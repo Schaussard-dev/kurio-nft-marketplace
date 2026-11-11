@@ -18,7 +18,13 @@ const emitBodySchema = z.discriminatedUnion('action', [
     action: z.literal('nft:update'),
     nftId: z.string(),
     price: z.string().optional(),
-    editions: z.number().int().optional(),
+    // A number sets every edition of the NFT; the array form targets specific editions.
+    editions: z
+      .union([
+        z.number().int().min(0),
+        z.array(z.object({ id: z.string(), available: z.number().int().min(0) })),
+      ])
+      .optional(),
   }),
   z.object({ action: z.literal('session:expire') }),
   z.object({ action: z.literal('socket:drop'), seconds: z.number().positive().optional() }),
@@ -26,17 +32,22 @@ const emitBodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('wallet:disconnect') }),
   z.object({ action: z.literal('event:replay'), eventId: z.string() }),
   z.object({ action: z.literal('order:resolve'), orderId: z.string() }),
+  // Mock-only probe: every socket connection receives 'mock.whoami' with the userId the server resolved.
+  z.object({ action: z.literal('whoami') }),
 ])
 export type MockEmitBody = z.infer<typeof emitBodySchema>
 export type MockActionName = MockEmitBody['action']
 type MockActionPayload<A extends MockActionName> = Extract<MockEmitBody, { action: A }>
 export type MockActionHandler<A extends MockActionName = MockActionName> = (
   payload: MockActionPayload<A>,
-) => void | Promise<void>
+) => void | Response | Promise<void | Response>
 
 const actionHandlers = new Map<MockActionName, MockActionHandler<never>>()
 
-/** Later tasks register the effect of an `/__mock/emit` action (mutate DB + emit through the mock socket). */
+/**
+ * Later tasks register the effect of an `/__mock/emit` action (mutate DB + emit through the mock socket).
+ * A handler may return a Response (e.g. 404) to override the default `{ ok: true }`.
+ */
 export function registerMockAction<A extends MockActionName>(name: A, handler: MockActionHandler<A>): void {
   actionHandlers.set(name, handler as unknown as MockActionHandler<never>)
 }
@@ -81,8 +92,8 @@ export const mockControlHandlers = [
     if (!parsed.success) return invalidBody()
     const handler = actionHandlers.get(parsed.data.action) as MockActionHandler | undefined
     if (!handler) return apiError(501, 'TRANSIENT', 'Ação ainda não disponível')
-    await handler(parsed.data)
-    return HttpResponse.json({ ok: true })
+    const result = await handler(parsed.data)
+    return result instanceof Response ? result : HttpResponse.json({ ok: true })
   }),
 
   // Mock-only probe used by e2e tests: the one control-area route that DOES follow scenario faults.

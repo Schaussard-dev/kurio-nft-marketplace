@@ -212,6 +212,18 @@ O resultado entra no `ARCHITECTURE.md`.
 
 **Queda de conexão simulada:** o painel e os testes têm a ação `socket:drop` (o servidor simulado fecha as conexões e recusa novas por N segundos ou até `socket:restore`). O cenário `offline` aplica isso ao socket e também `HttpResponse.error()` ao REST. Toda mudança no banco simulado (preço, estoque, status do pedido) passa por uma única função `commit()`, que atualiza o banco e emite o evento correspondente. Assim REST e socket nunca divergem (§6).
 
+### Resultados do spike (Task 7)
+
+Validado com `tests/e2e/realtime-spike.spec.ts` (projeto Playwright `spike`, contra `npm run dev` na porta 5173, importando o `createSocket` real) e pela leitura do código instalado em `node_modules`.
+
+- **Versões:** `socket.io-client` 4.8.4 (`engine.io-client` 6.6.8, protocolo EIO=4) e `@mswjs/socket.io-binding` 0.2.0 compartilham `socket.io-parser` 4.2.7 e `engine.io-parser` 5.2.3 (deduplicados). `msw` 2.15.0 traz o próprio `@mswjs/interceptors` 0.41.9; o binding declara tipos do 0.39.8, sem conflito no `tsc`. Compatível.
+- **Canal de autenticação: query string.** O binding não expõe o pacote CONNECT: `SocketIoConnection.on()` só repassa pacotes `EVENT`, e o binding responde sozinho ao CONNECT com `40{"sid":"test"}`. Por isso o `createSocket` envia o token em `auth` (para um servidor real) **e** em `query`. A mock lê `connection.client.url.searchParams.get('token')`. Token vazio, inválido ou expirado conecta como visitante: recebe só eventos públicos (`nft.updated`) e não entra em nenhuma sala.
+- **Ping/pong:** o binding envia o handshake Engine.IO fixo (`pingInterval` 25000, `pingTimeout` 5000), mas nunca envia ping. Sem ping, o cliente fecha com "ping timeout" após 30 s e reconecta (comprovado no teste (d) com o ping desligado: eventos `connect, disconnect, connect`). A mock envia o pacote Engine.IO `"2"` a cada 25 s por conexão; o cliente responde `"3"`, que o binding ignora. Com isso, a conexão sobrevive a 60 s de `page.clock.runFor`.
+- **Reconexão:** `client.close()` do lado do servidor gera `disconnect` ("transport close") e o `Manager` reconecta com backoff (500 ms a 3 s). Enquanto `socket:drop` está ativo, a mock recusa novas conexões disparando `error` e depois `close` no WebSocket interceptado antes do handshake. O cliente emite `connect_error` e continua tentando. Fechar sem `error` deixaria o `Manager` preso até o timeout de 20 s. `socket:restore` (ou o fim de `seconds`) libera a reconexão.
+- **Somente websocket:** `transports: ['websocket']` é obrigatório. O `ws.link` usa a mesma origem do cliente (`VITE_SOCKET_URL || location.origin`), e o MSW remove o prefixo `/socket.io/` antes de comparar a URL.
+- **Servidor por aba:** a interceptação roda na thread principal. Cada aba tem o próprio servidor simulado, com conexões e salas próprias. O banco é compartilhado via `localStorage`, mas um evento emitido numa aba não chega às outras.
+- **Dev server:** `socket.io-client` está em `optimizeDeps.include` para o Vite não recarregar a página ao descobrir a dependência no meio da sessão.
+
 ## 7. Tempo real
 
 **Formato dos eventos:**

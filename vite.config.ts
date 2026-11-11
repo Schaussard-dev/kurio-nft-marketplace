@@ -9,4 +9,6 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
+  // Pre-bundle deps first reached through dynamic imports, so dev never reloads mid-session to optimize them.
+  optimizeDeps: { include: ['socket.io-client'] },
 })

@@ -13,10 +13,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
+      testIgnore: /realtime-spike/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
     {
       name: 'chromium-mobile',
+      testIgnore: /realtime-spike/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
     },
     {
@@ -24,11 +26,26 @@ export default defineConfig({
       testMatch: /visual/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } },
     },
+    {
+      // Realtime spike: runs against the Vite dev server so the spec can import source modules.
+      name: 'spike',
+      testMatch: /realtime-spike/,
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:5173' },
+    },
   ],
-  webServer: {
-    command: 'npm run build:demo && npm run preview',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: 'npm run build:demo && npm run preview',
+      url: 'http://localhost:4173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    {
+      command: 'npm run dev -- --port 5173 --strictPort',
+      url: 'http://localhost:5173',
+      env: { VITE_ENABLE_MOCKS: 'true' },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 })
