@@ -4,9 +4,9 @@ import { emailSchema, networkSchema, requiredStringSchema, type Network } from '
 const EVM_ADDRESS = /^0x[0-9a-fA-F]{40}$/
 const BASE58_ADDRESS = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
-const ADDRESS_ERROR = 'Endereço de carteira inválido para a rede selecionada'
+export const WALLET_ADDRESS_ERROR = 'Endereço de carteira inválido para a rede selecionada'
 
-function isValidAddress(network: Network, address: string): boolean {
+export function isValidWalletAddress(network: Network, address: string): boolean {
   return (network === 'solana' ? BASE58_ADDRESS : EVM_ADDRESS).test(address)
 }
 
@@ -25,14 +25,26 @@ const walletFieldsSchema = z.object({
 })
 
 function refineAddresses(
-  value: { network: Network; address: string; secondaryAddress?: string | undefined },
+  value: {
+    network: Network
+    address: string
+    secondaryAddress?: string | undefined
+  },
   ctx: z.RefinementCtx,
 ) {
-  if (value.address && !isValidAddress(value.network, value.address)) {
-    ctx.addIssue({ code: 'custom', path: ['address'], message: ADDRESS_ERROR })
+  if (value.address && !isValidWalletAddress(value.network, value.address)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['address'],
+      message: WALLET_ADDRESS_ERROR,
+    })
   }
-  if (value.secondaryAddress && !isValidAddress(value.network, value.secondaryAddress)) {
-    ctx.addIssue({ code: 'custom', path: ['secondaryAddress'], message: ADDRESS_ERROR })
+  if (value.secondaryAddress && !isValidWalletAddress(value.network, value.secondaryAddress)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['secondaryAddress'],
+      message: WALLET_ADDRESS_ERROR,
+    })
   }
 }
 
@@ -49,3 +61,15 @@ export const walletsResponseSchema = z.object({
   secondary: walletSchema.nullable(),
 })
 export type WalletsResponse = z.infer<typeof walletsResponseSchema>
+
+/** Secondary-slot shortcut: the server copies the primary wallet, so nothing else is sent. */
+export const sameAsPrimaryInputSchema = z.object({
+  sameAsPrimary: z.literal(true),
+})
+export type SameAsPrimaryInput = z.infer<typeof sameAsPrimaryInputSchema>
+
+export const walletConnectionSchema = z.object({
+  connected: z.literal(true),
+  sessionId: z.string(),
+})
+export type WalletConnection = z.infer<typeof walletConnectionSchema>

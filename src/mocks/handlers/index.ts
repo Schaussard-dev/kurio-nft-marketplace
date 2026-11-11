@@ -5,6 +5,7 @@ import { mockControlHandlers } from './mock-control'
 import { nftHandlers } from './nfts'
 import { profileHandlers } from './profile'
 import { quoteHandlers } from './quote'
+import { walletHandlers } from './wallets'
 
 export const handlers = [
   ...mockControlHandlers,
@@ -14,4 +15,5 @@ export const handlers = [
   ...cartHandlers,
   ...quoteHandlers,
   ...profileHandlers,
+  ...walletHandlers,
 ]

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { AuthField } from '@/features/auth/components/AuthField'
 import { toApiError } from '@/shared/api/api-error'
 import { updateProfileInputSchema, type Profile, type UpdateProfileInput } from '@/shared/contracts'
+import { ENS_LABEL_ERROR, ENS_LABEL_PATTERN, ENS_SUFFIX, toFormEns, toStoredEns } from '@/shared/lib/ens'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { useUpdateProfile } from '../queries'
@@ -13,19 +14,10 @@ import { AvatarField } from './AvatarField'
 import { PROFILE_INPUT_CLASS } from './profile-styles'
 
 const FIELDS = ['displayName', 'username', 'email'] as const satisfies (keyof UpdateProfileInput)[]
-const ENS_SUFFIX = '.eth'
-
-// Figma draws a ".eth" selector next to the name: the input holds the name without the suffix.
-const toFormEns = (ensName: string) => (ensName.endsWith(ENS_SUFFIX) ? ensName.slice(0, -ENS_SUFFIX.length) : ensName)
-// A pasted "foo.eth" must not become "foo.eth.eth": a trailing .eth is dropped before the suffix is added.
-const toStoredEns = (name: string) => {
-  const label = name.trim().replace(/\.eth$/i, '')
-  return label ? `${label}${ENS_SUFFIX}` : ''
-}
 
 // The field holds the name without the suffix, so it is validated before the suffix is added.
 const formSchema = updateProfileInputSchema.extend({
-  ensName: z.string().regex(/^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*)?$/i, 'Use letras, números ou hífen'),
+  ensName: z.string().regex(ENS_LABEL_PATTERN, ENS_LABEL_ERROR),
 })
 
 function toFormValues(profile: Profile): UpdateProfileInput {
