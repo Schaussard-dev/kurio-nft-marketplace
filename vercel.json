@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/((?!assets/|nfts/|icons/|fonts/|mockServiceWorker\.js).*)", "destination": "/index.html" }
+  ],
+  "buildCommand": "npm run build:demo",
+  "outputDirectory": "dist"
+}
