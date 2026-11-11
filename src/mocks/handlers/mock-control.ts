@@ -34,6 +34,8 @@ const emitBodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('order:resolve'), orderId: z.string() }),
   // Mock-only probe: every socket connection receives 'mock.whoami' with the userId the server resolved.
   z.object({ action: z.literal('whoami') }),
+  // Never registered on purpose: keeps the 501 'no handler' path testable as features land.
+  z.object({ action: z.literal('__unregistered__') }),
 ])
 export type MockEmitBody = z.infer<typeof emitBodySchema>
 export type MockActionName = MockEmitBody['action']

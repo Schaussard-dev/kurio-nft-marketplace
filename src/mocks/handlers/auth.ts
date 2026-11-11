@@ -65,7 +65,14 @@ export function requireSession(request: Request): { user: UserRecord; session: S
   const db = getDb()
   const session = db.sessions.find((s) => s.token === token)
   const user = session && db.users.find((u) => u.id === session.userId)
-  if (!session || !user || isExpired(session)) return expired()
+  if (!session || !user) return expired()
+  if (isExpired(session)) {
+    // Natural TTL expiry detected: the user's sockets must not outlive the session
+    // (rooms are per user, so only when no other session of theirs is still valid).
+    const stillSignedIn = db.sessions.some((s) => s.userId === session.userId && !isExpired(s))
+    if (!stillSignedIn) disconnectUser(session.userId)
+    return expired()
+  }
 
   const limit = SCENARIOS[getMockConfig().scenario].flags?.sessionTtlRequests
   const count = (session.requestCount ?? 0) + 1
@@ -125,7 +132,8 @@ export const authHandlers = [
       const db = getDb()
       const fieldErrors: Record<string, string[]> = {}
       if (db.users.some((u) => sameEmail(u.email, email))) fieldErrors.email = ['E-mail já cadastrado']
-      if (db.users.some((u) => u.username === username)) fieldErrors.username = ['Nome de usuário indisponível']
+      const sameUsername = (u: UserRecord) => u.username.toLowerCase() === username.toLowerCase()
+      if (db.users.some(sameUsername)) fieldErrors.username = ['Nome de usuário indisponível']
       if (fieldErrors.email || fieldErrors.username) {
         const code = fieldErrors.email ? 'EMAIL_TAKEN' : 'USERNAME_TAKEN'
         return apiError(409, code, 'Já existe uma conta com esses dados', fieldErrors)

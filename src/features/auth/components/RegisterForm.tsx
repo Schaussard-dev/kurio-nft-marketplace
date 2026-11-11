@@ -9,6 +9,7 @@ import { safeRedirect } from '@/shared/lib/safe-redirect'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { useRegister } from '../queries'
+import { takeResume } from '../session-events'
 import { AuthDivider, AuthField } from './AuthField'
 import { AUTH_INPUT_CLASS, type AuthVariant } from './auth-styles'
 import { PasswordInput } from './PasswordInput'
@@ -44,7 +45,9 @@ export function RegisterForm({ variant, redirect }: { variant: AuthVariant; redi
       if (withErrors.length === 0) setFormError('Não foi possível criar a conta agora. Tente novamente.')
       return
     }
-    await navigate({ href: safeRedirect(redirect), replace: true })
+    // Same target rule as login: explicit redirect first, then the context saved by an expiry.
+    const resume = takeResume()
+    await navigate({ href: safeRedirect(redirect ?? resume?.path), replace: true })
   })
 
   const input = AUTH_INPUT_CLASS[variant]

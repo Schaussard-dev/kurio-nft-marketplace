@@ -72,7 +72,8 @@ test.describe('app shell', () => {
         await page.setViewportSize({ width, height: 900 })
         for (const path of paths) {
           await page.goto(path)
-          await expect(page.locator('main#conteudo h1')).toBeVisible()
+          // Full loads (worker boot + session check) can exceed 5 s when the whole suite runs in parallel.
+          await expect(page.locator('main#conteudo h1')).toBeVisible({ timeout: 10_000 })
           const overflow = await page.evaluate<number>('document.documentElement.scrollWidth - window.innerWidth')
           expect(overflow, `${path} at ${width}px`).toBeLessThanOrEqual(0)
         }

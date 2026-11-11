@@ -42,8 +42,8 @@ test.describe('mock control endpoints', () => {
       const res = await fetch('/api/__mock/emit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        // order:resolve gets its handler with the orders feature (Task 18); pick another unregistered action then.
-        body: JSON.stringify({ action: 'order:resolve', orderId: 'ord_x' }),
+        // Valid action name that no feature ever registers (unknown names are 422 by schema).
+        body: JSON.stringify({ action: '__unregistered__' }),
       })
       return res.status
     })

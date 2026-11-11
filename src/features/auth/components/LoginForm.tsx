@@ -15,6 +15,8 @@ import { AUTH_INPUT_CLASS, type AuthVariant } from './auth-styles'
 import { PasswordInput } from './PasswordInput'
 import { SocialButtons, UnavailablePopover } from './SocialButtons'
 
+const LOGIN_FIELDS = ['email', 'password'] as const satisfies (keyof LoginInput)[]
+
 export const EXPIRED_MESSAGE = 'Sua sessão expirou. Entre novamente para continuar.'
 
 export function LoginForm({
@@ -45,10 +47,12 @@ export function LoginForm({
       await login.mutateAsync(values)
     } catch (error) {
       const apiError = toApiError(error)
-      const fields = apiError.fieldErrors
-      if (fields?.email?.[0]) setError('email', { message: fields.email[0] }, { shouldFocus: true })
-      if (fields?.password?.[0]) setError('password', { message: fields.password[0] })
-      if (!fields) {
+      const withErrors = LOGIN_FIELDS.filter((field) => apiError.fieldErrors?.[field]?.[0])
+      withErrors.forEach((field, index) =>
+        setError(field, { message: apiError.fieldErrors![field][0] }, { shouldFocus: index === 0 }),
+      )
+      // Field errors this form cannot show (or none at all) fall back to the form-level message.
+      if (withErrors.length === 0) {
         setFormError(apiError.status === 401 ? apiError.message : 'Não foi possível entrar agora. Tente novamente.')
       }
       return

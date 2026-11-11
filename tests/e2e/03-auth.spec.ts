@@ -11,8 +11,8 @@ const path = (page: Page) => {
 
 async function fillLogin(page: Page, email: string, password: string) {
   const form = loginForm(page)
-  await form.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
-  await form.getByLabel('Senha', { exact: true }).fill(password)
+  await form.getByRole('textbox', { name: /^E-mail/ }).fill(email)
+  await form.getByLabel(/^Senha/).fill(password)
   await form.getByRole('button', { name: 'Entrar', exact: true }).click()
 }
 
@@ -32,16 +32,19 @@ test.describe('auth and session', () => {
     const submit = form.getByRole('button', { name: /^Criar (conta|perfil)$/ })
     await submit.click()
 
-    const username = form.getByRole('textbox', { name: 'Nome de usuário' })
+    const username = form.getByRole('textbox', { name: /^Nome de usuário/ })
     await expect(username).toBeFocused()
+    // Spec §10: required fields say so to assistive tech.
+    await expect(username).toHaveAttribute('aria-required', 'true')
+    await expect(username).toHaveAccessibleName('Nome de usuário (obrigatório)')
     await expect(username).toHaveAttribute('aria-invalid', 'true')
     await expect(username).toHaveAccessibleDescription(/3 a 20 caracteres/)
-    await expect(form.getByRole('textbox', { name: 'E-mail' })).toHaveAttribute('aria-invalid', 'true')
+    await expect(form.getByRole('textbox', { name: /^E-mail/ })).toHaveAttribute('aria-invalid', 'true')
 
     await username.fill('nova_colecionadora')
-    await form.getByRole('textbox', { name: 'E-mail' }).fill('nova@kurio.dev')
-    await form.getByLabel('Senha', { exact: true }).fill('Kurio@2026')
-    await form.getByLabel('Confirmar senha', { exact: true }).fill('Kurio@2026')
+    await form.getByRole('textbox', { name: /^E-mail/ }).fill('nova@kurio.dev')
+    await form.getByLabel(/^Senha/).fill('Kurio@2026')
+    await form.getByLabel(/^Confirmar senha/).fill('Kurio@2026')
     await submit.click()
 
     await expect(page).toHaveURL('/')
@@ -51,11 +54,11 @@ test.describe('auth and session', () => {
   test('register with a taken e-mail shows the API field error', async ({ page, gotoFresh }) => {
     await gotoFresh('/cadastro')
     const form = registerForm(page)
-    await form.getByRole('textbox', { name: 'Nome de usuário' }).fill('outra_ana')
-    const email = form.getByRole('textbox', { name: 'E-mail' })
+    await form.getByRole('textbox', { name: /^Nome de usuário/ }).fill('outra_ana')
+    const email = form.getByRole('textbox', { name: /^E-mail/ })
     await email.fill('ana@kurio.dev')
-    await form.getByLabel('Senha', { exact: true }).fill('Kurio@2026')
-    await form.getByLabel('Confirmar senha', { exact: true }).fill('Kurio@2026')
+    await form.getByLabel(/^Senha/).fill('Kurio@2026')
+    await form.getByLabel(/^Confirmar senha/).fill('Kurio@2026')
     await form.getByRole('button', { name: /^Criar (conta|perfil)$/ }).click()
 
     await expect(email).toHaveAttribute('aria-invalid', 'true')
@@ -189,12 +192,34 @@ test.describe('auth and session', () => {
     const dialog = page.getByRole('dialog', { name: 'Entrar' })
     await expect(dialog).toBeVisible()
     await expect(page.getByTestId('nft-card').first()).toBeAttached()
-    await expect(dialog.getByRole('textbox', { name: 'E-mail', exact: true })).toBeFocused()
+    await expect(dialog.getByRole('textbox', { name: /^E-mail/ })).toBeFocused()
     await dialog.getByRole('link', { name: 'Criar conta' }).click()
     await expect(page).toHaveURL('/cadastro')
     await expect(page.getByRole('dialog', { name: 'Criar conta' })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page).toHaveURL('/')
     await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('closing the dialog returns to a public redirect target, never to a private one', async ({
+    page,
+    gotoFresh,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'the dialog only exists at ≥768px')
+    await gotoFresh('/entrar?redirect=%2Fnft%2Fnft_001')
+    await expect(page.getByRole('dialog', { name: 'Entrar' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL('/nft/nft_001')
+
+    await page.goto('/entrar?redirect=%2Fperfil%2Fcarteiras')
+    await expect(page.getByRole('dialog', { name: 'Entrar' })).toBeVisible()
+    await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click()
+    await expect(page).toHaveURL('/')
+
+    await page.goto('/entrar?redirect=https://evil.example')
+    await expect(page.getByRole('dialog', { name: 'Entrar' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL('/')
   })
 })

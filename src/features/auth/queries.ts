@@ -9,14 +9,14 @@ import { endSession, markSessionRejected, startSession } from './session-events'
 
 /**
  * The session, validated against the API. No stored token → null without a request.
- * 401 → the stored token is dropped and the query resolves to null (the guard turns that into
- * "session expired"). Network failures keep the stored session: private calls still re-check it.
+ * 401 → the session ends without navigating (user queries dropped, sessionEnded emitted) and the
+ * query resolves to null; the guard turns that into "session expired" on private routes. Network failures keep the stored session: private calls still re-check it.
  */
 export function sessionQueryOptions() {
   return queryOptions<Session | null>({
     queryKey: queryKeys.session(),
     staleTime: 300_000,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, client }) => {
       const stored = sessionStore.get()
       if (!stored) return null
       // The user may log in/out while this request is in flight; only the token it checked is affected.
@@ -29,7 +29,8 @@ export function sessionQueryOptions() {
         if (apiError.code === 'CANCELED') throw error
         if (!isCurrent()) return sessionStore.get()
         if (apiError.status === 401) {
-          sessionStore.clear()
+          // Same cleanup as any session end; redirecting is left to the guard (private routes only).
+          endSession(client, 'expired', { navigate: false })
           markSessionRejected()
           return null
         }

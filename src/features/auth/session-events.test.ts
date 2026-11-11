@@ -7,6 +7,7 @@ import {
   RESUME_KEY,
   bindSessionNavigator,
   endSession,
+  redirectAfterExpiry,
   onSessionEnded,
   registerSessionStartHook,
   startSession,
@@ -111,5 +112,43 @@ describe('session events', () => {
     expect(listener).toHaveBeenCalledWith('switch')
     expect(qc.getQueryCache().findAll({ queryKey: ['user'] })).toHaveLength(0)
     expect(qc.getQueryData(queryKeys.session())).toEqual(bruno)
+  })
+
+  it('logout and switch drop a saved resume context; expiry keeps it', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => storage.get(k) ?? null,
+      setItem: (k: string, v: string) => void storage.set(k, v),
+      removeItem: (k: string) => void storage.delete(k),
+    })
+    storage.set(RESUME_KEY, JSON.stringify({ path: '/perfil' }))
+    endSession(new QueryClient(), 'expired', { navigate: false })
+    expect(storage.has(RESUME_KEY)).toBe(true)
+    endSession(new QueryClient(), 'logout')
+    expect(storage.has(RESUME_KEY)).toBe(false)
+    storage.set(RESUME_KEY, JSON.stringify({ path: '/perfil' }))
+    endSession(new QueryClient(), 'switch')
+    expect(storage.has(RESUME_KEY)).toBe(false)
+    vi.unstubAllGlobals()
+  })
+
+  it('endSession(expired, { navigate: false }) ends the session without redirecting', () => {
+    const toLogin = vi.fn()
+    bindSessionNavigator({ currentPath: () => '/perfil', toLogin })
+    const qc = seededClient()
+    endSession(qc, 'expired', { navigate: false })
+    expect(qc.getQueryCache().findAll({ queryKey: ['user'] })).toHaveLength(0)
+    expect(toLogin).not.toHaveBeenCalled()
+  })
+
+  it('redirectAfterExpiry only redirects while the user is on a private route', () => {
+    const toLogin = vi.fn()
+    let path = '/nft/nft_001'
+    bindSessionNavigator({ currentPath: () => path, toLogin })
+    redirectAfterExpiry({ onlyFromPrivate: true })
+    expect(toLogin).not.toHaveBeenCalled()
+    path = '/perfil/carteiras'
+    redirectAfterExpiry({ onlyFromPrivate: true })
+    expect(toLogin).toHaveBeenCalledWith('/perfil/carteiras')
   })
 })

@@ -4,7 +4,9 @@ import { HomeContent } from '@/features/catalog/components/HomeContent'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog'
+import { safeRedirect } from '@/shared/lib/safe-redirect'
 import type { AuthSearch } from '../auth-route'
+import { isPrivatePath } from '../private-paths'
 import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
 
@@ -28,13 +30,19 @@ const tabSearch = (search: AuthSearch) => (search.redirect ? { redirect: search.
 
 const TAB = 'text-title-22 font-bold text-foreground transition-colors hover:text-text-accent'
 
-/** Desktop (≥768px): Figma's dialog over Início. Esc / close returns to Início. */
+/** Where closing the dialog goes: the (internal) redirect target, or Início when that target needs a session. */
+const closeTarget = (search: AuthSearch) => {
+  const target = safeRedirect(search.redirect)
+  return isPrivatePath(target) ? '/' : target
+}
+
+/** Desktop (≥768px): Figma's dialog over Início. Esc / close returns to the public redirect target or Início. */
 export function AuthDialog({ mode, search, children }: { mode: AuthMode; search: AuthSearch; children: ReactNode }) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
   const copy = COPY[mode]
   return (
-    <Dialog open onOpenChange={(open) => !open && void navigate({ to: '/' })}>
+    <Dialog open onOpenChange={(open) => !open && void navigate({ href: closeTarget(search) })}>
       <DialogContent
         ref={contentRef}
         onOpenAutoFocus={(event) => {

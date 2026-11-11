@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/app/query-client'
 import { sessionStore } from '@/shared/api/session-storage'
 import type { Session } from '@/shared/contracts'
+import { isPrivatePath } from './private-paths'
 
 export type SessionEndReason = 'logout' | 'expired' | 'switch'
 
@@ -84,12 +85,36 @@ export function takeResume(): { path: string } | null {
   return null
 }
 
+function clearResume(): void {
+  try {
+    sessionStorage.removeItem(RESUME_KEY)
+  } catch {
+    // nothing to clear
+  }
+}
+
+/**
+ * Saves where the user was and sends them to /entrar?redirect=…&reason=expired. Skipped when already
+ * on /entrar (parallel 401s redirect once) and, with onlyFromPrivate, when the current route is public.
+ */
+export function redirectAfterExpiry({ onlyFromPrivate = false }: { onlyFromPrivate?: boolean } = {}): void {
+  const path = currentPath()
+  if (path === '/entrar' || path.startsWith('/entrar?')) return
+  if (onlyFromPrivate && !isPrivatePath(path)) return
+  saveResume(path)
+  navigator?.toLogin(path)
+}
+
 /**
  * Ends the client session: clears the token, drops every user-scoped query, caches "no session"
- * and notifies subscribers (the realtime provider disconnects its socket). An expiry also saves
- * where the user was and sends them to /entrar?redirect=…&reason=expired.
+ * and notifies subscribers (the realtime provider disconnects its socket). An expiry keeps the
+ * resume context and, unless navigate is false, redirects to /entrar; logout and switch drop it.
  */
-export function endSession(queryClient: QueryClient, reason: SessionEndReason): void {
+export function endSession(
+  queryClient: QueryClient,
+  reason: SessionEndReason,
+  { navigate = true }: { navigate?: boolean } = {},
+): void {
   sessionStore.clear()
   queryClient.removeQueries({ queryKey: queryKeys.users })
   queryClient.setQueryData(queryKeys.session(), null)
@@ -97,13 +122,10 @@ export function endSession(queryClient: QueryClient, reason: SessionEndReason): 
 
   if (reason !== 'expired') {
     expiredHint = false
+    clearResume()
     return
   }
-  const path = currentPath()
-  // Several requests can fail at once; only the first one redirects.
-  if (path === '/entrar' || path.startsWith('/entrar?')) return
-  saveResume(path)
-  navigator?.toLogin(path)
+  if (navigate) redirectAfterExpiry()
 }
 
 /** Starts a client session after login/register; a different previous user is ended first (switch). */
