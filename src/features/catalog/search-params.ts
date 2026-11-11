@@ -31,6 +31,15 @@ export const isCatalogTab = (value: string): value is CatalogTab => CATALOG_TABS
 
 export const CATALOG_DEFAULTS = { tab: 'all', sort: 'recent', page: 1 } as const satisfies Partial<CatalogSearch>
 
+/** Patch that clears every narrowing filter (keeps tab and sort). */
+export const CLEARED_FILTERS = {
+  q: undefined,
+  categories: undefined,
+  networks: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+} as const satisfies Partial<CatalogSearch>
+
 /** Any filter, search, tab or sort change goes back to the first page. */
 export function withFilterChange(prev: Partial<CatalogSearch>, patch: Partial<CatalogSearch>): Partial<CatalogSearch> {
   return { ...prev, ...patch, page: 1 }

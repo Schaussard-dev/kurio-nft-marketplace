@@ -11,10 +11,12 @@ const GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-[34px] md
 interface NftGridProps extends NftCardActions {
   query: UseQueryResult<CatalogResponse>
   onClearFilters: () => void
+  /** Used when the URL points past the last page (e.g. `?page=99`). */
+  onFirstPage: () => void
 }
 
 /** Catalog results with loading (skeletons), empty, error and background-refresh states. */
-export function NftGrid({ query, onClearFilters, ...actions }: NftGridProps) {
+export function NftGrid({ query, onClearFilters, onFirstPage, ...actions }: NftGridProps) {
   const { data, isError, isFetching, refetch } = query
 
   if (isError && !data) {
@@ -38,6 +40,21 @@ export function NftGrid({ query, onClearFilters, ...actions }: NftGridProps) {
         <p className="text-body-14 text-text-secondary">Tente outra busca ou ajuste os filtros.</p>
         <Button variant="outline" onClick={onClearFilters}>
           Limpar filtros
+        </Button>
+      </div>
+    )
+  }
+
+  if (data && data.items.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-lg bg-surface px-6 py-16 text-center">
+        <SearchX aria-hidden className="size-8 text-text-accent" />
+        <h3 className="text-body-lg-18 font-bold text-foreground">Nenhum NFT nesta página</h3>
+        <p className="text-body-14 text-text-secondary">
+          Esta busca tem {data.totalPages} {data.totalPages === 1 ? 'página' : 'páginas'}.
+        </p>
+        <Button variant="outline" onClick={onFirstPage}>
+          Voltar à primeira página
         </Button>
       </div>
     )

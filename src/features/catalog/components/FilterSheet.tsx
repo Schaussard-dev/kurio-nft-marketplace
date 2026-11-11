@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/shared/ui/button'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/shared/ui/sheet'
 import { catalogQueryOptions } from '../queries'
-import { hasActiveFilters } from '../search-params'
+import { CLEARED_FILTERS, hasActiveFilters } from '../search-params'
 import { useCatalogNavigate, useCatalogSearch } from '../use-catalog-search'
 import { FilterPanel } from './FilterSidebar'
 
@@ -48,9 +48,7 @@ export function FilterSheet() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() =>
-                void navigateCatalog({ q: undefined, categories: undefined, networks: undefined, minPrice: undefined, maxPrice: undefined })
-              }
+              onClick={() => void navigateCatalog(CLEARED_FILTERS)}
             >
               Limpar filtros
             </Button>

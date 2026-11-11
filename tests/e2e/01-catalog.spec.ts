@@ -17,6 +17,8 @@ async function openFilters(page: Page, isMobile: boolean): Promise<Locator> {
 
 async function closeFilters(page: Page, isMobile: boolean) {
   if (!isMobile) return
+  // Shared sheet chrome is pt-BR too.
+  await expect(page.getByRole('dialog', { name: 'Filtros' }).getByRole('button', { name: 'Fechar', exact: true })).toBeVisible()
   await page.getByRole('dialog', { name: 'Filtros' }).getByRole('button', { name: /Ver resultados/ }).click()
   await expect(page.getByRole('dialog', { name: 'Filtros' })).toBeHidden()
 }
@@ -94,16 +96,23 @@ test.describe('catalog (Início)', () => {
     await expect(cards(page)).toHaveCount(0)
   })
 
+  test('a page past the end offers a way back instead of a blank grid', async ({ page, gotoFresh }) => {
+    await gotoFresh('/?page=99')
+    await expect(page.getByRole('heading', { name: 'Nenhum NFT nesta página' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Voltar à primeira página' }).click()
+    await expect(cards(page)).toHaveCount(9)
+    expect(param(page, 'page')).toBeNull()
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toBeVisible()
+  })
+
   test('out-of-order responses never overwrite the latest search (jitter)', async ({ page, gotoFresh }) => {
     await gotoFresh('/', { scenario: 'jitter' })
     await expect(cards(page)).toHaveCount(9, { timeout: 10_000 })
 
     const search = page.getByRole('searchbox', { name: 'Buscar NFTs' })
-    // Gaps longer than the 300 ms debounce, so each term issues its own request.
-    for (const term of ['a', 'ap', 'ape']) {
-      await search.fill(term)
-      await page.waitForTimeout(350)
-    }
+    // Typed faster than the 300 ms debounce: "a", "ap", "ape" in quick succession.
+    await search.pressSequentially('ape', { delay: 60 })
     await expect.poll(() => param(page, 'q')).toBe('ape')
 
     const expected = await page.evaluate(async () => {
@@ -114,7 +123,7 @@ test.describe('catalog (Início)', () => {
     expect(expected.length).toBeGreaterThan(0)
     await expect.poll(() => cardNames(page), { timeout: 10_000 }).toEqual(expected)
     // Let any straggling response land, then confirm nothing overwrote the grid.
-    await page.waitForTimeout(1600)
+    await page.waitForLoadState('networkidle')
     await settled(page)
     expect(await cardNames(page)).toEqual(expected)
   })
