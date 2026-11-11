@@ -94,6 +94,11 @@ export function emitToAll(envelope: EventEnvelope): void {
   for (const entry of connections) entry.io.client.emit(envelope.type, envelope)
 }
 
+/** Users with at least one authenticated connection in this tab. */
+export function connectedUserIds(): string[] {
+  return [...rooms.keys()]
+}
+
 /** Closes and forgets every connection of a user (session expiry/logout isolation). */
 export function disconnectUser(userId: string): void {
   for (const entry of [...(rooms.get(userId) ?? [])]) {

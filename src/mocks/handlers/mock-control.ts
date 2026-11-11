@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { setMockConfig, getMockConfig } from '../config'
 import { mutate, resetDb } from '../db/store'
 import { resetLatencyRng, apiError, withNetwork } from '../network'
+import { resetScenarioOnce } from '../scenario-once'
 import { SCENARIO_NAMES, type ScenarioName } from '../scenarios'
 
 const scenarioSchema = z.enum(SCENARIO_NAMES as [ScenarioName, ...ScenarioName[]])
@@ -29,7 +30,8 @@ const emitBodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('session:expire') }),
   z.object({ action: z.literal('socket:drop'), seconds: z.number().positive().optional() }),
   z.object({ action: z.literal('socket:restore') }),
-  z.object({ action: z.literal('wallet:disconnect') }),
+  // Without userId: every user connected to this tab's mock socket server.
+  z.object({ action: z.literal('wallet:disconnect'), userId: z.string().optional() }),
   z.object({ action: z.literal('event:replay'), eventId: z.string() }),
   z.object({ action: z.literal('order:resolve'), orderId: z.string() }),
   // Mock-only probe: every socket connection receives 'mock.whoami' with the userId the server resolved.
@@ -74,6 +76,7 @@ export const mockControlHandlers = [
     setMockConfig({ scenario })
     resetLatencyRng()
     await resetDb(scenario)
+    resetScenarioOnce()
     return HttpResponse.json({ ok: true })
   }),
 

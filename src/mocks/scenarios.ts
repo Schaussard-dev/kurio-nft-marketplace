@@ -32,10 +32,10 @@ export interface ScenarioFlags {
   orderOutcome?: 'confirmed' | 'declined'
   orderTimeout?: boolean
   walletReject?: boolean
-  /** NFT id whose price changes between quote and order. */
-  priceChangeOnQuote?: string
-  /** NFT id that sells out when the order is placed. */
-  soldOutOnOrder?: string
+  /** The first quote of a signed-in cart raises the first cart line price by 0.10 (emits nft.updated). */
+  priceChangeOnQuote?: boolean
+  /** The first order request sells out the edition of the first cart line before it is validated. */
+  soldOutOnOrder?: boolean
 }
 
 export interface ScenarioConfig {
@@ -74,8 +74,8 @@ export const SCENARIOS: Record<ScenarioName, ScenarioConfig> = {
   },
   'session-expired': { latency: DEFAULT_LATENCY, flags: { sessionTtlRequests: 3 } },
   'signup-conflict': { latency: DEFAULT_LATENCY },
-  'price-change': { latency: DEFAULT_LATENCY, flags: { priceChangeOnQuote: 'nft_001' } },
-  'sold-out': { latency: DEFAULT_LATENCY, flags: { soldOutOnOrder: 'nft_001' } },
+  'price-change': { latency: DEFAULT_LATENCY, flags: { priceChangeOnQuote: true } },
+  'sold-out': { latency: DEFAULT_LATENCY, flags: { soldOutOnOrder: true } },
   'order-timeout': { latency: DEFAULT_LATENCY, flags: { orderTimeout: true } },
   'payment-declined': { latency: DEFAULT_LATENCY, flags: { orderOutcome: 'declined' } },
   'wallet-reject': { latency: DEFAULT_LATENCY, flags: { walletReject: true } },

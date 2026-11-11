@@ -2,8 +2,9 @@ import { createRouter } from '@tanstack/react-router'
 import { routeTree } from '@/routeTree.gen'
 import { NotFound } from '@/app/NotFound'
 import { createQueryClient } from '@/app/query-client'
-import { bindSessionNavigator, endSession, registerSessionStartHook } from '@/features/auth/session-events'
+import { bindSessionNavigator, endSession, onSessionEnded, registerSessionStartHook } from '@/features/auth/session-events'
 import { mergeGuestCartAfterSignIn } from '@/features/cart/merge'
+import { clearAllCheckoutDrafts } from '@/features/checkout/draft'
 import { setSessionExpiredHandler } from '@/shared/api/http'
 
 export const APP_NAME = 'Kurio'
@@ -25,6 +26,11 @@ setSessionExpiredHandler(() => endSession(queryClient, 'expired'))
 
 // Sign-in (login or register) brings the visitor's cart into the account before the user is redirected.
 registerSessionStartHook(mergeGuestCartAfterSignIn)
+
+// Spec §8: an expiry keeps the checkout draft for the next login; logout and user switch drop it.
+onSessionEnded((reason) => {
+  if (reason !== 'expired') clearAllCheckoutDrafts()
+})
 
 declare module '@tanstack/react-router' {
   interface Register {

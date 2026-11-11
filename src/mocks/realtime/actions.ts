@@ -2,8 +2,8 @@ import { HttpResponse } from 'msw'
 import { getDb } from '../db/store'
 import { registerMockAction } from '../handlers/mock-control'
 import { apiError } from '../network'
-import { commitNftUpdate, nftPatchSchema, replayEvent } from './commit'
-import { dropAll, emitWhoAmI, restore } from './server'
+import { commitNftUpdate, commitWalletDisconnect, nftPatchSchema, replayEvent } from './commit'
+import { connectedUserIds, dropAll, emitWhoAmI, restore } from './server'
 
 /** Wires the realtime `/__mock/emit` actions to the commit pipeline and the mock socket server. */
 export function registerRealtimeMockActions(): void {
@@ -22,6 +22,13 @@ export function registerRealtimeMockActions(): void {
 
   registerMockAction('event:replay', ({ eventId }) => {
     if (!replayEvent(eventId)) return apiError(404, 'NOT_FOUND', 'Evento não encontrado')
+  })
+
+  // Simulated loss of the wallet connection (checkout goes back to the connect step).
+  registerMockAction('wallet:disconnect', ({ userId }) => {
+    const users = userId ? [userId] : connectedUserIds()
+    users.forEach((id) => commitWalletDisconnect(id))
+    return HttpResponse.json({ ok: true, users: users.length })
   })
 
   registerMockAction('socket:drop', ({ seconds }) => dropAll(seconds))

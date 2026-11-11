@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { parseCouponParam } from '@/features/cart/coupon-param'
+import { CheckoutPage } from '@/features/checkout/components/CheckoutPage'
 
 interface PaymentSearch {
   /** Coupon applied in the cart, re-validated by the quote at checkout. */
@@ -14,7 +15,13 @@ export const Route = createFileRoute('/_authenticated/pagamento')({
   component: PaymentPage,
 })
 
-// Placeholder; a later task builds checkout.
 function PaymentPage() {
-  return <h1 className="text-heading-28 text-foreground">Pagamento</h1>
+  const { cupom } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  return (
+    <CheckoutPage
+      cupom={cupom}
+      onCouponChange={(code) => void navigate({ search: code ? { cupom: code } : {}, replace: true, resetScroll: false })}
+    />
+  )
 }

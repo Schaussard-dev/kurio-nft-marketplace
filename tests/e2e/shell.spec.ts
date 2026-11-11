@@ -110,9 +110,9 @@ test.describe('app shell', () => {
     await expect(page.getByRole('combobox')).toContainText('Catálogo vazio')
     await waitForMocks(page)
 
-    // Wallet disconnect has no server-side handler yet (501).
-    // TODO Task 17: this assertion must change once wallet:disconnect is implemented.
+    // Wallet disconnect is handled by the mock (emits wallet.disconnected to the connected users).
     await page.getByRole('button', { name: 'Desconectar carteira' }).click()
-    await expect(page.getByText('Ação ainda não disponível').first()).toBeVisible()
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: /^Carteira desconectada$/ })).toBeVisible()
+    await expect(page.getByText('Ação ainda não disponível')).toHaveCount(0)
   })
 })

@@ -114,6 +114,14 @@ describe('resolveConnect', () => {
     expect('connection' in result && walletConnectionSchema.safeParse(result.connection).success).toBe(true)
   })
 
+  it('connects a wallet typed in by hand through its connector id (MetaMask, WalletConnect, Coinbase)', () => {
+    for (const connector of ['metamask', 'walletconnect', 'coinbase']) {
+      expect(resolveConnect(WALLET_SEEDS, 'usr_bruno', connector, false)).toHaveProperty('connection.connected', true)
+    }
+    expect(resolveConnect(WALLET_SEEDS, 'usr_bruno', 'metamask', true)).toEqual({ error: 'WALLET_REJECTED' })
+    expect(resolveConnect(WALLET_SEEDS, 'usr_bruno', 'phantom', false)).toEqual({ error: 'NOT_FOUND' })
+  })
+
   it('refuses when the wallet-reject scenario flag is on', () => {
     expect(SCENARIOS['wallet-reject'].flags?.walletReject).toBe(true)
     expect(SCENARIOS.default.flags?.walletReject).toBeUndefined()

@@ -1,5 +1,16 @@
 import type { Page } from '@playwright/test'
-import { expect, test, waitForRealtime } from './fixtures'
+import { expect, test, waitForApiIdle, waitForRealtime } from './fixtures'
+import {
+  checkoutForm,
+  confirmButton,
+  fillLogin,
+  listOrders,
+  openCheckout,
+  openReview,
+  reviewDialog,
+  sendButton,
+  showPayerFields,
+} from './checkout-helpers'
 
 // Realtime events reach the app only through its Socket.IO client: the test asks the mock server
 // (`/api/__mock/emit`), which changes the mock DB and pushes `nft.updated` over the socket.
@@ -124,5 +135,103 @@ test.describe('realtime: cart and catalog', () => {
     await ape.getByRole('button', { name: 'Diminuir quantidade de Emerald Ape #042' }).click()
     await expect(ape.getByTestId('quantity-value')).toHaveText('1')
     await expect(page.getByRole('link', { name: 'Conectar e finalizar' })).toBeVisible()
+  })
+})
+
+test.describe('realtime: checkout', () => {
+  test.describe.configure({ timeout: 90_000 })
+
+  test('a price change while the review is open makes "Enviar pedido" answer QUOTE_STALE; the new value must be confirmed', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await gotoFresh('/')
+    await login('ana')
+    await openCheckout(page)
+    await waitForRealtime(page)
+    await openReview(page)
+    await expect(reviewDialog(page).getByTestId('review-total')).toHaveText('1.706 ETH')
+
+    expect(await mock.emit({ action: 'nft:update', nftId: 'nft_009', price: '1.89' })).toBe(200)
+    // The page quote follows the event; the open review keeps what the collector is confirming.
+    await expect(page.getByTestId('checkout-total')).toHaveText('1.906 ETH')
+    await expect(reviewDialog(page).getByTestId('review-total')).toHaveText('1.706 ETH')
+
+    await sendButton(page).click()
+    const stale = page.getByRole('dialog', { name: 'O valor do pedido mudou' })
+    await expect(stale).toBeVisible()
+    const row = stale.getByRole('row').filter({ hasText: 'Sage Nomad #009' })
+    await expect(row).toContainText('1.69 ETH')
+    await expect(row).toContainText('1.89 ETH')
+    await expect(stale.getByTestId('stale-old-total')).toHaveText('1.706 ETH')
+    await expect(stale.getByTestId('stale-new-total')).toHaveText('1.906 ETH')
+    expect(await listOrders(page)).toHaveLength(0)
+
+    await stale.getByRole('button', { name: 'Confirmar novo valor' }).click()
+    await expect(reviewDialog(page).getByTestId('review-total')).toHaveText('1.906 ETH')
+    await sendButton(page).click()
+    await expect(page).toHaveURL(/\/pedidos\/ord_/)
+    const orders = await listOrders(page)
+    expect(orders).toHaveLength(1)
+    expect(orders[0].snapshot.total).toBe('1.906')
+    expect(orders[0].snapshot.lines[0].unitPrice).toBe('1.89')
+  })
+
+  test('a wallet disconnect during the review closes it, keeps the form and asks to connect again', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+    isMobile,
+  }) => {
+    await gotoFresh('/')
+    await login('ana')
+    await openCheckout(page)
+    await showPayerFields(page, isMobile)
+    await checkoutForm(page).getByLabel(/^Observação do colecionador/).fill('Presente para a Bia')
+    await waitForRealtime(page)
+    await openReview(page)
+
+    expect(await mock.emit({ action: 'wallet:disconnect' })).toBe(200)
+    await expect(reviewDialog(page)).toHaveCount(0)
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'Carteira desconectada. Conecte novamente.' })).toBeVisible()
+    await expect(checkoutForm(page).getByLabel(/^Observação do colecionador/)).toHaveValue('Presente para a Bia')
+
+    // Back to step 2: the next confirmation asks the wallet again.
+    const connects: string[] = []
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && /\/api\/wallets\/[^/]+\/connect$/.test(r.url())) connects.push(r.url())
+    })
+    await openReview(page)
+    expect(connects).toHaveLength(1)
+  })
+
+  test('review focus: a session that expires on /pagamento keeps the typed data through the new login', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+    isMobile,
+  }) => {
+    await gotoFresh('/')
+    await login('ana')
+    await openCheckout(page)
+    await showPayerFields(page, isMobile)
+    await checkoutForm(page).getByLabel(/^Código de indicação/).fill('KURIO-BIA')
+    await checkoutForm(page).getByLabel(/^Observação do colecionador/).fill('Entregar na carteira principal')
+    await waitForApiIdle(page)
+
+    expect(await mock.emit({ action: 'session:expire' })).toBe(200)
+    await confirmButton(page).click()
+    await expect(page).toHaveURL('/entrar?redirect=%2Fpagamento&reason=expired')
+    await expect(page.getByRole('alert').filter({ hasText: 'Sua sessão expirou' })).toBeVisible()
+    await fillLogin(page, 'ana')
+    await expect(page).toHaveURL('/pagamento')
+    await showPayerFields(page, isMobile)
+    await expect(checkoutForm(page).getByLabel(/^Código de indicação/)).toHaveValue('KURIO-BIA')
+    await expect(checkoutForm(page).getByLabel(/^Observação do colecionador/)).toHaveValue('Entregar na carteira principal')
+    await expect(checkoutForm(page).getByLabel(/^Nome de exibição/)).toHaveValue('Ana Souza')
   })
 })

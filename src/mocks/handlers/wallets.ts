@@ -70,14 +70,23 @@ export function syncSecondary(secondary: WalletRecord | undefined, primary: Wall
 
 export type ConnectResult = { connection: WalletConnection } | { error: 'NOT_FOUND' | 'WALLET_REJECTED' }
 
-/** Simulated wallet approval for a wallet the user owns; `rejected` is the wallet-reject scenario flag. */
+/** Connector ids accepted for a wallet typed in by hand at checkout ("Usar outra carteira?"). */
+export const CONNECTOR_IDS = ['metamask', 'walletconnect', 'coinbase'] as const
+
+/**
+ * Simulated wallet approval for a wallet the user owns, or for a connector id (manual wallet);
+ * `rejected` is the wallet-reject scenario flag.
+ */
 export function resolveConnect(
   wallets: WalletRecord[],
   userId: string,
   walletId: string,
   rejected: boolean,
 ): ConnectResult {
-  if (!wallets.some((w) => w.id === walletId && w.userId === userId)) return { error: 'NOT_FOUND' }
+  const known =
+    (CONNECTOR_IDS as readonly string[]).includes(walletId) ||
+    wallets.some((w) => w.id === walletId && w.userId === userId)
+  if (!known) return { error: 'NOT_FOUND' }
   if (rejected) return { error: 'WALLET_REJECTED' }
   return { connection: { connected: true, sessionId: `wcs_${globalThis.crypto.randomUUID()}` } }
 }

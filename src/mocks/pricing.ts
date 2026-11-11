@@ -23,7 +23,7 @@ export function isQuoteError(result: Quote | ApiErrorLike): result is ApiErrorLi
 }
 
 /** FNV-1a (two 32-bit lanes): stable, dependency-free fingerprint; not a security hash. */
-function stableHash(text: string): string {
+export function stableHash(text: string): string {
   let a = 0x811c9dc5
   let b = 0x01000193 ^ text.length
   for (let i = 0; i < text.length; i++) {
