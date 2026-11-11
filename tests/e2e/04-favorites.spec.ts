@@ -1,8 +1,10 @@
-import type { Page } from '@playwright/test'
+import type { Page, Response } from '@playwright/test'
 import { DEMO_USERS, expect, test, type DemoUser } from './fixtures'
 
 const favoriteButton = (page: Page) =>
   page.getByRole('main').getByRole('button', { name: /^(Favoritar|Remover dos favoritos)$/ })
+const isFavoritePut = (response: Response) =>
+  response.request().method() === 'PUT' && response.url().includes('/api/favorites/')
 const ERROR_TOAST = 'Não foi possível atualizar seus favoritos. Tente novamente.'
 
 async function fillLogin(page: Page, user: DemoUser) {
@@ -42,11 +44,13 @@ test.describe('favorites', () => {
 
     // A slow server proves the pressed state comes from the optimistic update, not the response.
     await mock.scenario('default', { latencyOverride: 2500 })
+    // networkidle resolves at once when already reached: wait for the toggle itself before reloading.
+    const saved = page.waitForResponse(isFavoritePut)
     await button.click()
     await expect(button).toHaveAttribute('aria-pressed', 'true', { timeout: 1000 })
     await expect(button).toHaveAccessibleName('Remover dos favoritos')
     await mock.scenario('default', { latencyOverride: null })
-    await page.waitForLoadState('networkidle')
+    expect((await saved).status()).toBe(204)
 
     await page.reload()
     await expect(favoriteButton(page)).toHaveAttribute('aria-pressed', 'true')
@@ -78,9 +82,10 @@ test.describe('favorites', () => {
     await expect(button).toHaveAttribute('aria-pressed', 'false')
 
     await mock.scenario('default', { latencyOverride: null })
+    const saved = page.waitForResponse(isFavoritePut)
     await button.click()
     await expect(button).toHaveAttribute('aria-pressed', 'true')
-    await page.waitForLoadState('networkidle')
+    expect((await saved).status()).toBe(204)
     await page.reload()
     await expect(favoriteButton(page)).toHaveAttribute('aria-pressed', 'true')
   })

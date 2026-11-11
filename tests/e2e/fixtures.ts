@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from '@playwright/test'
+import { test as base, expect, type Page, type Request } from '@playwright/test'
 
 /** Kept in sync with src/mocks/scenarios.ts (tests never import app code). */
 export type ScenarioName =
@@ -49,6 +49,44 @@ interface Fixtures {
 /** The page load event can fire before the MSW worker takes control of the page. */
 export async function waitForMocks(page: Page): Promise<void> {
   await page.waitForFunction('navigator.serviceWorker.controller !== null')
+}
+
+/**
+ * Resolves once no app API request (/api/*, except /api/__mock/*) has started or finished for quietMs.
+ * waitForLoadState('networkidle') returns at once when the page already reached that state, so it
+ * cannot wait for a request started afterwards. Requests in flight before the call reset the timer when they end.
+ */
+export async function waitForApiIdle(page: Page, { quietMs = 1000, timeout = 15_000 } = {}): Promise<void> {
+  const pending = new Set<Request>()
+  let lastEvent = Date.now()
+  const isApi = (request: Request) => {
+    const { pathname } = new URL(request.url())
+    return pathname.startsWith('/api/') && !pathname.startsWith('/api/__mock/')
+  }
+  const started = (request: Request) => {
+    if (!isApi(request)) return
+    pending.add(request)
+    lastEvent = Date.now()
+  }
+  const ended = (request: Request) => {
+    if (!isApi(request)) return
+    pending.delete(request)
+    lastEvent = Date.now()
+  }
+  page.on('request', started)
+  page.on('requestfinished', ended)
+  page.on('requestfailed', ended)
+  try {
+    const deadline = Date.now() + timeout
+    while (pending.size > 0 || Date.now() - lastEvent < quietMs) {
+      if (Date.now() > deadline) throw new Error('The app API never went idle')
+      await page.waitForTimeout(50)
+    }
+  } finally {
+    page.off('request', started)
+    page.off('requestfinished', ended)
+    page.off('requestfailed', ended)
+  }
 }
 
 /**

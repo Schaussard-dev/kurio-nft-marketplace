@@ -90,3 +90,8 @@ export function getGuestCartId(): string {
 export function resetGuestCartId(): void {
   removeRaw(GUEST_CART_KEY)
 }
+
+/** The current guest cart id, without creating one (used by the post-login merge). */
+export function peekGuestCartId(): string | null {
+  return readRaw(GUEST_CART_KEY)
+}

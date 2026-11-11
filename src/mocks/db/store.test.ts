@@ -54,6 +54,19 @@ describe('seed', () => {
     expect(db.favorites).toEqual([{ userId: 'usr_ana', nftId: 'nft_042' }])
     expect(db.wallets.some((w) => w.userId === 'usr_bruno')).toBe(false)
   })
+
+  it('seeds ana with 1× Sage Nomad (a valid edition) and bruno with no cart', async () => {
+    const db = await createSeed()
+    const anaCart = db.carts.find((c) => c.owner.type === 'user' && c.owner.id === 'usr_ana')!
+    expect(anaCart.lines).toHaveLength(1)
+    const [line] = anaCart.lines
+    const nft = db.nfts.find((n) => n.id === line!.nftId)!
+    expect(nft.name).toBe('Sage Nomad #009')
+    expect(line!.quantity).toBe(1)
+    expect(nft.editions.find((e) => e.id === line!.editionId)!.available).toBeGreaterThanOrEqual(1)
+    expect(db.carts.some((c) => c.owner.id === 'usr_bruno')).toBe(false)
+    expect(db.quotes).toEqual([])
+  })
 })
 
 describe('store', () => {
@@ -185,5 +198,16 @@ describe('store isolation', () => {
     setStorage(storage)
     await initDb()
     expect(getDb().nfts).toHaveLength(60)
+  })
+
+  it('reseeds a persisted blob from before carts were seeded (no quotes table)', async () => {
+    const storage = memoryStorage()
+    const legacy: Record<string, unknown> = { ...(await createSeed()), carts: [] }
+    delete legacy.quotes
+    storage.setItem(STORAGE_KEY, JSON.stringify(legacy))
+    setStorage(storage)
+    await initDb()
+    expect(getDb().quotes).toEqual([])
+    expect(getDb().carts.some((c) => c.owner.id === 'usr_ana')).toBe(true)
   })
 })

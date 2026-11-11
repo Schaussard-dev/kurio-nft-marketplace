@@ -1,4 +1,4 @@
-import type { CouponRecord, FavoriteRecord, WalletRecord } from '../db/schema'
+import type { CartRecord, CouponRecord, FavoriteRecord, WalletRecord } from '../db/schema'
 
 /** Fictional demo password; hashed at seed time and never stored in the database. */
 export const SEED_PASSWORD = 'Kurio@2026'
@@ -68,6 +68,16 @@ export const WALLET_SEEDS: WalletRecord[] = [
 ]
 
 export const FAVORITE_SEEDS: FavoriteRecord[] = [{ userId: 'usr_ana', nftId: 'nft_042' }]
+
+/** ana starts with 1× Sage Nomad #009, edition 1/50 (Mobile Carrinho frame); bruno has no cart. */
+export const CART_SEEDS: CartRecord[] = [
+  {
+    id: 'crt_usr_ana',
+    owner: { type: 'user', id: 'usr_ana' },
+    lines: [{ lineId: 'ln_ana_sage', nftId: 'nft_009', editionId: 'nft_009_e3', quantity: 1 }],
+    version: 1,
+  },
+]
 
 export const COUPON_SEEDS: CouponRecord[] = [
   { code: 'KURIO10', percent: 10, expiresAt: '2027-12-31T23:59:59.000Z' },

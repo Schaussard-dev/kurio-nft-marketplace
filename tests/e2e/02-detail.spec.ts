@@ -95,11 +95,14 @@ test.describe('NFT detail', () => {
     await expect(page.getByText(/Máximo de/)).toHaveCount(0)
   })
 
-  test('buy and cart actions are not wired yet and never look successful', async ({ page, gotoFresh }) => {
-    await gotoFresh('/nft/nft_042')
+  test('buying adds the selected edition and quantity to the cart and opens it', async ({ page, gotoFresh }) => {
+    await gotoFresh('/nft/nft_042?edition=nft_042_e3')
+    await quantity(page).getByRole('button', { name: 'Aumentar quantidade' }).click()
     await page.getByRole('button', { name: /^Comprar/i }).click()
-    await expect(page.getByText('Indisponível nesta demonstração')).toBeVisible()
-    await expect(page).toHaveURL(/\/nft\/nft_042/)
+    await expect(page).toHaveURL('/carrinho')
+    const line = page.getByTestId('cart-line').filter({ hasText: 'Emerald Ape #042' })
+    await expect(line).toContainText('1/50')
+    await expect(line.getByTestId('quantity-value')).toHaveText('2')
   })
 
   test('gallery thumbnails swap the main image and the zoom dialog traps and returns focus', async ({

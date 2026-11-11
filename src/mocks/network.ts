@@ -33,9 +33,11 @@ export function apiError(
   code: ApiErrorCode,
   message: string,
   fieldErrors?: Record<string, string[]>,
+  details?: unknown,
 ): HttpResponse<ApiErrorBody> {
   const error: ApiErrorBody['error'] = { code, message }
   if (fieldErrors) error.fieldErrors = fieldErrors
+  if (details !== undefined) error.details = details
   return HttpResponse.json({ error }, { status })
 }
 

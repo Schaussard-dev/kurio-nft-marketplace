@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { HeartOff, TriangleAlert } from 'lucide-react'
+import { useQuickAddToCart } from '@/features/cart/queries'
 import { NftCard } from '@/features/catalog/components/NftCard'
 import { NftCardSkeleton } from '@/features/catalog/components/NftCardSkeleton'
 import { Button, buttonVariants } from '@/shared/ui/button'
@@ -11,6 +12,7 @@ const GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-6 md:gap-
 export function FavoritesPage() {
   const query = useFavorites()
   const { isFavorite, toggleFavorite } = useFavoriteToggle()
+  const quickAdd = useQuickAddToCart()
   const { data, isError, isFetching, refetch } = query
 
   let body
@@ -51,6 +53,7 @@ export function FavoritesPage() {
                   nft={nft}
                   isFavorite={(card) => isFavorite(card.id)}
                   onToggleFavorite={(card) => toggleFavorite(card.id, card)}
+                  onAddToCart={(card) => void quickAdd(card)}
                 />
               ))
             : Array.from({ length: 3 }, (_, index) => <NftCardSkeleton key={index} />)}

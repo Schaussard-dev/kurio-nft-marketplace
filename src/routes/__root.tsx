@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
+import { useCartCount } from '@/features/cart/queries'
 import { PageShell } from '@/shared/layout/PageShell'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 
@@ -19,10 +20,11 @@ function RootLayout() {
   // Below 768px sign-in/sign-up and the NFT detail are full screens without the app chrome
   // (Mobile Login/Cadastro/Detalhes frames; the detail has its own back button and bottom bar).
   const isDialogWidth = useMediaQuery('(min-width: 768px)')
+  const cartCount = useCartCount()
   const bare = (AUTH_PATHS.has(pathname) || pathname.startsWith('/nft/')) && !isDialogWidth
   return (
     <>
-      <PageShell bare={bare}>
+      <PageShell bare={bare} cartCount={cartCount}>
         <Outlet />
       </PageShell>
       {MockPanel && (

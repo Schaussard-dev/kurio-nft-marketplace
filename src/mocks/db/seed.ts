@@ -1,5 +1,6 @@
 import { buildNfts } from '../fixtures/nfts'
 import {
+  CART_SEEDS,
   COUPON_SEEDS,
   FAVORITE_SEEDS,
   SEED_PASSWORD,
@@ -27,12 +28,13 @@ export async function createSeed(): Promise<MockDb> {
     users,
     sessions: [],
     nfts,
-    carts: [],
+    carts: CART_SEEDS.map((c) => ({ ...c, owner: { ...c.owner }, lines: c.lines.map((l) => ({ ...l })) })),
     favorites: FAVORITE_SEEDS.map((f) => ({ ...f })),
     wallets: WALLET_SEEDS.map((w) => ({ ...w })),
     orders: [],
     idempotency: [],
     coupons: COUPON_SEEDS.map((c) => ({ ...c })),
+    quotes: [],
     resourceVersions: Object.fromEntries(nfts.map((n) => [`nft:${n.id}`, 1])),
     eventLog: [],
   }

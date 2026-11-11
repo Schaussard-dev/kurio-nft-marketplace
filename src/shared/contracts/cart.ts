@@ -36,6 +36,9 @@ export const mergeCartResultSchema = z.object({
   adjustments: z.array(
     z.object({
       lineId: z.string(),
+      nftId: z.string(),
+      /** NFT name, so the UI can list adjustments of lines that were dropped (applied 0). */
+      name: z.string(),
       requested: z.number().int(),
       applied: z.number().int(),
       reason: z.literal('stock'),

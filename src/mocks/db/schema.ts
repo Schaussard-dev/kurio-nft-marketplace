@@ -1,4 +1,4 @@
-import type { NftDetail, Order, Wallet } from '@/shared/contracts'
+import type { NftDetail, Order, Quote, Wallet } from '@/shared/contracts'
 import type { PasswordRecord } from './password'
 
 import type { ScenarioName } from '../scenarios'
@@ -71,6 +71,12 @@ export interface CouponRecord {
   expiresAt: string | null
 }
 
+/** A quote handed out by POST /quote; orders (later task) look it up by quoteId and compare fingerprints. */
+export interface QuoteRecord {
+  cartId: string
+  quote: Quote
+}
+
 export interface MockDb {
   version: 1
   scenario: ScenarioName
@@ -83,6 +89,7 @@ export interface MockDb {
   orders: OrderRecord[]
   idempotency: IdempotencyRecord[]
   coupons: CouponRecord[]
+  quotes: QuoteRecord[]
   resourceVersions: Record<string, number>
   eventLog: string[]
 }

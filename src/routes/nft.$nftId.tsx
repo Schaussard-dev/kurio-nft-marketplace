@@ -1,7 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, notFound, useCanGoBack, useRouter } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound, useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
 import { ChevronLeft, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { ADDED_MESSAGE, useAddToCart, useQuickAddToCart } from '@/features/cart/queries'
 import { FavoriteButton } from '@/features/favorites/components/FavoriteButton'
 import { DetailTabs } from '@/features/nft/components/DetailTabs'
 import { Gallery } from '@/features/nft/components/Gallery'
@@ -102,8 +104,20 @@ function NftDetailPage() {
     void navigate({ search: { edition: editionId }, replace: true, resetScroll: false })
   }
 
-  // onAddToCart stays unwired until the cart feature lands (the actions then say "Indisponível").
-  const purchase: PurchaseProps = { nft, edition, quantity, onQuantityChange: setRequested }
+  const addToCart = useAddToCart()
+  const quickAdd = useQuickAddToCart()
+  const navigateApp = useNavigate()
+  const purchase: PurchaseProps = {
+    nft,
+    edition,
+    quantity,
+    onQuantityChange: setRequested,
+    adding: addToCart.isPending,
+    onAddToCart: (input, { goToCart }) =>
+      addToCart.mutate(input, {
+        onSuccess: () => (goToCart ? void navigateApp({ to: '/carrinho' }) : toast.success(ADDED_MESSAGE)),
+      }),
+  }
 
   return (
     <div className="flex flex-col max-md:pb-48">
@@ -127,7 +141,7 @@ function NftDetailPage() {
         <DetailTabs nft={nft} />
       </div>
       <div className="mt-14 md:mt-20">
-        <MoreFromCollection nft={nft} />
+        <MoreFromCollection nft={nft} onAddToCart={(card) => void quickAdd(card)} />
       </div>
       {!desktop && <MobileBuyBar {...purchase} />}
     </div>

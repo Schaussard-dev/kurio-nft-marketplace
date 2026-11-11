@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Tabs } from 'radix-ui'
+import { useQuickAddToCart } from '@/features/cart/queries'
 import { useFavoriteToggle } from '@/features/favorites/queries'
 import { useAnnounce } from '@/shared/ui/LiveRegion'
 import { catalogQueryOptions } from '../queries'
@@ -19,6 +20,7 @@ export function CatalogSection({ showSidebar }: { showSidebar: boolean }) {
   const navigateCatalog = useCatalogNavigate()
   const announce = useAnnounce()
   const { isFavorite, toggleFavorite } = useFavoriteToggle()
+  const quickAdd = useQuickAddToCart()
 
   const total = query.data?.total
   const settled = query.isSuccess && !query.isPlaceholderData
@@ -61,6 +63,7 @@ export function CatalogSection({ showSidebar }: { showSidebar: boolean }) {
             onFirstPage={() => void navigateCatalog({ page: 1 }, { keepPage: true })}
             isFavorite={(nft) => isFavorite(nft.id)}
             onToggleFavorite={(nft) => toggleFavorite(nft.id, nft)}
+            onAddToCart={(nft) => void quickAdd(nft)}
           />
           {/* Past the last page the grid offers "Voltar à primeira página" instead of a broken pager. */}
           {query.data && search.page <= query.data.totalPages && (

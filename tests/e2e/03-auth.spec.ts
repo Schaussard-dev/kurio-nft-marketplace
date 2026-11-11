@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { DEMO_USERS, expect, test } from './fixtures'
+import { DEMO_USERS, expect, test, waitForApiIdle } from './fixtures'
 
 const loginForm = (page: Page) => page.getByRole('form', { name: 'Entrar' })
 const registerForm = (page: Page) => page.getByRole('form', { name: 'Criar conta' })
@@ -97,6 +97,7 @@ test.describe('auth and session', () => {
     await login('ana')
     await page.goto('/perfil')
     await expect(page.getByRole('heading', { name: 'Perfil do colecionador' })).toBeVisible()
+    await waitForApiIdle(page)
 
     expect(await mock.emit({ action: 'session:expire' })).toBe(200)
     await page.getByRole('navigation', { name: 'Seções do perfil' }).getByRole('link', { name: 'Carteiras' }).click()
@@ -121,6 +122,9 @@ test.describe('auth and session', () => {
   }) => {
     await gotoFresh('/')
     await login('ana')
+    // Requests of the signed-in page still in flight would meet the expiry here and end the session
+    // in this page before the reload, which is not the case under test.
+    await waitForApiIdle(page)
     expect(await mock.emit({ action: 'session:expire' })).toBe(200)
 
     await page.goto('/perfil/carteiras')
