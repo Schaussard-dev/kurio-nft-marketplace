@@ -1,3 +1,4 @@
+import { isCancel } from 'axios'
 import { QueryClient } from '@tanstack/react-query'
 import { toApiError } from '@/shared/api/api-error'
 
@@ -5,7 +6,7 @@ export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        retry: (count, err) => toApiError(err).isTransient && count < 2,
+        retry: (count, err) => !isCancel(err) && toApiError(err).isTransient && count < 2,
         retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 4000),
         staleTime: 30_000,
         gcTime: 300_000,

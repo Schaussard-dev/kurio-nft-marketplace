@@ -71,7 +71,14 @@ describe('toApiError', () => {
     expect(err.isTransient).toBe(false)
   })
 
-  it('does not treat a CanceledError as an ApiError', () => {
-    expect(new CanceledError()).not.toBeInstanceOf(ApiError)
+  it('maps a CanceledError to a non-transient CANCELED error', () => {
+    const err = toApiError(new CanceledError())
+    expect(err.code).toBe('CANCELED')
+    expect(err.isTransient).toBe(false)
+  })
+
+  it('treats bodiless 408 and 429 as transient', () => {
+    expect(toApiError(axiosErrorWith(408, null)).code).toBe('TRANSIENT')
+    expect(toApiError(axiosErrorWith(429, '')).isTransient).toBe(true)
   })
 })

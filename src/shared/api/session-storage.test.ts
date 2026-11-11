@@ -59,6 +59,14 @@ describe('sessionStore', () => {
 })
 
 describe('guest cart id', () => {
+  it('falls back to a uuid-shaped id without crypto.randomUUID', async () => {
+    vi.resetModules()
+    stubStorage()
+    vi.stubGlobal('crypto', {})
+    const { getGuestCartId } = await import('./session-storage')
+    expect(getGuestCartId()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  })
+
   beforeEach(() => {
     vi.resetModules()
     vi.unstubAllGlobals()

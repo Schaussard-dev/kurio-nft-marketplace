@@ -1,4 +1,4 @@
-import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import { AxiosError, CanceledError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { describe, expect, it } from 'vitest'
 import { createQueryClient, queryKeys } from './query-client'
 
@@ -12,6 +12,7 @@ describe('createQueryClient', () => {
   const defaults = createQueryClient().getDefaultOptions()
   const retry = defaults.queries!.retry as (count: number, err: unknown) => boolean
 
+  it('does not retry cancellations', () => expect(retry(0, new CanceledError())).toBe(false))
   it('does not retry 404', () => expect(retry(0, httpError(404))).toBe(false))
   it('retries 503 at count 0 and 1, not 2', () => {
     expect(retry(0, httpError(503))).toBe(true)

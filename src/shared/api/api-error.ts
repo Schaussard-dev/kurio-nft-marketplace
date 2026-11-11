@@ -1,8 +1,8 @@
-import { isAxiosError } from 'axios'
+import { isAxiosError, isCancel } from 'axios'
 import { apiErrorBodySchema, type ApiErrorCode } from '@/shared/contracts'
 
 // NETWORK, TIMEOUT and INVALID_RESPONSE are client-only; they never come from the server enum.
-export type ApiErrorKind = ApiErrorCode | 'NETWORK' | 'TIMEOUT' | 'INVALID_RESPONSE'
+export type ApiErrorKind = ApiErrorCode | 'NETWORK' | 'TIMEOUT' | 'INVALID_RESPONSE' | 'CANCELED'
 
 export interface ApiErrorInit {
   status: number
@@ -33,7 +33,7 @@ export class ApiError extends Error {
 
 // Used when the server answered without a contract-shaped error body (proxy pages, etc.).
 function fallbackCode(status: number): ApiErrorKind {
-  if (status >= 500) return 'TRANSIENT'
+  if (status >= 500 || status === 408 || status === 429) return 'TRANSIENT'
   if (status === 401) return 'UNAUTHENTICATED'
   if (status === 403) return 'FORBIDDEN'
   if (status === 404) return 'NOT_FOUND'
@@ -42,6 +42,9 @@ function fallbackCode(status: number): ApiErrorKind {
 
 export function toApiError(e: unknown): ApiError {
   if (e instanceof ApiError) return e
+
+  // Cancellations are never transient so they are not retried.
+  if (isCancel(e)) return new ApiError({ status: 0, code: 'CANCELED', message: 'Requisição cancelada.' })
 
   if (isAxiosError(e)) {
     if (!e.response) {
