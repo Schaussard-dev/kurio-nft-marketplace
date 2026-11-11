@@ -1,0 +1,65 @@
+import { z } from 'zod'
+import {
+  artKeySchema,
+  emailSchema,
+  ethStringSchema,
+  isoDateTimeSchema,
+  networkSchema,
+  requiredStringSchema,
+} from './common'
+
+export const payerSchema = z.object({
+  displayName: requiredStringSchema,
+  username: requiredStringSchema,
+  profileName: requiredStringSchema,
+  email: emailSchema,
+  ensName: z.string().optional(),
+  referralCode: requiredStringSchema,
+  walletAddress: requiredStringSchema,
+  secondaryAddress: z.string().optional(),
+})
+export type Payer = z.infer<typeof payerSchema>
+
+export const createOrderInputSchema = z.object({
+  quoteId: z.string(),
+  walletId: z.string().nullable(),
+  network: networkSchema,
+  payer: payerSchema,
+  note: z.string().optional(),
+})
+export type CreateOrderInput = z.infer<typeof createOrderInputSchema>
+
+export const orderStatusSchema = z.enum(['pending', 'confirmed', 'declined'])
+export type OrderStatus = z.infer<typeof orderStatusSchema>
+
+export const orderSchema = z.object({
+  id: z.string(),
+  status: orderStatusSchema,
+  version: z.number().int(),
+  createdAt: isoDateTimeSchema,
+  resolvedAt: isoDateTimeSchema.nullable(),
+  declineReason: z.string().nullable(),
+  txHash: z.string(),
+  explorerUrl: z.string(),
+  snapshot: z.object({
+    lines: z.array(
+      z.object({
+        nftId: z.string(),
+        name: z.string(),
+        art: artKeySchema,
+        tokenNumber: z.number().int(),
+        editionLabel: z.string(),
+        unitPrice: ethStringSchema,
+        quantity: z.number().int().min(1),
+        lineTotal: ethStringSchema,
+      }),
+    ),
+    subtotal: ethStringSchema,
+    discount: ethStringSchema,
+    networkFee: ethStringSchema,
+    total: ethStringSchema,
+    walletLabel: z.string(),
+    network: networkSchema,
+  }),
+})
+export type Order = z.infer<typeof orderSchema>
