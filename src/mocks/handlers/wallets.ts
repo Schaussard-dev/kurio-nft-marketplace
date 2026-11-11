@@ -14,7 +14,9 @@ import { getDb, mutate } from '../db/store'
 import type { WalletRecord } from '../db/schema'
 import { apiError, withNetwork } from '../network'
 import { SCENARIOS } from '../scenarios'
+import { once } from '../scenario-once'
 import { requireUser } from './auth'
+import { raiseFirstLinePrice } from './orders'
 
 type Slot = Wallet['slot']
 type FieldErrors = Record<string, string[]>
@@ -159,13 +161,14 @@ export const walletHandlers = [
     withNetwork(({ request, params }) => {
       const user = requireUser(request)
       if (user instanceof Response) return user
-      const result = resolveConnect(
-        getDb().wallets,
-        user.id,
-        String(params.id),
-        Boolean(SCENARIOS[getMockConfig().scenario].flags?.walletReject),
-      )
-      if ('connection' in result) return HttpResponse.json(result.connection)
+      const flags = SCENARIOS[getMockConfig().scenario].flags
+      const result = resolveConnect(getDb().wallets, user.id, String(params.id), Boolean(flags?.walletReject))
+      if ('connection' in result) {
+        // Scenario price-change: the checkout's first approval finds a cart price raised meanwhile.
+        const cart = getDb().carts.find((c) => c.owner.type === 'user' && c.owner.id === user.id)
+        if (flags?.priceChangeAtCheckout && cart && once(`price-change:${user.id}`)) raiseFirstLinePrice(getDb(), cart)
+        return HttpResponse.json(result.connection)
+      }
       return result.error === 'NOT_FOUND'
         ? apiError(404, 'NOT_FOUND', 'Carteira não encontrada')
         : apiError(409, 'WALLET_REJECTED', 'A conexão foi recusada na carteira')

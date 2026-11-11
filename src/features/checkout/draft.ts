@@ -25,6 +25,8 @@ export const checkoutDraftSchema = z.object({
   /** A registered wallet id, or MANUAL_WALLET. */
   walletChoice: z.string(),
   note: z.string(),
+  /** Registered wallets when the draft was saved: a wallet created afterwards is preferred on restore. */
+  knownWalletIds: z.array(z.string()).default([]),
 })
 export type CheckoutDraft = z.infer<typeof checkoutDraftSchema>
 

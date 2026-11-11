@@ -89,9 +89,11 @@ export function computeQuote(
   const networkFee = NETWORK_FEES[network]
   const total = add(sub(subtotal, discount), networkFee)
 
+  // Price-only: lines (id, unit price, quantity), coupon, network and fee. Availability is left out on
+  // purpose: a stock change is enforced by the OUT_OF_STOCK check, never shown as a "value changed".
   const fingerprint = stableHash(
     JSON.stringify([
-      lines.map((line) => [line.lineId, line.unitPrice, line.quantity, line.available]),
+      lines.map((line) => [line.lineId, line.unitPrice, line.quantity]),
       coupon?.code ?? null,
       network,
       networkFee,

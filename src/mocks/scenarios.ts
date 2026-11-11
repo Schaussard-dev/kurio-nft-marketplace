@@ -32,8 +32,11 @@ export interface ScenarioFlags {
   orderOutcome?: 'confirmed' | 'declined'
   orderTimeout?: boolean
   walletReject?: boolean
-  /** The first quote of a signed-in cart raises the first cart line price by 0.10 (emits nft.updated). */
-  priceChangeOnQuote?: boolean
+  /**
+   * Checkout signal: the first wallet approval (POST /wallets/:id/connect, called only by /pagamento)
+   * raises the first cart line price by 0.10 (emits nft.updated), so the quote under review goes stale.
+   */
+  priceChangeAtCheckout?: boolean
   /** The first order request sells out the edition of the first cart line before it is validated. */
   soldOutOnOrder?: boolean
 }
@@ -74,7 +77,7 @@ export const SCENARIOS: Record<ScenarioName, ScenarioConfig> = {
   },
   'session-expired': { latency: DEFAULT_LATENCY, flags: { sessionTtlRequests: 3 } },
   'signup-conflict': { latency: DEFAULT_LATENCY },
-  'price-change': { latency: DEFAULT_LATENCY, flags: { priceChangeOnQuote: true } },
+  'price-change': { latency: DEFAULT_LATENCY, flags: { priceChangeAtCheckout: true } },
   'sold-out': { latency: DEFAULT_LATENCY, flags: { soldOutOnOrder: true } },
   'order-timeout': { latency: DEFAULT_LATENCY, flags: { orderTimeout: true } },
   'payment-declined': { latency: DEFAULT_LATENCY, flags: { orderOutcome: 'declined' } },

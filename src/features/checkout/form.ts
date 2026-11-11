@@ -56,7 +56,7 @@ export const checkoutFormSchema = z
     }
   })
 
-export type CheckoutFormValues = CheckoutDraft
+export type CheckoutFormValues = Omit<CheckoutDraft, 'knownWalletIds'>
 
 /** DOM order of the fields; the first invalid one gets the focus. */
 export const FIELD_ORDER = [
@@ -117,8 +117,16 @@ export function initialValues(
 ): CheckoutFormValues {
   const registered = registeredWallets(wallets)
   if (draft) {
-    const known = draft.walletChoice === MANUAL_WALLET || registered.some((w) => w.id === draft.walletChoice)
-    return known ? draft : { ...draft, walletChoice: MANUAL_WALLET }
+    const { knownWalletIds, ...values } = draft
+    // The drafted wallet still exists: its current network/address win over what the draft copied.
+    const drafted = registered.find((w) => w.id === values.walletChoice)
+    if (drafted) return { ...values, network: drafted.network, walletAddress: drafted.address }
+    // Back from "Cadastrar carteira": a wallet created after the draft is the one to pay with.
+    const created = registered.find((w) => !knownWalletIds.includes(w.id))
+    if (values.walletChoice === MANUAL_WALLET && !created) return values
+    const next = created ?? registered[0]
+    if (next) return { ...values, ...walletFields(next), walletChoice: next.id }
+    return { ...values, walletChoice: MANUAL_WALLET }
   }
   const wallet = registered[0]
   const base: CheckoutFormValues = {

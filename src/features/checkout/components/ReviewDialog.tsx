@@ -16,6 +16,7 @@ export function ReviewDialog({
   networkLabel,
   submitting,
   error,
+  resumes = false,
   onSend,
   onBack,
 }: {
@@ -27,6 +28,8 @@ export function ReviewDialog({
   networkLabel: string
   submitting: boolean
   error?: string
+  /** An earlier order is still unconfirmed: sending re-checks it with the same data instead of buying again. */
+  resumes?: boolean
   onSend: () => void
   onBack: () => void
 }) {
@@ -66,6 +69,12 @@ export function ReviewDialog({
           </dd>
         </div>
       </dl>
+      {resumes && (
+        <p className="rounded-sm border border-primary/60 bg-primary/10 px-3 py-2 text-body-15 text-foreground">
+          Um pedido anterior ainda aguarda confirmação. Ao enviar, verificamos esse pedido com os mesmos dados, sem
+          criar uma segunda compra.
+        </p>
+      )}
       {error && (
         <p role="alert" className="flex items-start gap-2 text-body-15 text-danger">
           <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />

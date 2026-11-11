@@ -119,6 +119,21 @@ describe('placeOrder', () => {
     expect(db.orders).toHaveLength(0)
   })
 
+  it('a stock-only change is not QUOTE_STALE: enough stock left creates the order from the reviewed quote', () => {
+    const quote = quoteFor(db)
+    db.nfts.find((n) => n.id === 'nft_009')!.editions.find((e) => e.id === 'nft_009_e3')!.available = 1
+    const result = place(inputFor(quote))
+    expect(result).toHaveProperty('order.snapshot.total', quote.total)
+  })
+
+  it('requires the payer address to be the address of the registered wallet it names', () => {
+    const quote = quoteFor(db)
+    const input = inputFor(quote)
+    const other = { ...input, payer: { ...input.payer, walletAddress: '0x1234567890abcdef1234567890abcdef12345678' } }
+    expect(place(other)).toMatchObject({ error: { status: 422, fieldErrors: { walletAddress: [expect.any(String)] } } })
+    expect(db.orders).toHaveLength(0)
+  })
+
   it('validates the wallet: foreign wallet id, network mismatch and an address invalid for the network', () => {
     const quote = quoteFor(db)
     expect(place(inputFor(quote, { walletId: 'wlt_bruno_primary' }))).toMatchObject({

@@ -25,6 +25,7 @@ const draft: CheckoutDraft = {
   ensName: 'ana.kurio',
   walletChoice: 'wlt_ana_primary',
   note: 'Para minha coleção',
+  knownWalletIds: ['wlt_ana_primary', 'wlt_ana_secondary'],
 }
 
 describe('checkout draft', () => {

@@ -108,6 +108,9 @@ export function placeOrder(
     if (wallet.network !== input.network) {
       return { error: validationError({ network: ['A rede não corresponde à carteira selecionada'] }) }
     }
+    if (input.payer.walletAddress !== wallet.address) {
+      return { error: validationError({ walletAddress: ['O endereço não corresponde à carteira selecionada'] }) }
+    }
     walletLabel = wallet.nickname ? `${wallet.nickname} · ${shortAddress(wallet.address)}` : shortAddress(wallet.address)
   }
   const addressErrors: Record<string, string[]> = {}
@@ -217,12 +220,23 @@ async function readJson(request: Request): Promise<unknown> {
   }
 }
 
-/** Never answers on its own; settles (as a network error) when the client gives up. */
+/**
+ * Longest a "never answered" order request stays open. The client gives up at 10 s, but through the
+ * Service Worker its abort does not always reach the handler, so the request is closed here at the latest.
+ */
+export const HANG_LIMIT_MS = 15_000
+
+/** Leaves the request unanswered: it ends as a network error on client abort, or after HANG_LIMIT_MS. */
 function hang(request: Request): Promise<Response> {
+  if (request.signal.aborted) return Promise.resolve(HttpResponse.error())
   return new Promise((resolve) => {
-    const end = () => resolve(HttpResponse.error())
-    if (request.signal.aborted) end()
-    else request.signal.addEventListener('abort', end, { once: true })
+    const end = () => {
+      clearTimeout(timer)
+      request.signal.removeEventListener('abort', end)
+      resolve(HttpResponse.error())
+    }
+    const timer = setTimeout(end, HANG_LIMIT_MS)
+    request.signal.addEventListener('abort', end, { once: true })
   })
 }
 

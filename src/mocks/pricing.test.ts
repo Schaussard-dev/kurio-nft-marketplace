@@ -84,13 +84,22 @@ describe('computeQuote', () => {
     expect(changed.fingerprint).not.toBe(first.fingerprint)
   })
 
-  it('changes the fingerprint with availability, coupon and network', () => {
+  it('changes the fingerprint with coupon, network and quantity', () => {
     const { db, cart } = setup()
     const base = quoteOf(computeQuote(db, cart, { network: 'ethereum', now: NOW })).fingerprint
     expect(quoteOf(computeQuote(db, cart, { coupon: 'KURIO10', network: 'ethereum', now: NOW })).fingerprint).not.toBe(base)
     expect(quoteOf(computeQuote(db, cart, { network: 'solana', now: NOW })).fingerprint).not.toBe(base)
-    db.nfts.find((n) => n.id === 'nft_042')!.editions[1]!.available = 1
+    cart.lines[0]!.quantity += 1
     expect(quoteOf(computeQuote(db, cart, { network: 'ethereum', now: NOW })).fingerprint).not.toBe(base)
+  })
+
+  it('is price-only: a stock change keeps the fingerprint (stock is enforced by OUT_OF_STOCK, not QUOTE_STALE)', () => {
+    const { db, cart } = setup()
+    const base = quoteOf(computeQuote(db, cart, { network: 'ethereum', now: NOW }))
+    db.nfts.find((n) => n.id === 'nft_042')!.editions[1]!.available = 1
+    const after = quoteOf(computeQuote(db, cart, { network: 'ethereum', now: NOW }))
+    expect(after.fingerprint).toBe(base.fingerprint)
+    expect(after.lines).not.toEqual(base.lines)
   })
 
   it('skips lines whose NFT or edition no longer exists', () => {

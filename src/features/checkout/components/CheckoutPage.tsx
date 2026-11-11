@@ -17,6 +17,7 @@ import { useRealtimeEvent } from '@/features/realtime/realtime-hub'
 import { useConnectWallet, useWallets } from '@/features/wallets/queries'
 import { toApiError } from '@/shared/api/api-error'
 import {
+  createOrderInputSchema,
   networkSchema,
   quoteSchema,
   type Cart,
@@ -27,7 +28,7 @@ import {
 } from '@/shared/contracts'
 import { Breadcrumbs } from '@/shared/layout/Breadcrumbs'
 import { formatEth } from '@/shared/lib/format'
-import { clearAttempt, getAttempt } from '@/shared/lib/idempotency'
+import { clearAttempt, getAttempt, peekAttempt } from '@/shared/lib/idempotency'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -37,6 +38,7 @@ import { Skeleton } from '@/shared/ui/Skeleton'
 import { clearCheckoutDraft, loadCheckoutDraft, MANUAL_WALLET, saveCheckoutDraft, type Connector } from '../draft'
 import {
   checkoutFormSchema,
+  changedLines,
   CONNECTOR_LABELS,
   connectTarget,
   FIELD_ORDER,
@@ -64,7 +66,7 @@ import { WalletPicker } from './WalletPicker'
 type Flow =
   | { step: 'idle' }
   | { step: 'connect'; status: ConnectStatus }
-  | { step: 'review'; quote: Quote; error?: string }
+  | { step: 'review'; quote: Quote; error?: string; resumes?: boolean }
   | { step: 'stale'; previous: Quote; next: Quote }
 
 const DRAFT_DEBOUNCE_MS = 300
@@ -237,16 +239,19 @@ function CheckoutFlow({
 
   // Debounced draft (no secrets) per user; stops once the order exists.
   const draftDone = useRef(false)
+  const knownWalletIds = registered.map((wallet) => wallet.id).join(',')
   const flushDraft = () => {
-    if (!draftDone.current) saveCheckoutDraft(userId, getValues())
+    if (draftDone.current) return
+    saveCheckoutDraft(userId, { ...getValues(), knownWalletIds: knownWalletIds.split(',').filter(Boolean) })
   }
   const watched = useWatch({ control })
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!draftDone.current) saveCheckoutDraft(userId, getValues())
+      if (draftDone.current) return
+      saveCheckoutDraft(userId, { ...getValues(), knownWalletIds: knownWalletIds.split(',').filter(Boolean) })
     }, DRAFT_DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [watched, userId, getValues])
+  }, [watched, userId, getValues, knownWalletIds])
 
   // Quote on the network of the chosen wallet; coupon errors fall back to the coupon-less quote.
   const parsedNetwork = networkSchema.safeParse(network)
@@ -280,6 +285,7 @@ function CheckoutFlow({
   const connect = useConnectWallet()
   const createOrder = useCreateOrder()
   const sending = useRef(false)
+  const autoRenewed = useRef(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
 
   const walletLabel = selectedWallet
@@ -332,7 +338,8 @@ function CheckoutFlow({
       return
     }
     createOrder.reset()
-    setFlow({ step: 'review', quote: current })
+    // An earlier order whose outcome is unknown is re-checked (same payload and key) by "Enviar pedido".
+    setFlow({ step: 'review', quote: current, resumes: peekAttempt(userId) !== null })
   }
 
   function startConnect() {
@@ -371,6 +378,11 @@ function CheckoutFlow({
     },
   )(event)
 
+  /** 4xx other than 401/408/429: the server decided, so the attempt is over and a new key may be minted. */
+  function isDefinitive(status: number): boolean {
+    return status >= 400 && status < 500 && status !== 401 && status !== 408 && status !== 429
+  }
+
   function submit(variables: CreateOrderVariables) {
     sending.current = true
     createOrder.mutate(variables, {
@@ -383,15 +395,27 @@ function CheckoutFlow({
         void navigate({ to: '/pedidos/$orderId', params: { orderId: order.id } })
       },
       onError: (error) => {
+        const apiError = toApiError(error)
+        // Uncertain outcomes keep the attempt: only the same payload + key may be sent again.
+        if (isDefinitive(apiError.status)) clearAttempt(userId)
         const current = flowRef.current
         if (current.step !== 'review') return
-        const apiError = toApiError(error)
         if (apiError.status === 401 || isUncertainOrderError(error)) return
         if (apiError.code === 'QUOTE_STALE') {
           const next = quoteSchema.safeParse((apiError.details as { quote?: unknown } | undefined)?.quote)
           void queryClient.invalidateQueries({ queryKey: ['quote'] })
-          if (next.success) setFlow({ step: 'stale', previous: current.quote, next: next.data })
-          else setFlow({ ...current, error: SEND_ERROR })
+          if (!next.success) return setFlow({ ...current, error: SEND_ERROR })
+          const unchanged =
+            changedLines(current.quote, next.data, names).length === 0 && current.quote.total === next.data.total
+          if (unchanged && !autoRenewed.current) {
+            // Same value under a renewed quote (e.g. expired): never ask to confirm an unchanged value.
+            autoRenewed.current = true
+            setFlow({ step: 'review', quote: next.data })
+            sending.current = false
+            setTimeout(() => void sendRef.current(), 0)
+            return
+          }
+          setFlow({ step: 'stale', previous: current.quote, next: next.data })
           return
         }
         if (apiError.code === 'OUT_OF_STOCK') {
@@ -409,7 +433,6 @@ function CheckoutFlow({
           announce('Verifique os campos destacados', 'assertive')
           return
         }
-        if (apiError.code === 'IDEMPOTENCY_CONFLICT') clearAttempt(userId)
         setFlow({ ...current, error: apiError.message && apiError.code !== 'INVALID_RESPONSE' ? apiError.message : SEND_ERROR })
       },
       onSettled: () => {
@@ -418,19 +441,44 @@ function CheckoutFlow({
     })
   }
 
+  /**
+   * "Enviar pedido". While an earlier attempt is unresolved, its exact payload and key are sent again
+   * (whatever the form or quote say now); otherwise a new attempt is stored before the request.
+   */
   async function send() {
     const current = flowRef.current
-    if (current.step !== 'review' || sending.current || createOrder.isPending) return
+    if (current.step !== 'review' || sending.current) return
     sending.current = true
-    setFlow({ step: 'review', quote: current.quote })
-    const input = toOrderInput(getValues(), current.quote.quoteId)
-    // Same payload → same stored key: a resend can never create a second order.
-    const attempt = getAttempt(userId, await hashPayload(input))
-    submit({ input, idempotencyKey: attempt.key })
+    let submitted = false
+    try {
+      setFlow({ step: 'review', quote: current.quote, resumes: current.resumes })
+      const input = toOrderInput(getValues(), current.quote.quoteId)
+      const attempt = getAttempt(userId, await hashPayload(input), input)
+      const payload = createOrderInputSchema.safeParse(attempt.payload)
+      if (!payload.success) {
+        clearAttempt(userId)
+        setFlow({ ...current, error: SEND_ERROR })
+        return
+      }
+      submit({ input: payload.data, idempotencyKey: attempt.key })
+      submitted = true
+    } catch {
+      setFlow({ ...current, error: SEND_ERROR })
+    } finally {
+      if (!submitted) sending.current = false
+    }
   }
+  const sendRef = useRef(send)
+  useEffect(() => {
+    sendRef.current = send
+  })
 
+  /** "Verificar pedido": the stored attempt, unchanged. */
   function verifyOrder() {
-    if (createOrder.variables && !createOrder.isPending) submit(createOrder.variables)
+    const attempt = peekAttempt(userId)
+    const payload = createOrderInputSchema.safeParse(attempt?.payload)
+    if (!attempt || !payload.success || sending.current) return
+    submit({ input: payload.data, idempotencyKey: attempt.key })
   }
 
   function closeFlow() {
@@ -481,7 +529,11 @@ function CheckoutFlow({
         networkLabel={NETWORK_LABELS[flow.quote.network]}
         submitting={createOrder.isPending}
         error={flow.error}
-        onSend={() => void send()}
+        resumes={flow.resumes}
+        onSend={() => {
+          autoRenewed.current = false
+          void send()
+        }}
         onBack={closeFlow}
       />
     )

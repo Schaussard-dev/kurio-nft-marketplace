@@ -179,6 +179,39 @@ test.describe('realtime: checkout', () => {
     expect(orders[0].snapshot.lines[0].unitPrice).toBe('1.89')
   })
 
+  test('price-change scenario: the price changes during the checkout; the notice shows and the order uses the new price', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await gotoFresh('/')
+    await login('ana')
+    await mock.scenario('price-change')
+    await openCheckout(page)
+    await expect(page.getByTestId('checkout-total')).toHaveText('1.706 ETH')
+    await waitForRealtime(page)
+
+    // The mock raises the first cart line by 0.10 when the checkout's wallet approval comes in.
+    await openReview(page)
+    await expect(page.getByTestId('price-notice')).toContainText('O preço de Sage Nomad #009 mudou de 1.69 para 1.79 ETH')
+    await expect(page.getByTestId('checkout-total')).toHaveText('1.806 ETH')
+
+    await sendButton(page).click()
+    const stale = page.getByRole('dialog', { name: 'O valor do pedido mudou' })
+    await expect.poll(async () => page.url().includes('/pedidos/') || (await stale.isVisible())).toBe(true)
+    if (await stale.isVisible()) {
+      // The review still showed the old value: the server refuses it and asks for the new one.
+      await expect(stale.getByTestId('stale-new-total')).toHaveText('1.806 ETH')
+      await stale.getByRole('button', { name: 'Confirmar novo valor' }).click()
+      await sendButton(page).click()
+    }
+    await expect(page).toHaveURL(/\/pedidos\/ord_/)
+    const [order] = await listOrders(page)
+    expect(order.snapshot.total).toBe('1.806')
+    expect(order.snapshot.lines[0].unitPrice).toBe('1.79')
+  })
+
   test('a wallet disconnect during the review closes it, keeps the form and asks to connect again', async ({
     page,
     gotoFresh,
