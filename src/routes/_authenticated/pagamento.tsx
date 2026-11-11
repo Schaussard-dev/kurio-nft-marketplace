@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { parseCouponParam } from '@/features/cart/coupon-param'
 
 interface PaymentSearch {
   /** Coupon applied in the cart, re-validated by the quote at checkout. */
@@ -6,8 +7,10 @@ interface PaymentSearch {
 }
 
 export const Route = createFileRoute('/_authenticated/pagamento')({
-  validateSearch: (search: Record<string, unknown>): PaymentSearch =>
-    typeof search.cupom === 'string' && search.cupom ? { cupom: search.cupom } : {},
+  validateSearch: (search: Record<string, unknown>): PaymentSearch => {
+    // Always set the key: an omitted key would let the raw (unvalidated) root search value through.
+    return { cupom: parseCouponParam(search.cupom) }
+  },
   component: PaymentPage,
 })
 

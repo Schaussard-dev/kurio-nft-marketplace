@@ -11,6 +11,8 @@ import { ArtImage } from './ArtImage'
 export interface NftCardActions {
   /** Wired by the cart feature; without it the action says it is unavailable (never fakes success). */
   onAddToCart?: (nft: NftSummary) => void
+  /** An add of this NFT is in flight: the cart action is busy and ignores clicks. */
+  isAddingToCart?: (nft: NftSummary) => boolean
   /** Wired by the favorites feature; same rule as above. */
   onToggleFavorite?: (nft: NftSummary) => void
   isFavorite?: (nft: NftSummary) => boolean
@@ -26,11 +28,17 @@ export function NftCard({
   nft,
   className,
   onAddToCart,
+  isAddingToCart,
   onToggleFavorite,
   isFavorite,
 }: { nft: NftSummary; className?: string } & NftCardActions) {
   const favorite = isFavorite?.(nft) ?? false
-  const addToCart = () => (onAddToCart ? onAddToCart(nft) : toast(UNAVAILABLE_MESSAGE))
+  const adding = isAddingToCart?.(nft) ?? false
+  const addToCart = () => {
+    if (adding) return
+    if (onAddToCart) onAddToCart(nft)
+    else toast(UNAVAILABLE_MESSAGE)
+  }
   const toggleFavorite = () => (onToggleFavorite ? onToggleFavorite(nft) : toast(UNAVAILABLE_MESSAGE))
   const favoriteLabel = `${favorite ? 'Remover' : 'Adicionar'} ${nft.name} ${favorite ? 'da' : 'à'} lista de interesse`
   const favoriteIcon = <Heart aria-hidden className={cn('size-5', favorite && 'fill-current text-text-accent')} />
@@ -68,7 +76,14 @@ export function NftCard({
 
         {/* Desktop (Login frame): actions appear on hover or keyboard focus. */}
         <div className="absolute inset-x-0 bottom-1 hidden justify-center gap-2 transition-opacity md:flex [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100">
-          <button type="button" className={ACTION} aria-label={`Adicionar ${nft.name} ao carrinho`} onClick={addToCart}>
+          <button
+            type="button"
+            className={cn(ACTION, 'aria-busy:cursor-progress aria-busy:opacity-70')}
+            aria-label={`Adicionar ${nft.name} ao carrinho`}
+            aria-busy={adding || undefined}
+            aria-disabled={adding || undefined}
+            onClick={addToCart}
+          >
             <ShoppingCart aria-hidden className="size-5" />
           </button>
           <button

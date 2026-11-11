@@ -12,7 +12,7 @@ const GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-6 md:gap-
 export function FavoritesPage() {
   const query = useFavorites()
   const { isFavorite, toggleFavorite } = useFavoriteToggle()
-  const quickAdd = useQuickAddToCart()
+  const { quickAdd, isAdding } = useQuickAddToCart()
   const { data, isError, isFetching, refetch } = query
 
   let body
@@ -54,6 +54,7 @@ export function FavoritesPage() {
                   isFavorite={(card) => isFavorite(card.id)}
                   onToggleFavorite={(card) => toggleFavorite(card.id, card)}
                   onAddToCart={(card) => void quickAdd(card)}
+                  isAddingToCart={isAdding}
                 />
               ))
             : Array.from({ length: 3 }, (_, index) => <NftCardSkeleton key={index} />)}

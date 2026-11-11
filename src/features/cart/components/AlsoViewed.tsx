@@ -16,7 +16,7 @@ export function AlsoViewed({ excludeIds }: { excludeIds: string[] }) {
   // Extra items so the row stays full after removing the cart's NFTs.
   const query = useQuery({ ...catalogQueryOptions({ tab: 'trending', pageSize: SHOWN * 2 }), placeholderData: undefined })
   const { isFavorite, toggleFavorite } = useFavoriteToggle()
-  const quickAdd = useQuickAddToCart()
+  const { quickAdd, isAdding } = useQuickAddToCart()
   const items = query.data?.items.filter((item) => !excludeIds.includes(item.id)).slice(0, SHOWN)
 
   if (query.isError || (items && items.length === 0)) return null
@@ -38,6 +38,7 @@ export function AlsoViewed({ excludeIds }: { excludeIds: string[] }) {
                 nft={item}
                 className={ITEM}
                 onAddToCart={(card) => void quickAdd(card)}
+                isAddingToCart={isAdding}
                 isFavorite={(card) => isFavorite(card.id)}
                 onToggleFavorite={(card) => toggleFavorite(card.id, card)}
               />

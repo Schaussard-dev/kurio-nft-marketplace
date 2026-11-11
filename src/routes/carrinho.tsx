@@ -1,11 +1,12 @@
 import { useIsMutating } from '@tanstack/react-query'
 import { createFileRoute, Link, useCanGoBack, useRouter } from '@tanstack/react-router'
 import { ChevronLeft, TriangleAlert } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { outOfStockMessage, stockIssues } from '@/features/cart/cache'
 import { AlsoViewed } from '@/features/cart/components/AlsoViewed'
 import { CartTable } from '@/features/cart/components/CartTable'
 import { ChangeNotice } from '@/features/cart/components/ChangeNotice'
+import { parseCouponParam } from '@/features/cart/coupon-param'
 import { CouponForm } from '@/features/cart/components/CouponForm'
 import { EmptyCart } from '@/features/cart/components/EmptyCart'
 import { OrderSummary } from '@/features/cart/components/OrderSummary'
@@ -25,8 +26,10 @@ interface CartSearch {
 }
 
 export const Route = createFileRoute('/carrinho')({
-  validateSearch: (search: Record<string, unknown>): CartSearch =>
-    typeof search.cupom === 'string' && search.cupom.trim() ? { cupom: search.cupom.trim() } : {},
+  validateSearch: (search: Record<string, unknown>): CartSearch => {
+    // Always set the key: an omitted key would let the raw (unvalidated) root search value through.
+    return { cupom: parseCouponParam(search.cupom) }
+  },
   component: CartPage,
 })
 
@@ -100,6 +103,32 @@ function CartPage() {
   const setCoupon = (code: string | undefined) =>
     void navigate({ search: code ? { cupom: code } : {}, replace: true, resetScroll: false })
 
+  // Announce the outcome of the collector's own apply (error assertive, success polite), once per attempt.
+  const awaitingCoupon = useRef<string | null>(null)
+  const [applyAttempt, setApplyAttempt] = useState(0)
+  const applyCoupon = (code: string) => {
+    awaitingCoupon.current = code
+    setApplyAttempt((n) => n + 1)
+    setCoupon(code)
+  }
+  const removeCoupon = () => {
+    awaitingCoupon.current = null
+    setCoupon(undefined)
+    announce('Cupom removido')
+  }
+  const appliedCode = shownQuote?.coupon?.code
+  useEffect(() => {
+    const code = awaitingCoupon.current
+    if (!code || code !== cupom) return
+    if (couponError) {
+      awaitingCoupon.current = null
+      announce(couponError, 'assertive')
+    } else if (appliedCode === code) {
+      awaitingCoupon.current = null
+      announce(`Cupom ${code} aplicado`)
+    }
+  }, [couponError, appliedCode, cupom, applyAttempt, announce])
+
   const onRemove = (line: CartLine) =>
     remove.mutate(line.lineId, {
       onSuccess: () => {
@@ -160,8 +189,8 @@ function CartPage() {
             applied={appliedCoupon}
             error={couponError}
             checking={Boolean(cupom) && quote.isFetching}
-            onApply={setCoupon}
-            onRemove={() => setCoupon(undefined)}
+            onApply={applyCoupon}
+            onRemove={removeCoupon}
             variant={desktop ? 'desktop' : 'mobile'}
           />
           {active.isError && !shownQuote ? (

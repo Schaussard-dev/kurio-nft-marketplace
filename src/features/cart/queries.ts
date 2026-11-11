@@ -1,4 +1,5 @@
 import { keepPreviousData, queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { queryKeys } from '@/app/query-client'
 import { nftQueryOptions } from '@/features/nft/queries'
@@ -72,28 +73,73 @@ export function useAddToCart() {
 }
 
 /**
+ * Runs at most one task per key at a time. The guard is a ref, so even two clicks in the same frame
+ * (double click, before React re-renders) start one task; `isPending` drives aria-busy.
+ */
+function useInFlightKeys() {
+  const running = useRef(new Set<string>())
+  const [pending, setPending] = useState<ReadonlySet<string>>(() => new Set())
+  const sync = () => setPending(new Set(running.current))
+  const run = async (key: string, task: () => Promise<unknown>): Promise<boolean> => {
+    if (running.current.has(key)) return false
+    running.current.add(key)
+    sync()
+    try {
+      await task()
+      return true
+    } catch {
+      return false // the task reports its own errors
+    } finally {
+      running.current.delete(key)
+      sync()
+    }
+  }
+  return { run, isPending: (key: string) => pending.has(key) }
+}
+
+/**
+ * Add with a per-NFT in-flight guard: repeated clicks while a request runs add once. `add` resolves to
+ * true when the item was added (errors are toasted by useAddToCart).
+ */
+export function useGuardedAddToCart() {
+  const add = useAddToCart()
+  const { run, isPending } = useInFlightKeys()
+  return {
+    add: (input: AddCartItemInput) => run(input.nftId, () => add.mutateAsync(input)),
+    isAdding: isPending,
+  }
+}
+
+/**
  * Catalog card action: the card only knows the summary, so the detail (editions) is read from the
- * API to pick the default edition, then one unit is added. The page stays where it is.
+ * API to pick the default edition, then one unit is added. The page stays where it is; a second
+ * click while the first is in flight is ignored (one item, one toast).
  */
 export function useQuickAddToCart() {
   const queryClient = useQueryClient()
   const add = useAddToCart()
-  return async (nft: NftSummary) => {
-    let editionId: string | undefined
-    try {
-      const detail = await queryClient.fetchQuery(nftQueryOptions(nft.id))
-      const edition = defaultEdition(detail.editions)
-      editionId = edition && edition.available > 0 ? edition.id : undefined
-    } catch {
-      toast.error(ADD_ERROR)
-      return
-    }
-    if (!editionId) {
-      toast.error(`${nft.name} está esgotado`)
-      return
-    }
-    add.mutate({ nftId: nft.id, editionId, quantity: 1 }, { onSuccess: () => toast.success(ADDED_MESSAGE) })
-  }
+  const { run, isPending } = useInFlightKeys()
+
+  const quickAdd = (nft: NftSummary) =>
+    run(nft.id, async () => {
+      let editionId: string | undefined
+      try {
+        const detail = await queryClient.fetchQuery(nftQueryOptions(nft.id))
+        const edition = defaultEdition(detail.editions)
+        editionId = edition && edition.available > 0 ? edition.id : undefined
+      } catch {
+        toast.error(ADD_ERROR)
+        return
+      }
+      if (!editionId) {
+        toast.error(`${nft.name} está esgotado`)
+        return
+      }
+      await add.mutateAsync({ nftId: nft.id, editionId, quantity: 1 })
+      toast.success(ADDED_MESSAGE)
+    })
+
+  return { quickAdd, isAdding: (nft: NftSummary) => isPending(nft.id) }
 }
 
 interface LineChange {

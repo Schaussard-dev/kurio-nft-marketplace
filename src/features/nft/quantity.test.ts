@@ -19,6 +19,11 @@ describe('clampQuantity', () => {
     expect(clampQuantity(5, edition(), 2)).toEqual({ value: 1, limited: true, max: 1 })
   })
 
+  it('counts the cart against the per-order cap too (one line never exceeds it)', () => {
+    expect(clampQuantity(5, edition({ available: 10, maxPerOrder: 4 }), 3)).toEqual({ value: 1, limited: true, max: 1 })
+    expect(clampQuantity(1, edition({ available: 10, maxPerOrder: 4 }), 4)).toEqual({ value: 0, limited: true, max: 0 })
+  })
+
   it('limits to maxPerOrder when stock is larger', () => {
     expect(clampQuantity(7, edition({ available: 50, maxPerOrder: 4 }))).toEqual({ value: 4, limited: true, max: 4 })
   })

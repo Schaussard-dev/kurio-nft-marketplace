@@ -1,6 +1,8 @@
 import { CircleAlert, TicketPercent, X } from 'lucide-react'
 import { useId, useState, type FormEvent } from 'react'
 import { cn } from '@/shared/lib/utils'
+import { useAnnounce } from '@/shared/ui/LiveRegion'
+import { parseCouponParam } from '../coupon-param'
 
 interface CouponFormProps {
   /** Code in the URL (`?cupom=`), applied or not. */
@@ -17,6 +19,7 @@ interface CouponFormProps {
 }
 
 const EMPTY_ERROR = 'Digite o código promocional'
+const FORMAT_ERROR = 'Cupom inválido'
 
 /**
  * "Código promocional" (Figma): the code lives in the URL; the quote validates it and its error is tied
@@ -29,12 +32,16 @@ export function CouponForm({ code, applied, error, checking, onApply, onRemove, 
   const errorId = useId()
   const shownError = localError ?? error
   const mobile = variant === 'mobile'
+  const announce = useAnnounce()
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    const next = value.trim().toUpperCase()
+    // Malformed codes (spaces, symbols, > 32 chars) never reach the URL or the API.
+    const next = parseCouponParam(value)
     if (!next) {
-      setLocalError(EMPTY_ERROR)
+      const message = value.trim() ? FORMAT_ERROR : EMPTY_ERROR
+      setLocalError(message)
+      announce(message, 'assertive')
       return
     }
     setLocalError(undefined)

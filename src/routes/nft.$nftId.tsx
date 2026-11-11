@@ -3,7 +3,7 @@ import { createFileRoute, Link, notFound, useCanGoBack, useNavigate, useRouter }
 import { ChevronLeft, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { ADDED_MESSAGE, useAddToCart, useQuickAddToCart } from '@/features/cart/queries'
+import { ADDED_MESSAGE, useCart, useGuardedAddToCart, useQuickAddToCart } from '@/features/cart/queries'
 import { FavoriteButton } from '@/features/favorites/components/FavoriteButton'
 import { DetailTabs } from '@/features/nft/components/DetailTabs'
 import { Gallery } from '@/features/nft/components/Gallery'
@@ -89,7 +89,9 @@ function NftDetailPage() {
   const setRequested = (value: number) => setRequestedState({ nftId, value })
 
   const edition = resolveEdition(nft.editions, search.edition)
-  const quantity = edition ? clampQuantity(requested, edition) : { value: 0, limited: true, max: 0 }
+  // Units of this edition already in the cart count against the line limit (same rule as the API).
+  const inCart = useCart().data?.lines.find((line) => line.editionId === edition?.id)?.quantity ?? 0
+  const quantity = edition ? clampQuantity(requested, edition, inCart) : { value: 0, limited: true, max: 0 }
 
   useEffect(() => {
     const previous = document.title
@@ -104,19 +106,21 @@ function NftDetailPage() {
     void navigate({ search: { edition: editionId }, replace: true, resetScroll: false })
   }
 
-  const addToCart = useAddToCart()
-  const quickAdd = useQuickAddToCart()
+  const addToCart = useGuardedAddToCart()
+  const { quickAdd, isAdding } = useQuickAddToCart()
   const navigateApp = useNavigate()
   const purchase: PurchaseProps = {
     nft,
     edition,
     quantity,
     onQuantityChange: setRequested,
-    adding: addToCart.isPending,
-    onAddToCart: (input, { goToCart }) =>
-      addToCart.mutate(input, {
-        onSuccess: () => (goToCart ? void navigateApp({ to: '/carrinho' }) : toast.success(ADDED_MESSAGE)),
-      }),
+    inCart,
+    adding: addToCart.isAdding(nft.id),
+    onAddToCart: async (input, { goToCart }) => {
+      if (!(await addToCart.add(input))) return
+      if (goToCart) await navigateApp({ to: '/carrinho' })
+      else toast.success(ADDED_MESSAGE)
+    },
   }
 
   return (
@@ -141,7 +145,7 @@ function NftDetailPage() {
         <DetailTabs nft={nft} />
       </div>
       <div className="mt-14 md:mt-20">
-        <MoreFromCollection nft={nft} onAddToCart={(card) => void quickAdd(card)} />
+        <MoreFromCollection nft={nft} onAddToCart={(card) => void quickAdd(card)} isAddingToCart={isAdding} />
       </div>
       {!desktop && <MobileBuyBar {...purchase} />}
     </div>

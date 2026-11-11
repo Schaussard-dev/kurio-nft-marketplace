@@ -129,16 +129,19 @@ test.describe('cart', () => {
     await apply.click()
     await expect(couponField(page)).toHaveAttribute('aria-invalid', 'true')
     await expect(couponField(page)).toHaveAccessibleDescription('Cupom inválido')
+    await expect(page.getByTestId('live-assertive')).toHaveText('Cupom inválido')
     await expect(summary(page, 'total')).toHaveText('3.786 ETH')
 
     await couponField(page).fill('LANCAMENTO24')
     await apply.click()
     await expect(couponField(page)).toHaveAccessibleDescription('Cupom expirado')
+    await expect(page.getByTestId('live-assertive')).toHaveText('Cupom expirado')
 
     await couponField(page).fill('KURIO10')
     await apply.click()
     await expect(page).toHaveURL('/carrinho?cupom=KURIO10')
     await expect(couponField(page)).not.toHaveAttribute('aria-invalid', 'true')
+    await expect(page.getByTestId('live-polite')).toHaveText('Cupom KURIO10 aplicado')
     const quote = await apiQuote(page, 'KURIO10')
     expect(quote.discount).toBe('0.377')
     await expect(summary(page, 'discount')).toHaveText(`(-) ${quote.discount} ETH`)
@@ -146,6 +149,7 @@ test.describe('cart', () => {
 
     await page.getByRole('button', { name: 'Remover cupom KURIO10' }).click()
     await expect(page).toHaveURL('/carrinho')
+    await expect(page.getByTestId('live-polite')).toHaveText('Cupom removido')
     await expect(summary(page, 'discount')).toHaveText('(-) 00.00')
     await expect(summary(page, 'total')).toHaveText('3.786 ETH')
 
@@ -157,6 +161,26 @@ test.describe('cart', () => {
     await expect(page).toHaveURL('/entrar?redirect=%2Fpagamento%3Fcupom%3DKURIO10')
     await fillLogin(page, 'bruno')
     await expect(page).toHaveURL('/pagamento?cupom=KURIO10')
+  })
+
+  test('a malformed coupon in the URL is dropped', async ({ page, gotoFresh, isMobile }) => {
+    await gotoFresh('/')
+    await buy(page, isMobile, 'nft_314')
+    await page.goto('/carrinho?cupom=%3Cscript%3E')
+    await expect(summary(page, 'total')).toHaveText('1.406 ETH')
+    await expect(couponField(page)).toHaveValue('')
+    await expect(couponField(page)).not.toHaveAttribute('aria-invalid', 'true')
+  })
+
+  test('buying again from the detail page accounts for what is already in the cart', async ({ page, gotoFresh, isMobile }) => {
+    await gotoFresh('/')
+    await buy(page, isMobile, 'nft_042', { quantity: 2 })
+    await page.goto('/nft/nft_042')
+    const stepper = page.getByRole('group', { name: 'Quantidade' })
+    await stepper.getByRole('button', { name: 'Aumentar quantidade' }).click()
+    await expect(stepper.getByTestId('quantity-value')).toHaveText('2')
+    await expect(page.getByText('Você já tem 2 no carrinho; máximo de 4 por pedido')).toBeVisible()
+    await expect(stepper.getByRole('button', { name: 'Aumentar quantidade' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   test('signing in merges the guest cart into the seeded cart once, and logout leaves an empty guest cart', async ({
@@ -184,8 +208,13 @@ test.describe('cart', () => {
     await expect(lineQuantity(page, 'Emerald Ape #042')).toHaveText('2')
     await expect(page.getByTestId('cart-line')).toHaveCount(3)
 
-    await page.evaluate(() => localStorage.removeItem('kurio-session'))
-    await page.goto('/carrinho')
+    // Real logout (user menu → Sair): the badge drops to the new, empty guest cart without a reload.
+    await page.getByRole('button', { name: 'Menu de Ana Souza' }).click()
+    await page.getByRole('menuitem', { name: 'Sair' }).click()
+    await expect(page).toHaveURL('/')
+    await expect(page.getByRole('link', { name: 'Carrinho', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: /^Carrinho, / })).toHaveCount(0)
+    await page.getByRole('link', { name: 'Carrinho', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Seu carrinho está vazio' })).toBeVisible()
   })
 
@@ -218,18 +247,22 @@ test.describe('cart', () => {
   }) => {
     if (isMobile) {
       await gotoFresh('/nft/nft_009')
-      await page.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+      // A double click adds once.
+      await page.getByRole('button', { name: 'Adicionar ao carrinho' }).dblclick()
       await expect(page).toHaveURL('/nft/nft_009')
     } else {
       await gotoFresh('/')
       const card = page.getByTestId('nft-card').filter({ hasText: 'Emerald Ape #042' })
       await card.hover()
-      await card.getByRole('button', { name: 'Adicionar Emerald Ape #042 ao carrinho' }).click()
+      // A double click adds once and shows one toast.
+      await card.getByRole('button', { name: 'Adicionar Emerald Ape #042 ao carrinho' }).dblclick()
       await expect(page).toHaveURL('/')
       await expect(cartLink(page, 1)).toBeVisible()
     }
     await expect(page.getByText('Adicionado ao carrinho')).toBeVisible()
+    await expect(page.getByText('Adicionado ao carrinho')).toHaveCount(1)
     await page.goto('/carrinho')
     await expect(page.getByTestId('cart-line')).toHaveCount(1)
+    await expect(page.getByTestId('cart-line').getByTestId('quantity-value')).toHaveText('1')
   })
 })

@@ -6,6 +6,7 @@ import { formatEth } from '@/shared/lib/format'
 import { UNAVAILABLE_MESSAGE } from '@/shared/lib/unavailable'
 import { cn } from '@/shared/lib/utils'
 import { buttonVariants } from '@/shared/ui/button'
+import { purchaseHint } from '../purchase-hint'
 import type { ClampedQuantity } from '../quantity'
 import { EditionPicker } from './EditionPicker'
 import { QuantityStepper } from './QuantityStepper'
@@ -22,8 +23,10 @@ export interface PurchaseProps {
    * goToCart: COMPRAR / "Comprar NFT" open the cart; the mobile cart shortcut stays on the page.
    */
   onAddToCart?: (input: { nftId: string; editionId: string; quantity: number }, options: { goToCart: boolean }) => void
-  /** An add request is in flight: the buy actions are disabled against repeated clicks. */
+  /** An add request is in flight: the buy actions ignore repeated clicks (aria-busy). */
   adding?: boolean
+  /** Units of the selected edition already in the cart (the limit message counts them). */
+  inCart?: number
 }
 
 interface NftInfoProps extends PurchaseProps {
@@ -44,8 +47,8 @@ function addToCart({ nft, edition, quantity, onAddToCart, adding }: PurchaseProp
 }
 
 /** "Máximo de N por pedido" / "Edição indisponível", announced politely (spec §9). */
-function PurchaseHint({ quantity, className }: { quantity: ClampedQuantity; className?: string }) {
-  const message = quantity.max === 0 ? 'Edição indisponível' : quantity.limited ? `Máximo de ${quantity.max} por pedido` : ''
+function PurchaseHint({ quantity, inCart = 0, className }: { quantity: ClampedQuantity; inCart?: number; className?: string }) {
+  const message = purchaseHint(quantity, inCart)
   return (
     <p aria-live="polite" className={cn('min-h-4 text-caption-13 text-text-accent', className)}>
       {message}
@@ -151,6 +154,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
                 type="button"
                 disabled={unavailable}
                 aria-busy={purchase.adding || undefined}
+                aria-disabled={purchase.adding || undefined}
                 onClick={() => addToCart(purchase, true)}
                 className={cn(buttonVariants(), 'h-10 w-[130px] text-caption-13')}
               >
@@ -159,7 +163,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
               <FavoriteButton nft={nft} />
             </div>
           </div>
-          <PurchaseHint quantity={quantity} />
+          <PurchaseHint quantity={quantity} inCart={purchase.inCart} />
         </div>
       )}
 
@@ -191,12 +195,13 @@ export function MobileBuyBar(purchase: PurchaseProps) {
           <span data-testid="nft-price">{formatEth(nft.price)}</span>
         </p>
       </div>
-      <PurchaseHint quantity={quantity} className="mt-1" />
+      <PurchaseHint quantity={quantity} inCart={purchase.inCart} className="mt-1" />
       <div className="mt-2 flex items-center gap-4">
         <button
           type="button"
           disabled={unavailable}
           aria-busy={purchase.adding || undefined}
+          aria-disabled={purchase.adding || undefined}
           onClick={() => addToCart(purchase, true)}
           className="h-14 flex-1 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-17 font-bold text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
         >
@@ -207,6 +212,7 @@ export function MobileBuyBar(purchase: PurchaseProps) {
           aria-label="Adicionar ao carrinho"
           disabled={unavailable}
           aria-busy={purchase.adding || undefined}
+          aria-disabled={purchase.adding || undefined}
           onClick={() => addToCart(purchase, false)}
           className="inline-flex size-14 items-center justify-center rounded-full border border-border-strong bg-ink/40 text-text-accent transition-colors hover:bg-surface-2 disabled:opacity-50"
         >

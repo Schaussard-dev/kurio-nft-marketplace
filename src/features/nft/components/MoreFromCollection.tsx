@@ -9,7 +9,11 @@ const SHOWN = 5
 const ITEM = 'w-[42vw] max-w-[220px] shrink-0 snap-start md:w-auto md:max-w-none'
 
 /** Other NFTs of the same collection (catalog search by collection), as catalog cards. */
-export function MoreFromCollection({ nft, onAddToCart }: { nft: NftDetail } & Pick<NftCardActions, 'onAddToCart'>) {
+export function MoreFromCollection({
+  nft,
+  onAddToCart,
+  isAddingToCart,
+}: { nft: NftDetail } & Pick<NftCardActions, 'onAddToCart' | 'isAddingToCart'>) {
   // One extra so the list stays full after removing the current NFT.
   const query = useQuery({ ...catalogQueryOptions({ q: nft.collection, pageSize: SHOWN + 1 }), placeholderData: undefined })
   const { isFavorite, toggleFavorite } = useFavoriteToggle()
@@ -37,6 +41,7 @@ export function MoreFromCollection({ nft, onAddToCart }: { nft: NftDetail } & Pi
                 nft={item}
                 className={ITEM}
                 onAddToCart={onAddToCart}
+                isAddingToCart={isAddingToCart}
                 isFavorite={(card) => isFavorite(card.id)}
                 onToggleFavorite={(card) => toggleFavorite(card.id, card)}
               />

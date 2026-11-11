@@ -7,9 +7,12 @@ export interface ClampedQuantity {
   max: number
 }
 
-/** Quantity bounded by stock (minus what is already in the cart) and the per-order cap; min 1, 0 when sold out. */
+/**
+ * Quantity that can still be added: a cart line never exceeds min(stock, per-order cap) (same rule as the
+ * API), so what is already in the cart counts against both. Min 1; 0 when nothing more can be added.
+ */
 export function clampQuantity(requested: number, edition: Edition, alreadyInCart = 0): ClampedQuantity {
-  const max = Math.max(0, Math.min(edition.available - alreadyInCart, edition.maxPerOrder))
+  const max = Math.max(0, Math.min(edition.available, edition.maxPerOrder) - alreadyInCart)
   if (max === 0) return { value: 0, limited: true, max: 0 }
   const wanted = Number.isFinite(requested) ? Math.floor(requested) : 1
   const value = Math.min(Math.max(1, wanted), max)
