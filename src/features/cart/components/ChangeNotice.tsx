@@ -8,17 +8,27 @@ interface ChangeNoticeProps {
   onDismiss?: () => void
   dismissLabel?: string
   testId?: string
+  /** false when the caller already announces the change (the banner then is not a live region). */
+  live?: boolean
 }
 
 /**
  * Inline banner for cart changes the collector must see before checkout (stock below the quantity,
  * realtime price changes). Icon + text, never colour alone; announced politely.
  */
-export function ChangeNotice({ id, title, items, onDismiss, dismissLabel = 'Dispensar aviso', testId }: ChangeNoticeProps) {
+export function ChangeNotice({
+  id,
+  title,
+  items,
+  onDismiss,
+  dismissLabel = 'Dispensar aviso',
+  testId,
+  live = true,
+}: ChangeNoticeProps) {
   return (
     <div
       id={id}
-      role="status"
+      role={live ? 'status' : undefined}
       data-testid={testId}
       className="flex gap-3 rounded-sm border border-primary/60 bg-primary/10 px-4 py-3 text-body-14 text-foreground"
     >

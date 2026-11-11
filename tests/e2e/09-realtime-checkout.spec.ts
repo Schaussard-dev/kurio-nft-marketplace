@@ -63,8 +63,28 @@ test.describe('realtime: cart and catalog', () => {
     expect(after).not.toBe(before)
     await expect(summaryTotal(page)).toHaveText(after)
 
+    // announce() is the single live announcement: the banner itself is not a live region, and the
+    // cart shows no toast on top of the banner.
+    await expect(priceNotice(page)).not.toHaveAttribute('role')
+    await expect(priceNotice(page)).not.toHaveAttribute('aria-live', /polite|assertive/)
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'mudou de' })).toHaveCount(0)
+
     await priceNotice(page).getByRole('button', { name: 'Dispensar aviso de preços' }).click()
     await expect(priceNotice(page)).toHaveCount(0)
+  })
+
+  test('away from the cart, a price change of a cart NFT shows a toast', async ({ page, gotoFresh, mock, isMobile }) => {
+    await gotoFresh('/')
+    await buy(page, isMobile, 'nft_042')
+    await page.getByRole('link', { name: 'Continuar explorando' }).click()
+    await expect(page).toHaveURL(/\/#catalogo$/)
+
+    await waitForRealtime(page)
+    expect(await mock.emit({ action: 'nft:update', nftId: 'nft_042', price: '1.29' })).toBe(200)
+
+    await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'O preço de Emerald Ape #042 mudou de 1.19 para 1.29 ETH' })).toBeVisible()
+    // Sonner's own live region speaks the toast, so the app region does not repeat it.
+    await expect(page.getByTestId('live-polite')).not.toContainText('mudou de')
   })
 
   test('the catalog grid card shows the new price without a reload', async ({ page, gotoFresh, mock }) => {

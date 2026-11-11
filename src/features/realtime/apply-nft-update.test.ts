@@ -153,6 +153,31 @@ describe('applyNftUpdate', () => {
     expect(qc.getQueryState(quoteKey)!.isInvalidated).toBe(true)
   })
 
+  it('cancels an in-flight (older) REST fetch so it cannot overwrite the event', async () => {
+    const { qc, userCartKey } = seeded()
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    const staleDetail = qc.fetchQuery({
+      queryKey: queryKeys.nft('nft_042'),
+      queryFn: () => gate.then(detail),
+      staleTime: 0,
+    })
+    const staleCart = qc.fetchQuery({
+      queryKey: userCartKey,
+      queryFn: () => gate.then(() => cart({ type: 'user', id: 'usr_ana' })),
+      staleTime: 0,
+    })
+
+    applyNftUpdate(qc, event({ price: '1.29' }))
+    release()
+    await Promise.allSettled([staleDetail, staleCart])
+
+    expect(qc.getQueryData<NftDetail>(queryKeys.nft('nft_042'))!.price).toBe('1.29')
+    expect(qc.getQueryData<Cart>(userCartKey)!.lines[0]!.nft.price).toBe('1.29')
+    // The cancelled fetch is marked stale, so the next observer reads the server again.
+    expect(qc.getQueryState(queryKeys.nft('nft_042'))!.isInvalidated).toBe(true)
+  })
+
   it('ignores a payload that does not match the nft.updated contract', () => {
     const { qc, pageWithApe } = seeded()
     expect(applyNftUpdate(qc, { ...event({ price: '1.29' }), data: { price: 12 } }).cartChange).toBeNull()

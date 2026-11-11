@@ -38,6 +38,20 @@ describe('createRealtimeHub', () => {
     expect(order).not.toHaveBeenCalled()
   })
 
+  it('keeps calling the other handlers when one throws', () => {
+    const hub = createRealtimeHub()
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const after = vi.fn()
+    hub.subscribe('nft.updated', () => {
+      throw new Error('boom')
+    })
+    hub.subscribe('nft.updated', after)
+    hub.dispatch('nft.updated', envelope, null)
+    expect(after).toHaveBeenCalledTimes(1)
+    expect(error).toHaveBeenCalledTimes(1)
+    error.mockRestore()
+  })
+
   it('unsubscribes handlers and publishes status changes', () => {
     const hub = createRealtimeHub()
     const nft = vi.fn()

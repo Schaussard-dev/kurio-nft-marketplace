@@ -1,5 +1,6 @@
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import type { Socket } from 'socket.io-client'
 import { onSessionEnded } from '@/features/auth/session-events'
 import { dismissPriceNotices, priceNoticeText, pushPriceNotice } from '@/features/cart/price-notices'
@@ -10,6 +11,9 @@ import { useAnnounce } from '@/shared/ui/LiveRegion'
 import { applyNftUpdate, isCartQueryKey } from './apply-nft-update'
 import { createRealtimeHub, RealtimeContext, useRealtimeEvent, type RealtimeHub } from './realtime-hub'
 
+/** Pages that render the price-change banner. */
+const CART_PATHS = new Set(['/carrinho', '/pagamento'])
+
 const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
 /** After a reconnect the REST API is the source of truth: refetch whatever events may have missed. */
@@ -19,7 +23,8 @@ function reconcile(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: ['quote'] })
   void queryClient.invalidateQueries({
     predicate: ({ queryKey }) =>
-      isCartQueryKey(queryKey) || (queryKey[0] === 'user' && (queryKey[2] === 'pending-orders' || queryKey[2] === 'order')),
+      isCartQueryKey(queryKey) ||
+      (queryKey[0] === 'user' && ['favorites', 'pending-orders', 'order'].includes(String(queryKey[2]))),
   })
 }
 
@@ -109,7 +114,10 @@ function NftUpdateSync() {
     if (!cartChange || compare(cartChange.from, cartChange.to) === 0) return
     const notice = { nftId: envelope.resource.id, name: cartChange.name, from: cartChange.from, to: cartChange.to }
     pushPriceNotice(notice)
-    announce(priceNoticeText(notice))
+    // One spoken announcement per change: the cart/payment pages show the banner (not a live region)
+    // and speak through the app live region; elsewhere a toast shows it and sonner's region speaks it.
+    if (CART_PATHS.has(window.location.pathname)) announce(priceNoticeText(notice))
+    else toast(priceNoticeText(notice))
   })
   return null
 }

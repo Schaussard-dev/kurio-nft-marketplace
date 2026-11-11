@@ -12,6 +12,7 @@ export function PriceChangeNotice({ nftIds }: { nftIds: readonly string[] }) {
   return (
     <ChangeNotice
       testId="price-notice"
+      live={false}
       title={shown.length === 1 ? 'Preço atualizado' : 'Preços atualizados'}
       items={shown.map(priceNoticeText)}
       onDismiss={dismiss}

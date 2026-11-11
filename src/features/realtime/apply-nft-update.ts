@@ -42,6 +42,20 @@ export function applyNftUpdate(qc: QueryClient, envelope: EventEnvelope): NftUpd
   const patchSummary = <T extends NftSummary>(nft: T): T =>
     isTarget(nft) ? { ...nft, price: data.price, previousPrice: data.previousPrice, version } : nft
 
+  // A REST response already in flight may predate the event: cancel it (synchronously, restoring the
+  // cached data) before patching, then mark it stale so active views fetch the post-event state.
+  const inFlight = new Set(
+    qc.getQueryCache().findAll({
+      fetchStatus: 'fetching',
+      predicate: ({ queryKey }) =>
+        (queryKey[0] === 'nft' && queryKey[1] === nftId) ||
+        queryKey[0] === 'nfts' ||
+        isCartQueryKey(queryKey) ||
+        isFavoritesKey(queryKey),
+    }),
+  )
+  if (inFlight.size > 0) void qc.cancelQueries({ predicate: (query) => inFlight.has(query) })
+
   qc.setQueryData<NftDetail>(queryKeys.nft(nftId), (detail) =>
     detail && isTarget(detail) ? { ...patchSummary(detail), editions: patchEditions(detail.editions, data) } : detail,
   )
@@ -76,6 +90,7 @@ export function applyNftUpdate(qc: QueryClient, envelope: EventEnvelope): NftUpd
     return next
   })
 
+  if (inFlight.size > 0) void qc.invalidateQueries({ predicate: (query) => inFlight.has(query) })
   void qc.invalidateQueries({ queryKey: ['quote'] })
   return { cartChange }
 }

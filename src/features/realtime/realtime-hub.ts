@@ -37,7 +37,14 @@ export function createRealtimeHub(guard: EventGuard = createEventGuard()): Realt
       const parsed = eventEnvelopeSchema.safeParse(payload)
       if (!parsed.success || parsed.data.type !== type) return
       if (!guard.shouldApply(parsed.data, currentUserId)) return
-      handlers.get(type)?.forEach((handler) => handler(parsed.data))
+      handlers.get(type)?.forEach((handler) => {
+        // One failing feature handler must not keep the others from seeing the event.
+        try {
+          handler(parsed.data)
+        } catch (error) {
+          console.error(`[realtime] ${type} handler failed`, error)
+        }
+      })
     },
     getStatus: () => status,
     setStatus(next) {

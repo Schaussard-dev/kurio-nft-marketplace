@@ -95,15 +95,20 @@ test.describe('app shell', () => {
     const resetRequest = page.waitForRequest(
       (r) => r.url().endsWith('/api/__mock/reset') && r.method() === 'POST',
     )
+    // Marker on the current document: a full reload drops it.
+    await page.evaluate('window.__beforeReseed = true')
     await page.getByRole('combobox').click()
     await page.getByRole('option', { name: 'Catálogo vazio' }).click()
     const request = await resetRequest
     expect(request.postDataJSON()).toEqual({ scenario: 'empty' })
 
-    // The select only reflects the scenario after the reseed succeeded, and every query is invalidated.
-    // No data-driven page exists yet, so the reload side effect is the success toast (invalidateQueries runs just before it).
+    // A reseed reloads the page (no stale cache, realtime versions or socket room survive); the panel
+    // reopens with the confirmation and the applied scenario.
     await expect(page.getByText('Cenário aplicado')).toBeVisible()
+    expect(await page.evaluate('window.__beforeReseed')).toBeUndefined()
+    await expect(page.getByRole('dialog')).toBeVisible()
     await expect(page.getByRole('combobox')).toContainText('Catálogo vazio')
+    await waitForMocks(page)
 
     // Wallet disconnect has no server-side handler yet (501).
     // TODO Task 17: this assertion must change once wallet:disconnect is implemented.
