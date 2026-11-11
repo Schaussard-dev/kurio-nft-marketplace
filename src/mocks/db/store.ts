@@ -1,4 +1,5 @@
-import type { MockDb, ScenarioName } from './schema'
+import { SCENARIOS, type ScenarioName } from '../scenarios'
+import type { MockDb } from './schema'
 import { createSeed } from './seed'
 
 export const STORAGE_KEY = 'kurio-mock-db:v1'
@@ -80,6 +81,7 @@ export function mutate<T>(fn: (db: MockDb) => T): T {
 export async function resetDb(scenario: ScenarioName = 'default'): Promise<void> {
   db = await createSeed()
   db.scenario = scenario
+  SCENARIOS[scenario].seedPatch?.(db)
   persist()
 }
 

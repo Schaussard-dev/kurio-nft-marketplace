@@ -1,21 +1,9 @@
 import type { NftDetail, Order, Wallet } from '@/shared/contracts'
 import type { PasswordRecord } from './password'
 
-export type ScenarioName =
-  | 'default'
-  | 'empty'
-  | 'slow'
-  | 'jitter'
-  | 'offline'
-  | 'server-error'
-  | 'favorite-fail'
-  | 'session-expired'
-  | 'signup-conflict'
-  | 'price-change'
-  | 'sold-out'
-  | 'order-timeout'
-  | 'payment-declined'
-  | 'wallet-reject'
+import type { ScenarioName } from '../scenarios'
+
+export type { ScenarioName }
 
 export interface UserRecord {
   id: string
