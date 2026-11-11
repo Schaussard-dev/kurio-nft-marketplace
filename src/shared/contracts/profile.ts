@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { passwordSchema } from './auth'
+import { passwordSchema, usernameSchema } from './auth'
 import { emailSchema, requiredStringSchema } from './common'
 
 export const profileSchema = z.object({
@@ -15,6 +15,7 @@ export type Profile = z.infer<typeof profileSchema>
 
 export const updateProfileInputSchema = z.object({
   displayName: requiredStringSchema,
+  username: usernameSchema,
   email: emailSchema,
   walletNickname: z.string(),
   ensName: z.string(),
@@ -33,6 +34,13 @@ export const changePasswordInputSchema = z
     }
   })
 export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>
+
+/** What goes over the wire: the confirmation field is client-only. */
+export const changePasswordRequestSchema = z.object({
+  currentPassword: requiredStringSchema,
+  newPassword: passwordSchema,
+})
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>
 
 export const avatarInputSchema = z.object({
   dataUrl: z

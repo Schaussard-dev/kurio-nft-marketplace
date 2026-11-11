@@ -67,16 +67,20 @@ function SearchButton() {
 const MENU_ITEM =
   'flex cursor-default items-center rounded-sm px-3 py-2 text-body-14 text-foreground outline-none data-[highlighted]:bg-surface-2 data-[highlighted]:text-text-accent'
 
-function UserMenu({ displayName }: { displayName: string }) {
+function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: string | null }) {
   const navigate = useNavigate()
   const logout = useLogout()
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
         aria-label={`Menu de ${displayName}`}
-        className="inline-flex size-10 items-center justify-center rounded-full bg-primary text-body-15 font-bold text-ink hover:bg-primary-light"
+        className="inline-flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary text-body-15 font-bold text-ink hover:bg-primary-light"
       >
-        {displayName.charAt(0).toUpperCase()}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="size-full object-cover" />
+        ) : (
+          displayName.charAt(0).toUpperCase()
+        )}
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
@@ -105,7 +109,7 @@ function UserMenu({ displayName }: { displayName: string }) {
 
 function AccountArea() {
   const session = useSession()
-  if (session) return <UserMenu displayName={session.user.displayName} />
+  if (session) return <UserMenu displayName={session.user.displayName} avatarUrl={session.user.avatarUrl} />
   return (
     <Link to="/entrar" className={cn(buttonVariants({ size: 'sm' }), 'h-9 gap-2 px-3 text-body-15')}>
       <LogIn className="size-5" aria-hidden />

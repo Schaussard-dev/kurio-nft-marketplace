@@ -12,26 +12,34 @@ export interface FieldA11y {
  * Figma draws placeholders only, so the label is visually hidden but real. The error sits under
  * the field (icon + text, never color alone) and is wired through aria-describedby/aria-invalid.
  * Required fields (all of them here) say "obrigatório" in the label and set aria-required (spec §10).
+ * `visibleLabel` (profile frame) shows the label above the field, with a decorative orange asterisk.
  */
 export function AuthField({
   id,
   label,
   error,
   required = true,
+  visibleLabel = false,
   children,
 }: {
   id: string
   label: string
   error?: string
   required?: boolean
+  visibleLabel?: boolean
   children: (a11y: FieldA11y) => ReactNode
 }) {
   const errorId = `${id}-erro`
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="sr-only">
+      <label htmlFor={id} className={visibleLabel ? 'text-body-15 text-foreground' : 'sr-only'}>
         {label}
-        {required && ' (obrigatório)'}
+        {required && visibleLabel && (
+          <span aria-hidden className="ml-0.5 text-danger">
+            *
+          </span>
+        )}
+        {required && <span className={visibleLabel ? 'sr-only' : undefined}>{' (obrigatório)'}</span>}
       </label>
       {children({
         id,
