@@ -18,7 +18,12 @@ import {
 test.describe('payment failures', () => {
   test.describe.configure({ timeout: 90_000 })
 
-  test('payment-declined: the order is created pending with the cart untouched', async ({ page, gotoFresh, login, mock }) => {
+  test('payment-declined: the order ends "Pagamento recusado" with the reason and the cart untouched', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
     await gotoFresh('/')
     await login('ana')
     await mock.scenario('payment-declined')
@@ -27,11 +32,19 @@ test.describe('payment failures', () => {
     await openReview(page)
     await sendButton(page).click()
     await expect(page).toHaveURL(/\/pedidos\/ord_/)
+    const orderId = page.url().split('/').pop()!
+
+    await expect(page.getByRole('heading', { name: 'Pagamento recusado' })).toBeVisible()
+    await expect(page.getByTestId('decline-reason')).toHaveText('A carteira recusou o pagamento. Nenhum valor foi cobrado.')
     const orders = await listOrders(page)
-    expect(orders).toHaveLength(1)
-    expect(orders[0].status).toBe('pending')
-    // Task 18 resolves it to declined ("Pagamento recusado"); nothing leaves the cart.
+    expect(orders.map((order) => [order.id, order.status])).toEqual([[orderId, 'declined']])
+    // No receipt for a declined order, and every item is still in the cart.
+    await expect(page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })).toHaveCount(0)
     expect(await cartLines(page)).toEqual(before)
+
+    await page.getByRole('link', { name: 'Voltar ao carrinho' }).click()
+    await expect(page).toHaveURL('/carrinho')
+    await expect(page.getByTestId('cart-line').filter({ hasText: 'Sage Nomad #009' })).toBeVisible()
   })
 
   test('a double click on "Enviar pedido" sends exactly one order request', async ({ page, gotoFresh, login, mock }) => {
@@ -88,6 +101,42 @@ test.describe('payment failures', () => {
     expect(new Set(posts.map((post) => post.headers()['idempotency-key'])).size).toBe(1)
     const orders = await listOrders(page)
     expect(orders.map((order) => order.id)).toEqual([created.id])
+  })
+
+  test('order-timeout: when the unanswered order resolves, order.updated takes the waiting checkout to the receipt', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await page.clock.install()
+    await gotoFresh('/')
+    await login('ana')
+    await mock.scenario('order-timeout')
+    await openCheckout(page)
+    await openReview(page)
+    const posts = recordOrderPosts(page)
+    const firstPost = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/api/orders'))
+    await sendButton(page).click()
+    await firstPost
+    await expect.poll(async () => (await listOrders(page)).length).toBe(1)
+    const [created] = await listOrders(page)
+
+    await mock.scenario('offline')
+    await page.clock.fastForward(10_000)
+    const pending = page.getByRole('dialog', { name: 'Confirmando pedido' })
+    await expect(pending.getByRole('button', { name: 'Verificar pedido' })).toBeVisible()
+    expect(posts).toHaveLength(2)
+
+    // The network confirms the order; its event reaches the checkout still waiting for an answer.
+    await mock.scenario('default')
+    await waitForRealtime(page)
+    expect(await mock.emit({ action: 'order:resolve', orderId: created.id })).toBe(200)
+    await expect(page).toHaveURL(`/pedidos/${created.id}`)
+    await expect(page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })).toBeVisible()
+    expect(posts).toHaveLength(2)
+    // The attempt behind it is over (a new purchase may mint a new key).
+    expect(await page.evaluate(() => sessionStorage.getItem('kurio-order-attempt:usr_ana'))).toBeNull()
   })
 
   test('an unconfirmed order stays the only one: closing, a new quote and an edited field still resend the same attempt', async ({

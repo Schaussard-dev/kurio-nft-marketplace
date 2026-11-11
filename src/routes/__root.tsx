@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { useCartCount } from '@/features/cart/queries'
+import { PendingOrderBanner } from '@/features/orders/components/PendingOrderBanner'
 import { PageShell } from '@/shared/layout/PageShell'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 
@@ -25,6 +26,7 @@ function RootLayout() {
   return (
     <>
       <PageShell bare={bare} cartCount={cartCount}>
+        <PendingOrderBanner />
         <Outlet />
       </PageShell>
       {MockPanel && (

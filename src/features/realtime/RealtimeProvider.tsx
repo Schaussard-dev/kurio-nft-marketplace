@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { Socket } from 'socket.io-client'
 import { onSessionEnded } from '@/features/auth/session-events'
 import { dismissPriceNotices, priceNoticeText, pushPriceNotice } from '@/features/cart/price-notices'
+import { useOrderUpdates } from '@/features/orders/queries'
 import { sessionStore } from '@/shared/api/session-storage'
 import { eventTypeSchema } from '@/shared/contracts'
 import { compare } from '@/shared/lib/money'
@@ -122,10 +123,16 @@ function NftUpdateSync() {
   return null
 }
 
+/** Orders: `order.updated` handling lives with the orders feature. */
+function OrderUpdateSync() {
+  useOrderUpdates()
+  return null
+}
+
 /**
  * Realtime sync (spec §7): socket lifecycle, guarded event dispatch (`useRealtimeEvent`), reconnect
- * reconciliation and the connection status (`useSocketStatus`). `order.updated` and
- * `wallet.disconnected` reach handlers registered with `useRealtimeEvent` by the checkout features.
+ * reconciliation and the connection status (`useSocketStatus`). `order.updated` is handled by the orders
+ * feature (`OrderUpdateSync`); `wallet.disconnected` by the checkout page (`useRealtimeEvent`).
  */
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
@@ -134,6 +141,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   return (
     <RealtimeContext.Provider value={hub}>
       <NftUpdateSync />
+      <OrderUpdateSync />
       {children}
     </RealtimeContext.Provider>
   )

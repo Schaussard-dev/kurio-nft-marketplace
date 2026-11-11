@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
-import { expect, test, waitForRealtime } from './fixtures'
+import { expect, test, waitForApiIdle, waitForRealtime } from './fixtures'
+import { listOrders, openCheckout, openReview, recordOrderPosts, reviewDialog, sendButton } from './checkout-helpers'
 
 // Duplicated / out-of-order events and connection loss. Everything is triggered through the mock
 // server (`/api/__mock/emit`), which talks to the app over its real Socket.IO client.
@@ -103,5 +104,159 @@ test.describe('realtime resilience', () => {
     await expect(socketStatus(page)).not.toContainText('Reconectando…')
     // Reconciliation reads the current state; it does not invent a change notice.
     await expect(priceNotice(page)).toHaveCount(0)
+  })
+})
+
+// Pending orders: recovery after reload / connection loss, immutable receipt and per-user isolation.
+test.describe('pending order resilience', () => {
+  test.describe.configure({ timeout: 90_000 })
+
+  const pendingStatus = (page: Page) => page.getByRole('status').filter({ hasText: 'Aguardando confirmação na rede…' })
+  const receipt = (page: Page) => page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })
+  const pendingBanner = (page: Page) => page.getByText('Você tem um pedido em processamento')
+
+  /** Freezes the page's wall clock (timers keep running), so a pending order is not due until unfrozen. */
+  async function freezeTime(page: Page): Promise<number> {
+    const now = await page.evaluate(() => Date.now())
+    await page.clock.setFixedTime(now)
+    return now
+  }
+
+  async function placePendingOrder(page: Page): Promise<string> {
+    await openCheckout(page)
+    await waitForRealtime(page)
+    await openReview(page)
+    await sendButton(page).click()
+    await expect(page).toHaveURL(/\/pedidos\/ord_[0-9a-f]+$/)
+    return page.url().split('/').pop()!
+  }
+
+  async function signOut(page: Page, displayName: string) {
+    await page.getByRole('button', { name: `Menu de ${displayName}` }).click()
+    await page.getByRole('menuitem', { name: 'Sair' }).click()
+    await expect(page.getByRole('button', { name: `Menu de ${displayName}` })).toHaveCount(0)
+  }
+
+  test('a pending order survives a reload and a dropped connection, then shows the receipt from its snapshot', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await page.clock.install()
+    await gotoFresh('/')
+    await login('ana')
+    const frozenAt = await freezeTime(page)
+    const posts = recordOrderPosts(page)
+
+    // Connection lost before the order is sent: the page must not depend on the socket.
+    await openCheckout(page)
+    await waitForRealtime(page)
+    expect(await mock.emit({ action: 'socket:drop' })).toBe(200)
+    await expect(socketStatus(page)).toHaveAttribute('data-status', 'reconnecting')
+    await openReview(page)
+    const reviewTotal = (await reviewDialog(page).getByTestId('review-total').textContent())!
+    await sendButton(page).click()
+    await expect(page).toHaveURL(/\/pedidos\/ord_[0-9a-f]+$/)
+    const orderId = page.url().split('/').pop()!
+    await expect(pendingStatus(page)).toBeVisible()
+    await expect(page.getByText('Você pode sair desta página com segurança')).toBeVisible()
+
+    // Reload in the middle of the wait: same order, still pending, no second purchase.
+    await page.reload()
+    await expect(pendingStatus(page)).toBeVisible()
+    expect(posts).toHaveLength(1)
+    const orders = await listOrders(page)
+    expect(orders.map((order) => [order.id, order.status])).toEqual([[orderId, 'pending']])
+
+    // The order resolves while the socket is down: the event is lost, reconnection reconciles via REST.
+    await waitForRealtime(page)
+    expect(await mock.emit({ action: 'socket:drop' })).toBe(200)
+    await expect(socketStatus(page)).toHaveAttribute('data-status', 'reconnecting')
+    await page.clock.setSystemTime(frozenAt + 10_000)
+    await expect.poll(async () => (await listOrders(page))[0].status).toBe('confirmed')
+    expect(await mock.emit({ action: 'socket:restore' })).toBe(200)
+    await waitForRealtime(page)
+
+    await expect(receipt(page)).toBeVisible()
+    await expect(pendingStatus(page)).toHaveCount(0)
+    const totalCell = receipt(page).getByTestId('receipt-total')
+    await expect(totalCell).toHaveText(reviewTotal)
+    await expect(receipt(page)).toContainText('Sage Nomad #009')
+    await expect(receipt(page).getByTestId('receipt-line-total')).toHaveText('1.69 ETH')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kurio-pending-order:usr_ana'))).toBeNull()
+
+    // A later price change never rewrites the receipt (immutable snapshot).
+    expect(await mock.emit({ action: 'nft:update', nftId: 'nft_009', price: '9.99' })).toBe(200)
+    await waitForApiIdle(page)
+    await expect(totalCell).toHaveText(reviewTotal)
+    await expect(receipt(page).getByTestId('receipt-line-total')).toHaveText('1.69 ETH')
+    await expect(receipt(page)).not.toContainText('9.99')
+
+    const link = receipt(page).getByRole('link', { name: /Ver no Etherscan/ })
+    await expect(link).toHaveAccessibleName('Ver no Etherscan (simulação, abre em nova aba)')
+    await expect(link).toHaveAttribute('target', '_blank')
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+
+    // Another collector never sees it: 403 renders "Pedido não encontrado" without any order data.
+    await signOut(page, 'Ana Souza')
+    await login('bruno')
+    await page.goto(`/pedidos/${orderId}`)
+    await expect(page.getByRole('heading', { name: 'Pedido não encontrado' })).toBeVisible()
+    await expect(page.getByRole('main')).not.toContainText('Sage Nomad')
+    await expect(page.getByRole('main')).not.toContainText(reviewTotal)
+  })
+
+  test('another collector signed in on the same tab gets no trace of the previous user order resolving', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await page.clock.install()
+    await gotoFresh('/')
+    await login('ana')
+    await freezeTime(page)
+    const orderId = await placePendingOrder(page)
+    await expect(pendingStatus(page)).toBeVisible()
+    expect(await mock.emit({ action: 'socket:drop' })).toBe(200)
+
+    await signOut(page, 'Ana Souza')
+    await login('bruno')
+    await expect(pendingBanner(page)).toHaveCount(0)
+    expect(await mock.emit({ action: 'socket:restore' })).toBe(200)
+    await waitForRealtime(page)
+    const announcements = await recordAnnouncements(page)
+
+    const resolved = await mock.emitJson<{ ok: boolean; status: string }>({ action: 'order:resolve', orderId })
+    expect(resolved).toEqual({ status: 200, body: { ok: true, status: 'confirmed' } })
+    // Any event for bruno would have arrived by the time this public one does (same socket, in order).
+    expect(await mock.emit({ action: 'nft:update', nftId: 'nft_042', price: '3.33' })).toBe(200)
+    await waitForApiIdle(page)
+    expect((await announcements()).filter((text) => /pedido|pagamento/i.test(text))).toEqual([])
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+    await expect(pendingBanner(page)).toHaveCount(0)
+
+    // ana, back on this tab, finds her order confirmed (and the pending marker cleared).
+    await signOut(page, 'Bruno Lima')
+    await login('ana')
+    await expect(pendingBanner(page)).toHaveCount(0)
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kurio-pending-order:usr_ana'))).toBeNull()
+    await page.goto(`/pedidos/${orderId}`)
+    await expect(receipt(page)).toBeVisible()
+  })
+
+  test('a pending order left behind shows the global banner until it resolves', async ({ page, gotoFresh, login }) => {
+    await page.clock.install()
+    await gotoFresh('/')
+    await login('ana')
+    const frozenAt = await freezeTime(page)
+    const orderId = await placePendingOrder(page)
+    await page.goto('/')
+    await expect(pendingBanner(page)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Acompanhar pedido' })).toHaveAttribute('href', `/pedidos/${orderId}`)
+    await waitForRealtime(page)
+    await page.clock.setSystemTime(frozenAt + 10_000)
+    await expect(pendingBanner(page)).toHaveCount(0)
   })
 })

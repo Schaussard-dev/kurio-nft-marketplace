@@ -20,12 +20,13 @@ import type { CartRecord, MockDb, OrderRecord, UserRecord } from '../db/schema'
 import { apiError, withNetwork } from '../network'
 import { computeQuote, isQuoteError, stableHash, type ApiErrorLike } from '../pricing'
 import { commitNftUpdate } from '../realtime/commit'
+import { resolveDueOrders, scheduleOrder } from '../realtime/order-scheduler'
 import { once } from '../scenario-once'
 import { SCENARIOS } from '../scenarios'
 import { requireUser } from './auth'
 import { resolveCart } from './cart'
 
-/** Pending orders resolve this long after creation (the resolver itself lives with the order page task). */
+/** Pending orders resolve this long after creation (order-scheduler.ts resolves them). */
 export const ORDER_RESOLVE_MS = 2500
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -74,6 +75,7 @@ export function placeOrder(
     payloadHash,
     now,
     outcome,
+    resolveMs = ORDER_RESOLVE_MS,
   }: {
     user: UserRecord
     cart: CartRecord
@@ -82,6 +84,7 @@ export function placeOrder(
     payloadHash: string
     now: Date
     outcome: 'confirmed' | 'declined'
+    resolveMs?: number
   },
 ): PlaceOrderResult {
   // 1. Idempotency: the same key answers the same order (even if prices changed since), never a second one.
@@ -168,6 +171,7 @@ export function placeOrder(
       name: nft.name,
       art: nft.art,
       tokenNumber: nft.tokenNumber,
+      editionId: edition.id,
       editionLabel: edition.label,
       unitPrice: line.unitPrice,
       quantity: line.quantity,
@@ -198,7 +202,7 @@ export function placeOrder(
     userId: user.id,
     idempotencyKey: key,
     payloadHash,
-    resolveAt: new Date(now.getTime() + ORDER_RESOLVE_MS).toISOString(),
+    resolveAt: new Date(now.getTime() + resolveMs).toISOString(),
     plannedOutcome: outcome,
   }
   db.orders.push(order)
@@ -281,6 +285,7 @@ export const orderHandlers = [
           payloadHash: payloadHashOf(input),
           now: new Date(),
           outcome: flags?.orderOutcome ?? 'confirmed',
+          resolveMs: flags?.orderResolveMs,
         }),
       )
       if ('error' in result) {
@@ -288,6 +293,7 @@ export const orderHandlers = [
         return apiError(status, code, message, fieldErrors, details)
       }
       // Scenario order-timeout: the order exists, but the first request with that key never gets an answer.
+      if (result.created) scheduleOrder(result.order)
       if (flags?.orderTimeout && result.created && once(`order-timeout:${key}`)) return hang(request)
       return HttpResponse.json(toOrder(result.order), { status: result.created ? 201 : 200 })
     }),
@@ -301,11 +307,26 @@ export const orderHandlers = [
       if (user instanceof Response) return user
       const query = listQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams))
       if (!query.success) return apiError(422, 'VALIDATION_ERROR', 'Filtro de pedidos inválido')
+      resolveDueOrders()
       const orders = getDb()
         .orders.filter((o) => o.userId === user.id && (!query.data.status || o.status === query.data.status))
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .map(toOrder)
       return HttpResponse.json(orders)
+    }),
+  ),
+
+  // One order of the signed-in user, resolved first if its confirmation is due (survives reloads).
+  http.get(
+    '/api/orders/:orderId',
+    withNetwork(({ request, params }) => {
+      const user = requireUser(request)
+      if (user instanceof Response) return user
+      resolveDueOrders()
+      const order = getDb().orders.find((o) => o.id === params.orderId)
+      if (!order) return apiError(404, 'NOT_FOUND', 'Pedido não encontrado')
+      if (order.userId !== user.id) return apiError(403, 'FORBIDDEN', 'Este pedido pertence a outra conta')
+      return HttpResponse.json(toOrder(order))
     }),
   ),
 ]

@@ -31,6 +31,8 @@ export interface ScenarioFlags {
   sessionTtlRequests?: number
   orderOutcome?: 'confirmed' | 'declined'
   orderTimeout?: boolean
+  /** Delay before a new order resolves (default ORDER_RESOLVE_MS). */
+  orderResolveMs?: number
   walletReject?: boolean
   /**
    * Checkout signal: the first wallet approval (POST /wallets/:id/connect, called only by /pagamento)
@@ -79,7 +81,8 @@ export const SCENARIOS: Record<ScenarioName, ScenarioConfig> = {
   'signup-conflict': { latency: DEFAULT_LATENCY },
   'price-change': { latency: DEFAULT_LATENCY, flags: { priceChangeAtCheckout: true } },
   'sold-out': { latency: DEFAULT_LATENCY, flags: { soldOutOnOrder: true } },
-  'order-timeout': { latency: DEFAULT_LATENCY, flags: { orderTimeout: true } },
+  // The network is slow too: the order stays pending long enough for the client deadline and its recovery.
+  'order-timeout': { latency: DEFAULT_LATENCY, flags: { orderTimeout: true, orderResolveMs: 60_000 } },
   'payment-declined': { latency: DEFAULT_LATENCY, flags: { orderOutcome: 'declined' } },
   'wallet-reject': { latency: DEFAULT_LATENCY, flags: { walletReject: true } },
 }

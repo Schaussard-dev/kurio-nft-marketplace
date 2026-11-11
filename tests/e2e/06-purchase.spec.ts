@@ -69,13 +69,34 @@ test.describe('purchase', () => {
 
     const orders = await listOrders(page)
     expect(orders).toHaveLength(1)
-    expect(orders[0]).toMatchObject({ id: orderId, status: 'pending', snapshot: { total: quoteTotal, network: 'ethereum' } })
+    expect(orders[0]).toMatchObject({ id: orderId, snapshot: { total: quoteTotal, network: 'ethereum' } })
     expect(posts).toHaveLength(1)
     expect(posts[0].headers()['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/)
-    // The pending order id is kept per user for the order page / reconnection (Task 18).
-    expect(await page.evaluate(() => localStorage.getItem('kurio-pending-order:usr_ana'))).toBe(orderId)
-    // Nothing leaves the cart while the order is pending (Task 18 subtracts the bought quantities on confirm).
-    expect(await cartLines(page)).toEqual(before)
+
+    // The network confirms (order.updated over the socket): the receipt shows what was reviewed.
+    const receipt = page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })
+    await expect(receipt).toBeVisible()
+    await expect(receipt.getByTestId('receipt-total')).toHaveText(`${quoteTotal} ETH`)
+    await expect(receipt.getByTestId('receipt-summary-total')).toHaveText(`${quoteTotal} ETH`)
+    await expect(receipt).toContainText('Emerald Ape #042')
+    await expect(receipt).toContainText('Sage Nomad #009')
+    await expect(receipt).toContainText('Transação confirmada na Ethereum.')
+    await expect(receipt).toContainText('Principal · 0xA91F…E82C')
+    // The confirmed order is no longer tracked as pending.
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('kurio-pending-order:usr_ana'))).toBeNull()
+    // The bought quantities left the cart (a line bought in full is removed).
+    const bought = new Map(orders[0].snapshot.lines.map((line) => [line.nftId, line.quantity]))
+    const expected = before
+      .map((line) => ({ ...line, quantity: line.quantity - (bought.get(line.nftId) ?? 0) }))
+      .filter((line) => line.quantity > 0)
+    expect(await cartLines(page)).toEqual(expected)
+    // …and the app's cart (badge) follows without a reload: everything was bought, so no count is left.
+    expect(expected).toEqual([])
+    await expect(page.getByRole('link', { name: /^Carrinho, / })).toHaveCount(0)
+
+    // Closing the receipt goes back to the home page.
+    await receipt.getByRole('link', { name: 'Fechar' }).click()
+    await expect(page).toHaveURL('/')
   })
 
   test('without registered wallets the checkout shows the empty state and accepts a wallet typed in by hand', async ({

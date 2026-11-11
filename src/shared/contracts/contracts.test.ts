@@ -75,6 +75,7 @@ const order = {
   declineReason: null,
   txHash: '0xabc',
   explorerUrl: 'https://etherscan.io/tx/0xabc',
+  idempotencyKey: 'key-1',
   snapshot: {
     lines: [
       {
@@ -82,6 +83,7 @@ const order = {
         name: 'Genesis',
         art: 'sage',
         tokenNumber: 42,
+        editionId: 'ed-1',
         editionLabel: '1/10',
         unitPrice: '1.5',
         quantity: 2,

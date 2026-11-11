@@ -3,6 +3,7 @@ import { getDb } from '../db/store'
 import { registerMockAction } from '../handlers/mock-control'
 import { apiError } from '../network'
 import { commitNftUpdate, commitWalletDisconnect, nftPatchSchema, replayEvent } from './commit'
+import { resolveOrder } from './order-scheduler'
 import { connectedUserIds, dropAll, emitWhoAmI, restore } from './server'
 
 /** Wires the realtime `/__mock/emit` actions to the commit pipeline and the mock socket server. */
@@ -29,6 +30,14 @@ export function registerRealtimeMockActions(): void {
     const users = userId ? [userId] : connectedUserIds()
     users.forEach((id) => commitWalletDisconnect(id))
     return HttpResponse.json({ ok: true, users: users.length })
+  })
+
+  // Resolves a pending order now, to its planned outcome (demo panel / tests); terminal orders are left alone.
+  registerMockAction('order:resolve', ({ orderId }) => {
+    const order = getDb().orders.find((o) => o.id === orderId)
+    if (!order) return apiError(404, 'NOT_FOUND', 'Pedido não encontrado')
+    resolveOrder(orderId)
+    return HttpResponse.json({ ok: true, status: order.status })
   })
 
   registerMockAction('socket:drop', ({ seconds }) => dropAll(seconds))

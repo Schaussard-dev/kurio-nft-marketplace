@@ -18,6 +18,7 @@ import { useConnectWallet, useWallets } from '@/features/wallets/queries'
 import { toApiError } from '@/shared/api/api-error'
 import {
   networkSchema,
+  orderUpdatedDataSchema,
   quoteSchema,
   type Cart,
   type Network,
@@ -52,7 +53,7 @@ import {
   type CheckoutFormValues,
 } from '../form'
 import { hashPayload } from '../payload-hash'
-import { savePendingOrderId } from '../pending-order'
+import { rememberPendingOrder } from '@/features/orders/pending-order'
 import { isUncertainOrderError, useCreateOrder, type CreateOrderVariables } from '../queries'
 import { CheckoutForm } from './CheckoutForm'
 import { CheckoutSummary } from './CheckoutSummary'
@@ -429,7 +430,7 @@ function CheckoutFlow({
     createOrder.mutate(variables, {
       onSuccess: (order) => {
         draftDone.current = true
-        savePendingOrderId(userId, order.id)
+        rememberPendingOrder(userId, order.id)
         forgetAttempt()
         clearCheckoutDraft(userId)
         dismissPriceNotices()
@@ -564,6 +565,23 @@ function CheckoutFlow({
       setFlow({ step: 'idle' })
     }
     toast.warning('Carteira desconectada. Conecte novamente.')
+  })
+
+  // The unresolved attempt's order reached its outcome although its answer was lost (spec §9 step 6):
+  // the attempt is over (the orders feature already cleared it); from an open dialog, go to the result.
+  useRealtimeEvent('order.updated', (envelope) => {
+    const parsed = orderUpdatedDataSchema.safeParse(envelope.data)
+    if (!parsed.success || parsed.data.order.status === 'pending') return
+    const { order } = parsed.data
+    if (!pendingAttempt || pendingAttempt.key !== order.idempotencyKey) return
+    setPendingAttempt(null)
+    // A request still in flight answers with this same order and navigates by itself.
+    if (createOrder.isPending || flowRef.current.step === 'idle') return
+    draftDone.current = true
+    connect.reset()
+    createOrder.reset()
+    setFlow({ step: 'idle' })
+    void navigate({ to: '/pedidos/$orderId', params: { orderId: order.id } })
   })
 
   const uncertain =

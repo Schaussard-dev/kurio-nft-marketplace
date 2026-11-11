@@ -41,6 +41,8 @@ export const orderSchema = z.object({
   declineReason: z.string().nullable(),
   txHash: z.string(),
   explorerUrl: z.string(),
+  /** The Idempotency-Key that created it (owner only): lets the client match an unresolved attempt. */
+  idempotencyKey: z.string(),
   snapshot: z.object({
     lines: z.array(
       z.object({
@@ -48,6 +50,7 @@ export const orderSchema = z.object({
         name: z.string(),
         art: artKeySchema,
         tokenNumber: z.number().int(),
+        editionId: z.string(),
         editionLabel: z.string(),
         unitPrice: ethStringSchema,
         quantity: z.number().int().min(1),
