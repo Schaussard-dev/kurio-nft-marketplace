@@ -50,21 +50,27 @@ export function useOrder(orderId: string | null) {
   })
 }
 
-/** Everything the client keeps about a purchase in flight is over once the order is terminal. */
-export function settleTerminalOrder(userId: string, order: Order): void {
+/**
+ * Everything the client keeps about a purchase in flight is over once the order is terminal. Returns
+ * whether the unresolved checkout attempt was the one that created this order.
+ */
+export function settleTerminalOrder(userId: string, order: Order): boolean {
   forgetPendingOrder(userId, order.id)
   // Only the attempt that created THIS order: another unresolved attempt must keep its key (no duplicates).
-  if (peekAttempt(userId)?.key === order.idempotencyKey) {
-    clearAttempt(userId)
-    clearCheckoutDraft(userId)
-  }
+  if (peekAttempt(userId)?.key !== order.idempotencyKey) return false
+  clearAttempt(userId)
+  clearCheckoutDraft(userId)
+  return true
 }
+
+/** The checkout page reports the outcome of its own unresolved attempt itself (one feedback only). */
+const CHECKOUT_PATH = '/pagamento'
 
 /**
  * `order.updated` (already deduped, versioned and scoped to the session user by the hub): stores the
  * order, refreshes what its outcome changed (cart, stock, quotes) and settles a terminal order. The
- * order page speaks the outcome itself; anywhere else a toast does (sonner's live region). Mounted by
- * the RealtimeProvider.
+ * order page speaks the outcome itself, and so does the checkout for its own unresolved attempt;
+ * anywhere else a toast does (sonner's live region). Mounted by the RealtimeProvider.
  */
 export function useOrderUpdates(): void {
   const queryClient = useQueryClient()
@@ -85,7 +91,9 @@ export function useOrderUpdates(): void {
     void queryClient.invalidateQueries({ queryKey: ['nft'] })
     void queryClient.invalidateQueries({ queryKey: ['nfts'] })
     if (!isTerminal(order)) return
-    settleTerminalOrder(userId, order)
-    if (window.location.pathname !== orderPath(order.id)) toast(orderOutcomeText(order))
+    const ownAttempt = settleTerminalOrder(userId, order)
+    const path = window.location.pathname
+    if (ownAttempt && path === CHECKOUT_PATH) return
+    if (path !== orderPath(order.id)) toast(orderOutcomeText(order))
   })
 }

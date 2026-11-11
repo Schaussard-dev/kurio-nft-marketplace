@@ -96,7 +96,7 @@ describe('checkout form', () => {
     const values = { ...initialValues(profile, wallets, null), walletChoice: MANUAL_WALLET, note: '  ' }
     const input = toOrderInput(values, 'qt_1')
     expect(createOrderInputSchema.safeParse(input).success).toBe(true)
-    expect(input).toMatchObject({ quoteId: 'qt_1', walletId: null, payer: { ensName: 'ana.kurio.eth' } })
+    expect(input).toMatchObject({ quoteId: 'qt_1', connector: values.connector, walletId: null, payer: { ensName: 'ana.kurio.eth' } })
     expect(input).not.toHaveProperty('note')
     expect(input.payer).not.toHaveProperty('secondaryAddress')
     expect(connectTarget(values)).toBe('metamask')

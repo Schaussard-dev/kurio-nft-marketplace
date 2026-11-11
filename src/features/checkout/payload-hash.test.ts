@@ -4,6 +4,7 @@ import { hashPayload } from './payload-hash'
 
 const input: CreateOrderInput = {
   quoteId: 'qt_1',
+  connector: 'metamask',
   walletId: 'wlt_ana_primary',
   network: 'ethereum',
   payer: {
@@ -26,6 +27,7 @@ describe('hashPayload', () => {
       network: input.network,
       walletId: input.walletId,
       quoteId: input.quoteId,
+      connector: input.connector,
     } as CreateOrderInput
     const a = await hashPayload(input)
     expect(a).toMatch(/^[0-9a-f]{64}$/)

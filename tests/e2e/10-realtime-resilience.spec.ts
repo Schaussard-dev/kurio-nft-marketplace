@@ -1,6 +1,14 @@
 import type { Page } from '@playwright/test'
 import { expect, test, waitForApiIdle, waitForRealtime } from './fixtures'
-import { listOrders, openCheckout, openReview, recordOrderPosts, reviewDialog, sendButton } from './checkout-helpers'
+import {
+  listOrders,
+  openCheckout,
+  openReview,
+  recordOrderPosts,
+  recordToasts,
+  reviewDialog,
+  sendButton,
+} from './checkout-helpers'
 
 // Duplicated / out-of-order events and connection loss. Everything is triggered through the mock
 // server (`/api/__mock/emit`), which talks to the app over its real Socket.IO client.
@@ -227,6 +235,7 @@ test.describe('pending order resilience', () => {
     expect(await mock.emit({ action: 'socket:restore' })).toBe(200)
     await waitForRealtime(page)
     const announcements = await recordAnnouncements(page)
+    const toasts = await recordToasts(page)
 
     const resolved = await mock.emitJson<{ ok: boolean; status: string }>({ action: 'order:resolve', orderId })
     expect(resolved).toEqual({ status: 200, body: { ok: true, status: 'confirmed' } })
@@ -234,7 +243,7 @@ test.describe('pending order resilience', () => {
     expect(await mock.emit({ action: 'nft:update', nftId: 'nft_042', price: '3.33' })).toBe(200)
     await waitForApiIdle(page)
     expect((await announcements()).filter((text) => /pedido|pagamento/i.test(text))).toEqual([])
-    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+    expect((await toasts()).filter((text) => /pedido|pagamento/i.test(text))).toEqual([])
     await expect(pendingBanner(page)).toHaveCount(0)
 
     // ana, back on this tab, finds her order confirmed (and the pending marker cleared).

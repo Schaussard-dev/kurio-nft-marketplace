@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { ArtImage } from '@/features/catalog/components/ArtImage'
-import { NETWORK_LABELS } from '@/features/checkout/form'
+import { CONNECTOR_LABELS, NETWORK_LABELS } from '@/features/checkout/form'
 import type { Order } from '@/shared/contracts'
 import { formatDate, formatDiscount, formatEth, shortHash } from '@/shared/lib/format'
 import { compare } from '@/shared/lib/money'
@@ -74,7 +74,10 @@ export function OrderReceipt({ order }: { order: Order }) {
         </div>
         <div className="min-w-0 pl-3 sm:pl-4">
           <dt className="font-bold text-text-secondary">Carteira</dt>
-          <dd className="break-words text-text-secondary">{snapshot.walletLabel}</dd>
+          <dd data-testid="receipt-wallet" className="text-text-secondary">
+            {CONNECTOR_LABELS[snapshot.connector]}
+            <span className="block text-caption-13 leading-5 break-words">{snapshot.walletLabel}</span>
+          </dd>
         </div>
       </dl>
 

@@ -162,6 +162,7 @@ export function toOrderInput(values: CheckoutFormValues, quoteId: string): Creat
   const note = values.note.trim()
   return {
     quoteId,
+    connector: values.connector as Connector,
     walletId: values.walletChoice === MANUAL_WALLET ? null : values.walletChoice,
     network: values.network as Network,
     payer: {

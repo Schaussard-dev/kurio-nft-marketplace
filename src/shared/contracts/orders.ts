@@ -20,8 +20,13 @@ export const payerSchema = z.object({
 })
 export type Payer = z.infer<typeof payerSchema>
 
+/** Wallet app that approved the payment (the receipt shows it under "Carteira"). */
+export const connectorSchema = z.enum(['metamask', 'walletconnect', 'coinbase'])
+export type ConnectorId = z.infer<typeof connectorSchema>
+
 export const createOrderInputSchema = z.object({
   quoteId: z.string(),
+  connector: connectorSchema,
   walletId: z.string().nullable(),
   network: networkSchema,
   payer: payerSchema,
@@ -62,6 +67,7 @@ export const orderSchema = z.object({
     networkFee: ethStringSchema,
     total: ethStringSchema,
     walletLabel: z.string(),
+    connector: connectorSchema,
     network: networkSchema,
   }),
 })

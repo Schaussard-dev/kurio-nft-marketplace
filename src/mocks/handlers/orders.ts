@@ -197,6 +197,7 @@ export function placeOrder(
       networkFee: stored.networkFee,
       total: stored.total,
       walletLabel,
+      connector: input.connector,
       network: stored.network,
     },
     userId: user.id,
@@ -211,7 +212,7 @@ export function placeOrder(
   return { order, created: true }
 }
 
-/** Public shape (strips userId, idempotency data, plannedOutcome…). */
+/** Public shape: strips userId, payloadHash, resolveAt and plannedOutcome (idempotencyKey is owner-visible). */
 function toOrder(record: OrderRecord): Order {
   return orderSchema.parse(record)
 }

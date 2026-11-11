@@ -95,7 +95,8 @@ export function commitOrderUpdate(orderId: string, patch: OrderPatch): EventEnve
     return next
   })
 
-  // orderSchema strips the mock-only fields (userId, idempotencyKey, plannedOutcome…).
+  // orderSchema strips the mock-only fields (userId, payloadHash, resolveAt, plannedOutcome); the
+  // idempotencyKey stays: the event goes to the owner only.
   const publicOrder = orderSchema.parse(order)
   const data: OrderUpdatedData = { status: publicOrder.status, order: publicOrder }
   const envelope = buildEnvelope('order.updated', { type: 'order', id: orderId }, version, order.userId, data)

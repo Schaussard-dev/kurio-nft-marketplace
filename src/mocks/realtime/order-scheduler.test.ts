@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { add, mul } from '@/shared/lib/money'
 import { getDb, initDb, memoryStorage, mutate, setStorage } from '../db/store'
 import type { CartRecord, OrderRecord } from '../db/schema'
 import { bootScheduler, resetOrderScheduler, resolveDueOrders, scheduleOrder } from './order-scheduler'
@@ -45,14 +46,15 @@ function seedOrder({
           editionLabel: '1/50',
           unitPrice: sage().price,
           quantity,
-          lineTotal: sage().price,
+          lineTotal: mul(sage().price, quantity),
         },
       ],
-      subtotal: '1.69',
+      subtotal: mul(sage().price, quantity),
       discount: '0',
       networkFee: '0.016',
-      total: '1.706',
+      total: add(mul(sage().price, quantity), '0.016'),
       walletLabel: 'Principal · 0xA91F…E82C',
+      connector: 'metamask',
       network: 'ethereum',
     },
     userId: 'usr_ana',

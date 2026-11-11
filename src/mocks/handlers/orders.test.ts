@@ -27,6 +27,7 @@ function quoteFor(state: MockDb, at = now): Quote {
 function inputFor(quote: Quote, overrides: Partial<CreateOrderInput> = {}): CreateOrderInput {
   return {
     quoteId: quote.quoteId,
+    connector: 'metamask',
     walletId: 'wlt_ana_primary',
     network: 'ethereum',
     payer: {

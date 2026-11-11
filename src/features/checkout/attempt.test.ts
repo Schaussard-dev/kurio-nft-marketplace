@@ -26,6 +26,7 @@ const display: AttemptDisplay = {
 }
 const input: CreateOrderInput = {
   quoteId: 'qt_1',
+  connector: 'metamask',
   walletId: 'wlt_ana_primary',
   network: 'ethereum',
   payer: {

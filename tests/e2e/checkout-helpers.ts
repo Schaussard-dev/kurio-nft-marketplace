@@ -88,3 +88,22 @@ export function recordOrderPosts(page: Page): Request[] {
   })
   return posts
 }
+
+/** Records the text of every toast shown from now on (sonner removes them after a few seconds). */
+export async function recordToasts(page: Page): Promise<() => Promise<string[]>> {
+  // A string script: the e2e tsconfig has no DOM types.
+  await page.evaluate(`(() => {
+    const seen = []
+    window.__toasts = seen
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node.nodeType !== 1) continue
+          const toasts = node.matches('[data-sonner-toast]') ? [node] : [...node.querySelectorAll('[data-sonner-toast]')]
+          toasts.forEach((toast) => seen.push(toast.textContent))
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true })
+  })()`)
+  return () => page.evaluate<string[]>('window.__toasts')
+}

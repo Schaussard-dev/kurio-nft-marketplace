@@ -54,6 +54,7 @@ import {
 } from '../form'
 import { hashPayload } from '../payload-hash'
 import { rememberPendingOrder } from '@/features/orders/pending-order'
+import { orderOutcomeText } from '@/features/orders/queries'
 import { isUncertainOrderError, useCreateOrder, type CreateOrderVariables } from '../queries'
 import { CheckoutForm } from './CheckoutForm'
 import { CheckoutSummary } from './CheckoutSummary'
@@ -575,8 +576,14 @@ function CheckoutFlow({
     const { order } = parsed.data
     if (!pendingAttempt || pendingAttempt.key !== order.idempotencyKey) return
     setPendingAttempt(null)
+    // The orders feature leaves this outcome to the checkout: exactly one feedback, here.
+    if (flowRef.current.step === 'idle') {
+      toast(orderOutcomeText(order))
+      return
+    }
+    announce(orderOutcomeText(order))
     // A request still in flight answers with this same order and navigates by itself.
-    if (createOrder.isPending || flowRef.current.step === 'idle') return
+    if (createOrder.isPending) return
     draftDone.current = true
     connect.reset()
     createOrder.reset()

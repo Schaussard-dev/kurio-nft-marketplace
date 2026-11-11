@@ -95,6 +95,7 @@ const order = {
     networkFee: '0.016',
     total: '3.016',
     walletLabel: 'MetaMask',
+    connector: 'metamask',
     network: 'ethereum',
   },
 }
@@ -291,8 +292,9 @@ describe('orders', () => {
       referralCode: 'R',
       walletAddress: evmAddress,
     }
-    const base = { quoteId: 'q', walletId: null, network: 'polygon' }
+    const base = { quoteId: 'q', connector: 'coinbase', walletId: null, network: 'polygon' }
     expect(createOrderInputSchema.safeParse({ ...base, payer }).success).toBe(true)
+    expect(createOrderInputSchema.safeParse({ ...base, connector: 'phantom', payer }).success).toBe(false)
     expect(createOrderInputSchema.safeParse({ ...base, payer: { ...payer, email: 'x' } }).success).toBe(false)
   })
 })

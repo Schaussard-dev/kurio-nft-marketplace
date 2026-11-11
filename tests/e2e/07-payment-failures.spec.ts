@@ -8,6 +8,7 @@ import {
   openCheckout,
   openReview,
   recordOrderPosts,
+  recordToasts,
   reviewDialog,
   sendButton,
   showPayerFields,
@@ -131,9 +132,13 @@ test.describe('payment failures', () => {
     // The network confirms the order; its event reaches the checkout still waiting for an answer.
     await mock.scenario('default')
     await waitForRealtime(page)
+    const toasts = await recordToasts(page)
     expect(await mock.emit({ action: 'order:resolve', orderId: created.id })).toBe(200)
     await expect(page).toHaveURL(`/pedidos/${created.id}`)
     await expect(page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })).toBeVisible()
+    // One feedback only: the checkout speaks the outcome; no global toast on top of the navigation.
+    await expect(page.getByTestId('live-polite')).toHaveText(/Pedido confirmado/)
+    expect(await toasts()).toEqual([])
     expect(posts).toHaveLength(2)
     // The attempt behind it is over (a new purchase may mint a new key).
     expect(await page.evaluate(() => sessionStorage.getItem('kurio-order-attempt:usr_ana'))).toBeNull()

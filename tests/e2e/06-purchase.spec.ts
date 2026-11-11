@@ -81,7 +81,8 @@ test.describe('purchase', () => {
     await expect(receipt).toContainText('Emerald Ape #042')
     await expect(receipt).toContainText('Sage Nomad #009')
     await expect(receipt).toContainText('Transação confirmada na Ethereum.')
-    await expect(receipt).toContainText('Principal · 0xA91F…E82C')
+    // "Carteira" names the approving wallet app (Figma), with the wallet used below it.
+    await expect(receipt.getByTestId('receipt-wallet')).toHaveText('MetaMaskPrincipal · 0xA91F…E82C')
     // The confirmed order is no longer tracked as pending.
     await expect.poll(() => page.evaluate(() => localStorage.getItem('kurio-pending-order:usr_ana'))).toBeNull()
     // The bought quantities left the cart (a line bought in full is removed).
@@ -144,5 +145,8 @@ test.describe('purchase', () => {
     await expect(page).toHaveURL(/\/pedidos\/ord_/)
     const [order] = await listOrders(page)
     expect(order.snapshot.network).toBe('polygon')
+    const receipt = page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })
+    await expect(receipt.getByTestId('receipt-wallet')).toContainText('Coinbase Wallet')
+    await expect(receipt).toContainText('Transação confirmada na Polygon.')
   })
 })

@@ -43,6 +43,7 @@ function seedOrder(): OrderRecord {
       networkFee: '0.016',
       total: '1.206',
       walletLabel: 'MetaMask',
+      connector: 'metamask',
       network: 'ethereum',
     },
     userId: 'usr_ana',
