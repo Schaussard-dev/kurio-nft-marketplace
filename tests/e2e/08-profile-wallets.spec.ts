@@ -259,6 +259,52 @@ test.describe('carteiras', () => {
     await expect(again.getByText('Você ainda não adicionou')).toHaveCount(0)
   })
 
+  test('ENS is optional outside Ethereum, the secondary field takes an ENS name and the placeholder follows the network', async ({
+    page,
+  }) => {
+    await page.getByRole('region', { name: 'Carteira principal' }).getByRole('button', { name: 'Adicionar' }).click()
+    const form = await fillPrimary(page)
+    const ens = form.getByRole('textbox', { name: /^Nome ENS/ })
+    const network = form.getByRole('combobox', { name: /^Rede/ })
+    const address = form.getByRole('textbox', { name: /^Endereço da carteira/ })
+    await expect(ens).toHaveAttribute('aria-required', 'true')
+    await expect(address).toHaveAttribute('placeholder', 'Endereço 0x da carteira')
+    await network.selectOption('solana')
+    await expect(address).toHaveAttribute('placeholder', 'Endereço Solana da carteira')
+    await network.selectOption('polygon')
+    await expect(ens).not.toHaveAttribute('aria-required', 'true')
+    await ens.fill('')
+    await form.getByRole('textbox', { name: /^ENS ou carteira secundária/ }).fill('nova.kurio.eth')
+    await form.getByRole('button', { name: 'Salvar carteira' }).click()
+    await expect(page.getByText('Carteira salva')).toBeVisible()
+    await network.selectOption('ethereum')
+    await form.getByRole('button', { name: 'Salvar carteira' }).click()
+    await expect(ens).toHaveAttribute('aria-invalid', 'true')
+    await expect(ens).toHaveAccessibleDescription('Campo obrigatório')
+  })
+
+  test('a same-as-primary secondary follows later edits of the primary', async ({ page }) => {
+    await page.getByRole('region', { name: 'Carteira principal' }).getByRole('button', { name: 'Adicionar' }).click()
+    const primary = await fillPrimary(page)
+    await primary.getByRole('button', { name: 'Salvar carteira' }).click()
+    await expect(page.getByText('Carteira salva')).toBeVisible()
+    const secondary = page.getByRole('region', { name: 'Carteira secundária' })
+    await secondary.getByRole('checkbox', { name: 'Igual à carteira principal' }).click()
+    await secondary.getByRole('button', { name: 'Adicionar' }).click()
+    await secondary.getByRole('button', { name: 'Salvar carteira' }).click()
+    await waitForApiIdle(page)
+
+    await primary.getByRole('textbox', { name: /^Apelido da carteira/ }).fill('Cofre')
+    await primary.getByRole('button', { name: 'Salvar carteira' }).click()
+    await waitForApiIdle(page)
+    await page.reload()
+    await waitForMocks(page)
+    const again = page.getByRole('region', { name: 'Carteira secundária' })
+    await expect(again.getByRole('checkbox', { name: 'Igual à carteira principal' })).toBeChecked()
+    await again.getByRole('checkbox', { name: 'Igual à carteira principal' }).click()
+    await expect(again.getByRole('textbox', { name: /^Apelido da carteira/ })).toHaveValue('Cofre')
+  })
+
   test('returns to the redirect target after the first save', async ({ page }) => {
     await page.goto('/perfil/carteiras?redirect=/pagamento')
     await waitForMocks(page)

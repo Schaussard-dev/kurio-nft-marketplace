@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { LoaderCircle } from 'lucide-react'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { AuthField } from '@/features/auth/components/AuthField'
@@ -9,7 +9,10 @@ import { PROFILE_INPUT_CLASS } from '@/features/profile/components/profile-style
 import { toApiError } from '@/shared/api/api-error'
 import {
   WALLET_ADDRESS_ERROR,
+  WALLET_ENS_REQUIRED_ERROR,
+  WALLET_SECONDARY_ERROR,
   emailSchema,
+  isValidSecondaryWallet,
   isValidWalletAddress,
   networkSchema,
   type Wallet,
@@ -41,23 +44,19 @@ const formSchema = z
     }),
     referralCode: required,
     email: z.string().trim().min(1, REQUIRED).pipe(emailSchema),
-    ensName: required.regex(ENS_LABEL_PATTERN, ENS_LABEL_ERROR),
+    ensName: z.string().trim().regex(ENS_LABEL_PATTERN, ENS_LABEL_ERROR),
   })
   .superRefine((value, ctx) => {
     if (!value.network) return
     if (value.address && !isValidWalletAddress(value.network, value.address)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['address'],
-        message: WALLET_ADDRESS_ERROR,
-      })
+      ctx.addIssue({ code: 'custom', path: ['address'], message: WALLET_ADDRESS_ERROR })
     }
-    if (value.secondaryAddress && !isValidWalletAddress(value.network, value.secondaryAddress)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['secondaryAddress'],
-        message: WALLET_ADDRESS_ERROR,
-      })
+    if (value.secondaryAddress && !isValidSecondaryWallet(value.network, value.secondaryAddress)) {
+      ctx.addIssue({ code: 'custom', path: ['secondaryAddress'], message: WALLET_SECONDARY_ERROR })
+    }
+    // Spec: the ENS name is optional outside Ethereum.
+    if (value.network === 'ethereum' && !value.ensName) {
+      ctx.addIssue({ code: 'custom', path: ['ensName'], message: WALLET_ENS_REQUIRED_ERROR })
     }
   })
 type FormValues = z.infer<typeof formSchema>
@@ -120,13 +119,22 @@ export function WalletForm({
     reset,
     trigger,
     getValues,
-    formState: { errors },
+    getFieldState,
+    control,
+    formState: { errors, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: toFormValues(wallet),
     // Registration order differs from the DOM order (some fields register eagerly), so focus is set by hand.
     shouldFocusError: false,
   })
+  const network = useWatch({ control, name: 'network' })
+
+  // An untouched form follows the server data (e.g. a same-as-primary secondary after the primary changed).
+  useEffect(() => {
+    if (!isDirty) reset(toFormValues(wallet))
+  }, [wallet, isDirty, reset])
+
   const id = (name: string) => `carteira-${slot}-${name}`
 
   async function persist(input: WalletInput | { sameAsPrimary: true }) {
@@ -165,7 +173,10 @@ export function WalletForm({
 
   // Network-specific address rules: changing the network re-checks the address fields that hold a value.
   const revalidateAddresses = () => {
-    const fields = (['address', 'secondaryAddress'] as const).filter((field) => getValues(field))
+    const fields: ('address' | 'secondaryAddress' | 'ensName')[] = (['address', 'secondaryAddress'] as const).filter(
+      (field) => getValues(field),
+    )
+    if (getFieldState('ensName').error) fields.push('ensName')
     if (fields.length > 0) void trigger(fields)
   }
 
@@ -216,7 +227,7 @@ export function WalletForm({
               <input
                 {...a11y}
                 {...register('address')}
-                placeholder="Endereço 0x da carteira"
+                placeholder={network === 'solana' ? 'Endereço Solana da carteira' : 'Endereço 0x da carteira'}
                 autoCapitalize="none"
                 autoComplete="off"
                 spellCheck={false}
@@ -262,7 +273,12 @@ export function WalletForm({
               />
             )}
           </AuthField>
-          <EnsField id={id('ens')} error={errors.ensName?.message} registration={register('ensName')} />
+          <EnsField
+            id={id('ens')}
+            required={network === 'ethereum'}
+            error={errors.ensName?.message}
+            registration={register('ensName')}
+          />
         </>
       )}
       <div className="md:col-span-2">

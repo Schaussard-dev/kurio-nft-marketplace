@@ -29,6 +29,12 @@ export function WalletSection({
 }) {
   const [open, setOpen] = useState(false)
   const [sameAsPrimary, setSameAsPrimary] = useState(wallet?.sameAsPrimary ?? false)
+  // Follow the server when it flips the flag (the checkbox is otherwise the user's own choice).
+  const [syncedFlag, setSyncedFlag] = useState(wallet?.sameAsPrimary)
+  if (syncedFlag !== wallet?.sameAsPrimary) {
+    setSyncedFlag(wallet?.sameAsPrimary)
+    setSameAsPrimary(wallet?.sameAsPrimary ?? false)
+  }
   const headingId = `carteira-${slot}-titulo`
   const checkboxId = `carteira-${slot}-igual`
   const showForm = Boolean(wallet) || open

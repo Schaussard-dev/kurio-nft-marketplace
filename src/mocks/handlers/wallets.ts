@@ -5,10 +5,10 @@ import {
   walletSchema,
   walletInputSchema,
   type Wallet,
+  type WalletConnection,
   type WalletInput,
   type WalletsResponse,
 } from '@/shared/contracts'
-import { ENS_NAME_PATTERN } from '@/shared/contracts/profile'
 import { getMockConfig } from '../config'
 import { getDb, mutate } from '../db/store'
 import type { WalletRecord } from '../db/schema'
@@ -57,10 +57,29 @@ export function resolveWalletInput(
       fieldErrors: z.flattenError(parsed.error).fieldErrors as FieldErrors,
     }
   const fieldErrors: FieldErrors = {}
-  if (!ENS_NAME_PATTERN.test(parsed.data.ensName)) fieldErrors.ensName = ['Nome ENS inválido']
   if (slot === 'primary' && parsed.data.sameAsPrimary) fieldErrors.sameAsPrimary = [SECONDARY_ONLY_ERROR]
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
   return { input: parsed.data }
+}
+
+/** "Igual à carteira principal": a secondary flagged as a copy follows every edit of the primary. */
+export function syncSecondary(secondary: WalletRecord | undefined, primary: WalletRecord): WalletRecord | undefined {
+  if (!secondary?.sameAsPrimary) return secondary
+  return { ...primary, id: secondary.id, slot: 'secondary', sameAsPrimary: true }
+}
+
+export type ConnectResult = { connection: WalletConnection } | { error: 'NOT_FOUND' | 'WALLET_REJECTED' }
+
+/** Simulated wallet approval for a wallet the user owns; `rejected` is the wallet-reject scenario flag. */
+export function resolveConnect(
+  wallets: WalletRecord[],
+  userId: string,
+  walletId: string,
+  rejected: boolean,
+): ConnectResult {
+  if (!wallets.some((w) => w.id === walletId && w.userId === userId)) return { error: 'NOT_FOUND' }
+  if (rejected) return { error: 'WALLET_REJECTED' }
+  return { connection: { connected: true, sessionId: `wcs_${globalThis.crypto.randomUUID()}` } }
 }
 
 async function readJson(request: Request): Promise<unknown> {
@@ -91,8 +110,20 @@ function upsertHandler(slot: Slot) {
         slot,
         userId: user.id,
       }
+      const secondary =
+        slot === 'primary'
+          ? syncSecondary(
+              current.find((w) => w.slot === 'secondary'),
+              record,
+            )
+          : undefined
       mutate((db) => {
-        db.wallets = [...db.wallets.filter((w) => w !== existing), record]
+        const replaced = new Set<WalletRecord>(
+          [existing, secondary && current.find((w) => w.slot === 'secondary')].filter((w): w is WalletRecord =>
+            Boolean(w),
+          ),
+        )
+        db.wallets = [...db.wallets.filter((w) => !replaced.has(w)), record, ...(secondary ? [secondary] : [])]
       })
       return HttpResponse.json(toWallet(record), {
         status: existing ? 200 : 201,
@@ -119,15 +150,16 @@ export const walletHandlers = [
     withNetwork(({ request, params }) => {
       const user = requireUser(request)
       if (user instanceof Response) return user
-      const wallet = getDb().wallets.find((w) => w.id === params.id && w.userId === user.id)
-      if (!wallet) return apiError(404, 'NOT_FOUND', 'Carteira não encontrada')
-      if (SCENARIOS[getMockConfig().scenario].flags?.walletReject) {
-        return apiError(409, 'WALLET_REJECTED', 'A conexão foi recusada na carteira')
-      }
-      return HttpResponse.json({
-        connected: true,
-        sessionId: `wcs_${globalThis.crypto.randomUUID()}`,
-      })
+      const result = resolveConnect(
+        getDb().wallets,
+        user.id,
+        String(params.id),
+        Boolean(SCENARIOS[getMockConfig().scenario].flags?.walletReject),
+      )
+      if ('connection' in result) return HttpResponse.json(result.connection)
+      return result.error === 'NOT_FOUND'
+        ? apiError(404, 'NOT_FOUND', 'Carteira não encontrada')
+        : apiError(409, 'WALLET_REJECTED', 'A conexão foi recusada na carteira')
     }),
   ),
 ]

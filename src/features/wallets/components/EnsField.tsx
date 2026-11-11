@@ -8,15 +8,18 @@ import { cn } from '@/shared/lib/utils'
 /** "Nome ENS": the Figma ".eth" selector next to the name; the input holds the name without the suffix. */
 export function EnsField({
   id,
+  required = true,
   error,
   registration,
 }: {
   id: string
+  /** Required on Ethereum only; optional on the other networks. */
+  required?: boolean
   error?: string
   registration: UseFormRegisterReturn
 }) {
   return (
-    <AuthField id={id} label="Nome ENS" visibleLabel error={error}>
+    <AuthField id={id} label="Nome ENS" visibleLabel required={required} error={error}>
       {(a11y) => (
         <div className="flex gap-3">
           <div className="relative">
