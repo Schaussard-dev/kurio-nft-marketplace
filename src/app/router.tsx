@@ -1,19 +1,15 @@
-import { Link, createRouter } from '@tanstack/react-router'
+import { createRouter } from '@tanstack/react-router'
 import { routeTree } from '@/routeTree.gen'
+import { NotFound } from '@/app/NotFound'
+import { createQueryClient } from '@/app/query-client'
 
 export const APP_NAME = 'Kurio'
 
-function NotFound() {
-  return (
-    <main>
-      <h1>Página não encontrada</h1>
-      <Link to="/">Voltar para o início</Link>
-    </main>
-  )
-}
+export const queryClient = createQueryClient()
 
 export const router = createRouter({
   routeTree,
+  context: { queryClient },
   defaultNotFoundComponent: NotFound,
 })
 
