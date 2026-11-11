@@ -8,8 +8,12 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  thumbs,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
+}: React.ComponentProps<typeof SliderPrimitive.Root> & {
+  /** Accessible name / value text per thumb (two-thumb range sliders need distinct labels). */
+  thumbs?: { "aria-label": string; "aria-valuetext"?: string }[]
+}) {
   const _values = React.useMemo(
     () =>
       Array.isArray(value)
@@ -50,6 +54,7 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
+          {...thumbs?.[index]}
           className="block size-4 shrink-0 rounded-full border border-primary bg-foreground transition-colors hover:bg-primary-light disabled:pointer-events-none disabled:opacity-50"
         />
       ))}

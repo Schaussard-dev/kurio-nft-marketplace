@@ -51,3 +51,15 @@ export function compare(a: EthString, b: EthString): -1 | 0 | 1 {
 export function sum(values: EthString[]): EthString {
   return canonical(values.reduce((acc, v) => acc.plus(parse(v)), new B(0)))
 }
+
+/** Integer cents for UI controls that need numeric positions (e.g. sliders). Rounds down unless `ceil`. */
+export function toCents(value: EthString, mode: 'floor' | 'ceil' = 'floor'): number {
+  const rounded = parse(value).times(100).round(0, mode === 'ceil' ? Big.roundUp : Big.roundDown)
+  return Number(rounded.toFixed(0))
+}
+
+/** Integer cents back to an ETH string with two decimals ("12.30"). */
+export function fromCents(cents: number): EthString {
+  if (!Number.isInteger(cents) || cents < 0) throw new TypeError(`Invalid cents: ${String(cents)}`)
+  return new B(cents).div(100).toFixed(2)
+}

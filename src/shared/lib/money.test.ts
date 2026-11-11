@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { add, compare, isEthString, mul, percentOf, sub, sum } from './money'
+import { add, compare, fromCents, isEthString, mul, percentOf, sub, sum, toCents } from './money'
 
 describe('money', () => {
   it('adds without float error', () => {
@@ -40,5 +40,15 @@ describe('money', () => {
     expect(() => add('1e3', '1')).toThrow(TypeError)
     expect(() => sum(['1', 'abc'])).toThrow(TypeError)
     expect(() => compare('x', '1')).toThrow(/invalid/i)
+  })
+  it('converts to and from integer cents for slider positions', () => {
+    expect(toCents('12.30')).toBe(1230)
+    expect(toCents('0.02')).toBe(2)
+    expect(toCents('1.005')).toBe(100)
+    expect(toCents('1.005', 'ceil')).toBe(101)
+    expect(fromCents(1230)).toBe('12.30')
+    expect(fromCents(2)).toBe('0.02')
+    expect(fromCents(0)).toBe('0.00')
+    expect(() => fromCents(-1)).toThrow(TypeError)
   })
 })

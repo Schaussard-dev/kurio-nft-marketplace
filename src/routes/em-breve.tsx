@@ -21,6 +21,7 @@ const SECTION_LABELS: Record<string, string> = {
   musica: 'Música',
   'arte-3d': 'Arte 3D',
   utilidade: 'Utilidade',
+  diario: 'Diário da Cunhagem',
 }
 
 export const Route = createFileRoute('/em-breve')({

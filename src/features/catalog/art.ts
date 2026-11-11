@@ -30,3 +30,11 @@ export function artSources(key: ArtKey): ArtSources {
     srcSet: { avif: srcSet(key, 'avif'), webp: srcSet(key, 'webp') },
   }
 }
+
+/** Descriptive alt text for each artwork (spec §10). */
+export const ART_DESCRIPTIONS: Record<ArtKey, string> = {
+  emerald: 'macaco de óculos redondos e jaqueta verde de colegial',
+  sage: 'gorila de chapéu bucket verde e moletom lilás',
+  ivory: 'macaco de blazer marfim e gola alta verde',
+  golden: 'macaco dourado com fones de ouvido e jaqueta creme',
+}
