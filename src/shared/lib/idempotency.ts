@@ -10,6 +10,8 @@ export interface OrderAttempt<T = unknown> {
   payloadHash: string
   /** The body sent with this key (no secrets: order payload only). */
   payload: T
+  /** What the collector reviewed for this payload (shown again when the attempt is replayed). */
+  meta?: unknown
 }
 
 const attemptKey = (userId: string) => `kurio-order-attempt:${userId}`
@@ -22,7 +24,7 @@ export function peekAttempt(userId: string): OrderAttempt | null {
     const key: unknown = Reflect.get(parsed, 'key')
     const payloadHash: unknown = Reflect.get(parsed, 'payloadHash')
     if (typeof key !== 'string' || typeof payloadHash !== 'string' || !Reflect.has(parsed, 'payload')) return null
-    return { key, payloadHash, payload: Reflect.get(parsed, 'payload') }
+    return { key, payloadHash, payload: Reflect.get(parsed, 'payload'), meta: Reflect.get(parsed, 'meta') }
   } catch {
     return null
   }
@@ -32,10 +34,15 @@ export function peekAttempt(userId: string): OrderAttempt | null {
  * The unresolved attempt when one exists (whatever payload is asked now), otherwise a new attempt with
  * a fresh UUID key for this payload, stored before it is sent.
  */
-export function getAttempt<T>(userId: string, payloadHash: string, payload: T): OrderAttempt<T> & { reused: boolean } {
+export function getAttempt<T>(
+  userId: string,
+  payloadHash: string,
+  payload: T,
+  meta?: unknown,
+): OrderAttempt<T> & { reused: boolean } {
   const stored = peekAttempt(userId)
   if (stored) return { ...(stored as OrderAttempt<T>), reused: true }
-  const attempt: OrderAttempt<T> = { key: crypto.randomUUID(), payloadHash, payload }
+  const attempt: OrderAttempt<T> = { key: crypto.randomUUID(), payloadHash, payload, meta }
   try {
     sessionStorage.setItem(attemptKey(userId), JSON.stringify(attempt))
   } catch {

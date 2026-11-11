@@ -1,12 +1,14 @@
 import { CircleAlert, LoaderCircle } from 'lucide-react'
+import { useId } from 'react'
 import type { Quote } from '@/shared/contracts'
 import { formatDiscount, formatEth } from '@/shared/lib/format'
 import { Button } from '@/shared/ui/button'
 import { DialogDescription, DialogTitle } from '@/shared/ui/dialog'
 
 /**
- * Step 3: the quote being confirmed (frozen when the review opened). "Enviar pedido" stays focusable
- * but aria-disabled while the order is in flight, so repeated clicks or Enter key repeats send nothing.
+ * Step 3: the quote being confirmed (frozen when the review opened; for a replay, the snapshot of the
+ * earlier attempt). "Enviar pedido" stays focusable but aria-disabled while the order is in flight, so
+ * repeated clicks or Enter key repeats send nothing; the replay notice describes that button.
  */
 export function ReviewDialog({
   quote,
@@ -16,7 +18,7 @@ export function ReviewDialog({
   networkLabel,
   submitting,
   error,
-  resumes = false,
+  replayNotice,
   onSend,
   onBack,
 }: {
@@ -29,10 +31,11 @@ export function ReviewDialog({
   submitting: boolean
   error?: string
   /** An earlier order is still unconfirmed: sending re-checks it with the same data instead of buying again. */
-  resumes?: boolean
+  replayNotice?: string
   onSend: () => void
   onBack: () => void
 }) {
+  const noticeId = useId()
   return (
     <>
       <DialogTitle className="text-title-20 font-bold text-foreground">Revise seu pedido</DialogTitle>
@@ -69,10 +72,13 @@ export function ReviewDialog({
           </dd>
         </div>
       </dl>
-      {resumes && (
-        <p className="rounded-sm border border-primary/60 bg-primary/10 px-3 py-2 text-body-15 text-foreground">
-          Um pedido anterior ainda aguarda confirmação. Ao enviar, verificamos esse pedido com os mesmos dados, sem
-          criar uma segunda compra.
+      {replayNotice && (
+        <p
+          id={noticeId}
+          data-testid="replay-notice"
+          className="rounded-sm border border-primary/60 bg-primary/10 px-3 py-2 text-body-15 text-foreground"
+        >
+          {replayNotice}
         </p>
       )}
       {error && (
@@ -95,6 +101,7 @@ export function ReviewDialog({
           type="button"
           className="h-12 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
           aria-disabled={submitting || undefined}
+          aria-describedby={replayNotice ? noticeId : undefined}
           onClick={() => {
             if (!submitting) onSend()
           }}

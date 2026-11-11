@@ -118,9 +118,9 @@ export function initialValues(
   const registered = registeredWallets(wallets)
   if (draft) {
     const { knownWalletIds, ...values } = draft
-    // The drafted wallet still exists: its current network/address win over what the draft copied.
+    // The drafted wallet still exists: its current fields win over what the draft copied.
     const drafted = registered.find((w) => w.id === values.walletChoice)
-    if (drafted) return { ...values, network: drafted.network, walletAddress: drafted.address }
+    if (drafted) return { ...values, ...walletFields(drafted) }
     // Back from "Cadastrar carteira": a wallet created after the draft is the one to pay with.
     const created = registered.find((w) => !knownWalletIds.includes(w.id))
     if (values.walletChoice === MANUAL_WALLET && !created) return values
@@ -201,6 +201,11 @@ export interface LineChange {
   name: string
   before: string | null
   after: string | null
+}
+
+/** A renewed quote with the same lines and total: nothing for the collector to confirm again. */
+export function isUnchangedQuote(previous: Quote, next: Quote): boolean {
+  return changedLines(previous, next, {}).length === 0 && previous.total === next.total
 }
 
 /** Lines whose unit price, quantity or presence differ between two quotes (QUOTE_STALE dialog). */

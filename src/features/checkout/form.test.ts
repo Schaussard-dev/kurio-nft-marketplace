@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { createOrderInputSchema, walletSchema, type Profile, type WalletsResponse } from '@/shared/contracts'
 import { WALLET_SEEDS } from '@/mocks/fixtures/users'
 import { MANUAL_WALLET } from './draft'
-import { checkoutFormSchema, connectTarget, initialValues, toOrderInput } from './form'
+import {
+  changedLines,
+  checkoutFormSchema,
+  connectTarget,
+  initialValues,
+  isUnchangedQuote,
+  toOrderInput,
+} from './form'
+import type { Quote } from '@/shared/contracts'
 
 const profile: Profile = {
   id: 'usr_ana',
@@ -41,15 +49,25 @@ describe('checkout form', () => {
 
   const known = ['wlt_ana_primary', 'wlt_ana_secondary']
 
-  it('keeps a restored draft, re-applying the current network/address of its registered wallet', () => {
+  it('keeps a restored draft, re-applying every current field of its registered wallet', () => {
     const values = { ...initialValues(profile, wallets, null), note: 'rascunho' }
     expect(initialValues(profile, wallets, { ...values, knownWalletIds: known })).toEqual(values)
     // The wallet was edited since the draft was saved: its address/network win over the stale draft.
-    const stale = { ...values, walletAddress: '0x0000000000000000000000000000000000000000', network: 'polygon' as const }
+    const stale = {
+      ...values,
+      walletAddress: '0x0000000000000000000000000000000000000000',
+      network: 'polygon' as const,
+      secondaryAddress: 'old.eth',
+      connector: 'coinbase' as const,
+      ensName: 'old',
+    }
     expect(initialValues(profile, wallets, { ...stale, knownWalletIds: known })).toMatchObject({
       walletChoice: 'wlt_ana_primary',
       network: 'ethereum',
       walletAddress: primary.address,
+      secondaryAddress: primary.secondaryAddress ?? '',
+      connector: primary.walletType,
+      ensName: 'ana.kurio',
       note: 'rascunho',
     })
   })
@@ -91,5 +109,47 @@ describe('checkout form', () => {
     expect(issues({ ...values, network: 'solana' })).toContain('walletAddress')
     expect(issues({ ...values, ensName: '' })).toContain('ensName')
     expect(issues({ ...values, network: 'polygon', ensName: '' })).toEqual([])
+  })
+})
+
+const quote = (lines: [string, string, number][], total: string): Quote => ({
+  quoteId: 'qt',
+  lines: lines.map(([lineId, unitPrice, quantity]) => ({
+    lineId,
+    nftId: `nft_${lineId}`,
+    editionId: 'e',
+    unitPrice,
+    quantity,
+    lineTotal: unitPrice,
+    available: 5,
+  })),
+  subtotal: total,
+  discount: '0',
+  networkFee: '0',
+  total,
+  coupon: null,
+  network: 'ethereum',
+  expiresAt: '2026-11-11T12:00:00.000Z',
+  fingerprint: 'f',
+})
+
+describe('quote comparison (QUOTE_STALE)', () => {
+  it('changedLines lists price, quantity, added and removed lines by name', () => {
+    const before = quote([['a', '1.69', 1], ['b', '1.19', 2], ['c', '0.5', 1]], '5')
+    const after = quote([['a', '1.89', 1], ['b', '1.19', 3], ['d', '2', 1]], '7')
+    expect(changedLines(before, after, { a: 'Sage Nomad #009' })).toEqual([
+      { lineId: 'a', name: 'Sage Nomad #009', before: '1.69', after: '1.89' },
+      { lineId: 'b', name: 'nft_b', before: '1.19', after: '1.19' },
+      { lineId: 'c', name: 'nft_c', before: '0.5', after: null },
+      { lineId: 'd', name: 'nft_d', before: null, after: '2' },
+    ])
+    expect(changedLines(before, before, {})).toEqual([])
+  })
+
+  it('isUnchangedQuote: a renewed quote with the same lines and total needs no new confirmation', () => {
+    const before = quote([['a', '1.69', 1]], '1.706')
+    expect(isUnchangedQuote(before, { ...before, quoteId: 'qt_new', expiresAt: '2026-11-11T13:00:00.000Z' })).toBe(true)
+    expect(isUnchangedQuote(before, quote([['a', '1.79', 1]], '1.806'))).toBe(false)
+    expect(isUnchangedQuote(before, { ...before, total: '1.707' })).toBe(false)
   })
 })

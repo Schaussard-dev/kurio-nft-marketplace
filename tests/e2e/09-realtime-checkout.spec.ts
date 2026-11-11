@@ -192,20 +192,22 @@ test.describe('realtime: checkout', () => {
     await expect(page.getByTestId('checkout-total')).toHaveText('1.706 ETH')
     await waitForRealtime(page)
 
-    // The mock raises the first cart line by 0.10 when the checkout's wallet approval comes in.
+    // The mock raises the first cart line by 0.10 when the checkout's wallet approval comes in. A slow
+    // API keeps the page's re-quote in flight when the approval lands, so the review opens on 1.706.
+    await mock.scenario('price-change', { latencyOverride: 1500 })
     await openReview(page)
+    await expect(reviewDialog(page).getByTestId('review-total')).toHaveText('1.706 ETH')
     await expect(page.getByTestId('price-notice')).toContainText('O preço de Sage Nomad #009 mudou de 1.69 para 1.79 ETH')
     await expect(page.getByTestId('checkout-total')).toHaveText('1.806 ETH')
 
+    // Sending the old value is refused (QUOTE_STALE) and the new one must be confirmed.
     await sendButton(page).click()
     const stale = page.getByRole('dialog', { name: 'O valor do pedido mudou' })
-    await expect.poll(async () => page.url().includes('/pedidos/') || (await stale.isVisible())).toBe(true)
-    if (await stale.isVisible()) {
-      // The review still showed the old value: the server refuses it and asks for the new one.
-      await expect(stale.getByTestId('stale-new-total')).toHaveText('1.806 ETH')
-      await stale.getByRole('button', { name: 'Confirmar novo valor' }).click()
-      await sendButton(page).click()
-    }
+    await expect(stale.getByTestId('stale-old-total')).toHaveText('1.706 ETH')
+    await expect(stale.getByTestId('stale-new-total')).toHaveText('1.806 ETH')
+    await stale.getByRole('button', { name: 'Confirmar novo valor' }).click()
+    await expect(reviewDialog(page).getByTestId('review-total')).toHaveText('1.806 ETH')
+    await sendButton(page).click()
     await expect(page).toHaveURL(/\/pedidos\/ord_/)
     const [order] = await listOrders(page)
     expect(order.snapshot.total).toBe('1.806')

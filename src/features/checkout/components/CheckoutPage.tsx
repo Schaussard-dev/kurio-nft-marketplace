@@ -17,7 +17,6 @@ import { useRealtimeEvent } from '@/features/realtime/realtime-hub'
 import { useConnectWallet, useWallets } from '@/features/wallets/queries'
 import { toApiError } from '@/shared/api/api-error'
 import {
-  createOrderInputSchema,
   networkSchema,
   quoteSchema,
   type Cart,
@@ -28,21 +27,22 @@ import {
 } from '@/shared/contracts'
 import { Breadcrumbs } from '@/shared/layout/Breadcrumbs'
 import { formatEth } from '@/shared/lib/format'
-import { clearAttempt, getAttempt, peekAttempt } from '@/shared/lib/idempotency'
+import { clearAttempt } from '@/shared/lib/idempotency'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Dialog, DialogContent } from '@/shared/ui/dialog'
 import { useAnnounce } from '@/shared/ui/LiveRegion'
 import { Skeleton } from '@/shared/ui/Skeleton'
+import { readAttempt, startAttempt, type AttemptDisplay, type StoredAttempt } from '../attempt'
 import { clearCheckoutDraft, loadCheckoutDraft, MANUAL_WALLET, saveCheckoutDraft, type Connector } from '../draft'
 import {
   checkoutFormSchema,
-  changedLines,
   CONNECTOR_LABELS,
   connectTarget,
   FIELD_ORDER,
   initialValues,
+  isUnchangedQuote,
   NETWORK_LABELS,
   registeredWallets,
   shortAddress,
@@ -66,12 +66,18 @@ import { WalletPicker } from './WalletPicker'
 type Flow =
   | { step: 'idle' }
   | { step: 'connect'; status: ConnectStatus }
-  | { step: 'review'; quote: Quote; error?: string; resumes?: boolean }
+  | { step: 'review'; quote: Quote; error?: string; replay?: StoredAttempt }
   | { step: 'stale'; previous: Quote; next: Quote }
 
 const DRAFT_DEBOUNCE_MS = 300
 const STOCK_NOTICE_ID = 'pagamento-aviso-estoque'
 const SEND_ERROR = 'Não foi possível enviar o pedido. Tente novamente.'
+const REPLAY_ENDED = 'O pedido anterior não foi registrado. Revise os dados atuais e envie o pedido novamente.'
+
+/** Names the replayed attempt by what was reviewed for it (not by the current screen). */
+function replayNoticeText(display: AttemptDisplay): string {
+  return `Vamos reenviar o pedido anterior, que ainda aguarda confirmação: ${display.walletLabel} via ${display.connectorLabel} · Rede ${display.networkLabel} · total ${formatEth(display.quote.total)}. Nenhuma compra nova será criada.`
+}
 
 // Element that receives the focus for each field (the first invalid one is focused on submit).
 const FOCUS_IDS: Partial<Record<keyof CheckoutFormValues, string>> = {
@@ -330,16 +336,36 @@ function CheckoutFlow({
     })
   }
 
+  // The unresolved order attempt (outcome unknown), shown as a banner while no dialog is open.
+  const [pendingAttempt, setPendingAttempt] = useState<StoredAttempt | null>(() => readAttempt(userId))
+  const forgetAttempt = () => {
+    clearAttempt(userId)
+    setPendingAttempt(null)
+  }
+
+  /** Review of the current quote, or, while an attempt is unresolved, of exactly what that attempt sent. */
   function openReview() {
+    createOrder.reset()
+    const stored = readAttempt(userId)
+    setPendingAttempt(stored)
+    if (stored) {
+      setFlow({ step: 'review', quote: stored.display.quote, replay: stored })
+      return
+    }
     const current = latestQuote.current
     if (!current) {
       setFlow({ step: 'idle' })
       toast.error('O total ainda está sendo calculado. Tente novamente em instantes.')
       return
     }
-    createOrder.reset()
-    // An earlier order whose outcome is unknown is re-checked (same payload and key) by "Enviar pedido".
-    setFlow({ step: 'review', quote: current, resumes: peekAttempt(userId) !== null })
+    setFlow({ step: 'review', quote: current })
+  }
+
+  /** Back to a normal review of the current form and quote, after a replay ended without an order. */
+  function restartReview(error: string) {
+    const current = latestQuote.current
+    setFlow(current ? { step: 'review', quote: current, error } : { step: 'idle' })
+    if (!current) toast.error(error)
   }
 
   function startConnect() {
@@ -364,32 +390,32 @@ function CheckoutFlow({
 
   const onConfirm = (event: React.FormEvent<HTMLFormElement>) =>
     void form.handleSubmit(
-    () => {
-      flushDraft()
-      setBlockingError(null)
-      if (connectedTarget === targetKey) openReview()
-      else startConnect()
-    },
-    (invalid) => {
-      flushDraft()
-      const first = FIELD_ORDER.find((field) => invalid[field])
-      if (first) focusField(first)
-      announce('Verifique os campos destacados', 'assertive')
-    },
-  )(event)
+      () => {
+        flushDraft()
+        setBlockingError(null)
+        if (connectedTarget === targetKey) openReview()
+        else startConnect()
+      },
+      (invalid) => {
+        flushDraft()
+        const first = FIELD_ORDER.find((field) => invalid[field])
+        if (first) focusField(first)
+        announce('Verifique os campos destacados', 'assertive')
+      },
+    )(event)
 
   /** 4xx other than 401/408/429: the server decided, so the attempt is over and a new key may be minted. */
   function isDefinitive(status: number): boolean {
     return status >= 400 && status < 500 && status !== 401 && status !== 408 && status !== 429
   }
 
-  function submit(variables: CreateOrderVariables) {
+  function submit(variables: CreateOrderVariables, replay: boolean) {
     sending.current = true
     createOrder.mutate(variables, {
       onSuccess: (order) => {
         draftDone.current = true
         savePendingOrderId(userId, order.id)
-        clearAttempt(userId)
+        forgetAttempt()
         clearCheckoutDraft(userId)
         dismissPriceNotices()
         void navigate({ to: '/pedidos/$orderId', params: { orderId: order.id } })
@@ -397,17 +423,29 @@ function CheckoutFlow({
       onError: (error) => {
         const apiError = toApiError(error)
         // Uncertain outcomes keep the attempt: only the same payload + key may be sent again.
-        if (isDefinitive(apiError.status)) clearAttempt(userId)
+        if (isDefinitive(apiError.status)) forgetAttempt()
         const current = flowRef.current
         if (current.step !== 'review') return
         if (apiError.status === 401 || isUncertainOrderError(error)) return
+        if (apiError.code === 'OUT_OF_STOCK') {
+          setFlow({ step: 'idle' })
+          setBlockingError('Alguns itens não têm mais estoque suficiente. Ajuste o carrinho para continuar.')
+          void queryClient.invalidateQueries({ queryKey: ['quote'] })
+          void queryClient.invalidateQueries({ queryKey: ['user', userId, 'cart'] })
+          return
+        }
+        if (replay) {
+          // The earlier order was never created (stale quote, data no longer valid…): nothing of that
+          // old payload is mapped onto the current screen; the normal review of the current data starts.
+          if (apiError.code === 'QUOTE_STALE') void queryClient.invalidateQueries({ queryKey: ['quote'] })
+          restartReview(REPLAY_ENDED)
+          return
+        }
         if (apiError.code === 'QUOTE_STALE') {
           const next = quoteSchema.safeParse((apiError.details as { quote?: unknown } | undefined)?.quote)
           void queryClient.invalidateQueries({ queryKey: ['quote'] })
           if (!next.success) return setFlow({ ...current, error: SEND_ERROR })
-          const unchanged =
-            changedLines(current.quote, next.data, names).length === 0 && current.quote.total === next.data.total
-          if (unchanged && !autoRenewed.current) {
+          if (isUnchangedQuote(current.quote, next.data) && !autoRenewed.current) {
             // Same value under a renewed quote (e.g. expired): never ask to confirm an unchanged value.
             autoRenewed.current = true
             setFlow({ step: 'review', quote: next.data })
@@ -416,13 +454,6 @@ function CheckoutFlow({
             return
           }
           setFlow({ step: 'stale', previous: current.quote, next: next.data })
-          return
-        }
-        if (apiError.code === 'OUT_OF_STOCK') {
-          setFlow({ step: 'idle' })
-          setBlockingError('Alguns itens não têm mais estoque suficiente. Ajuste o carrinho para continuar.')
-          void queryClient.invalidateQueries({ queryKey: ['quote'] })
-          void queryClient.invalidateQueries({ queryKey: ['user', userId, 'cart'] })
           return
         }
         const fields = Object.entries(apiError.fieldErrors ?? {}).filter(([name]) => SERVER_FIELDS[name])
@@ -442,8 +473,8 @@ function CheckoutFlow({
   }
 
   /**
-   * "Enviar pedido". While an earlier attempt is unresolved, its exact payload and key are sent again
-   * (whatever the form or quote say now); otherwise a new attempt is stored before the request.
+   * "Enviar pedido". A replay review re-sends its stored payload and key unchanged; otherwise the
+   * current data becomes a new attempt (payload + review snapshot) stored before the request.
    */
   async function send() {
     const current = flowRef.current
@@ -451,16 +482,27 @@ function CheckoutFlow({
     sending.current = true
     let submitted = false
     try {
-      setFlow({ step: 'review', quote: current.quote, resumes: current.resumes })
-      const input = toOrderInput(getValues(), current.quote.quoteId)
-      const attempt = getAttempt(userId, await hashPayload(input), input)
-      const payload = createOrderInputSchema.safeParse(attempt.payload)
-      if (!payload.success) {
-        clearAttempt(userId)
-        setFlow({ ...current, error: SEND_ERROR })
+      if (current.replay) {
+        setFlow({ ...current, error: undefined })
+        submit({ input: current.replay.payload, idempotencyKey: current.replay.key }, true)
+        submitted = true
         return
       }
-      submit({ input: payload.data, idempotencyKey: attempt.key })
+      setFlow({ step: 'review', quote: current.quote })
+      const input = toOrderInput(getValues(), current.quote.quoteId)
+      const display = {
+        quote: current.quote,
+        walletLabel,
+        connectorLabel,
+        networkLabel: NETWORK_LABELS[current.quote.network],
+      }
+      const attempt = startAttempt(userId, await hashPayload(input), input, display)
+      setPendingAttempt(attempt)
+      if (attempt.reused) {
+        // Another send left an unresolved attempt meanwhile: that one is what goes out, and what is shown.
+        setFlow({ step: 'review', quote: attempt.display.quote, replay: attempt })
+      }
+      submit({ input: attempt.payload, idempotencyKey: attempt.key }, attempt.reused)
       submitted = true
     } catch {
       setFlow({ ...current, error: SEND_ERROR })
@@ -473,18 +515,24 @@ function CheckoutFlow({
     sendRef.current = send
   })
 
-  /** "Verificar pedido": the stored attempt, unchanged. */
+  /** "Verificar pedido" (pending dialog or page banner): the stored attempt, unchanged. */
   function verifyOrder() {
-    const attempt = peekAttempt(userId)
-    const payload = createOrderInputSchema.safeParse(attempt?.payload)
-    if (!attempt || !payload.success || sending.current) return
-    submit({ input: payload.data, idempotencyKey: attempt.key })
+    const stored = readAttempt(userId)
+    setPendingAttempt(stored)
+    if (!stored || sending.current) return
+    const current = flowRef.current
+    if (current.step !== 'review' || !current.replay) {
+      createOrder.reset()
+      setFlow({ step: 'review', quote: stored.display.quote, replay: stored })
+    }
+    submit({ input: stored.payload, idempotencyKey: stored.key }, true)
   }
 
   function closeFlow() {
     if (createOrder.isPending) return
     connect.reset()
     createOrder.reset()
+    setPendingAttempt(readAttempt(userId))
     setFlow({ step: 'idle' })
   }
 
@@ -497,6 +545,7 @@ function CheckoutFlow({
     if (!createOrder.isPending) {
       connect.reset()
       createOrder.reset()
+      setPendingAttempt(readAttempt(userId))
       setFlow({ step: 'idle' })
     }
     toast.warning('Carteira desconectada. Conecte novamente.')
@@ -520,16 +569,17 @@ function CheckoutFlow({
   } else if (flow.step === 'review' && uncertain) {
     dialog = <PendingOrderDialog checking={createOrder.isPending} onVerify={verifyOrder} onClose={closeFlow} />
   } else if (flow.step === 'review') {
+    const shown = flow.replay?.display
     dialog = (
       <ReviewDialog
         quote={flow.quote}
         names={names}
-        walletLabel={walletLabel}
-        connectorLabel={connectorLabel}
-        networkLabel={NETWORK_LABELS[flow.quote.network]}
+        walletLabel={shown ? shown.walletLabel : walletLabel}
+        connectorLabel={shown ? shown.connectorLabel : connectorLabel}
+        networkLabel={shown ? shown.networkLabel : NETWORK_LABELS[flow.quote.network]}
         submitting={createOrder.isPending}
         error={flow.error}
-        resumes={flow.resumes}
+        replayNotice={shown && replayNoticeText(shown)}
         onSend={() => {
           autoRenewed.current = false
           void send()
@@ -562,6 +612,22 @@ function CheckoutFlow({
 
   const notices = (
     <>
+      {pendingAttempt && flow.step === 'idle' && (
+        <div
+          role="status"
+          data-testid="pending-attempt"
+          className="flex flex-col gap-3 rounded-sm border border-primary/60 bg-primary/10 px-4 py-3"
+        >
+          <p className="text-body-15 text-foreground">
+            Um pedido anterior ficou sem confirmação ({pendingAttempt.display.walletLabel} · Rede{' '}
+            {pendingAttempt.display.networkLabel} · total {formatEth(pendingAttempt.display.quote.total)}). Verifique-o
+            antes de continuar: a verificação nunca cria uma segunda compra.
+          </p>
+          <Button type="button" variant="outline" className="h-11 self-start" onClick={verifyOrder}>
+            Verificar pedido
+          </Button>
+        </div>
+      )}
       <PriceChangeNotice nftIds={lines.map((line) => line.nftId)} />
       {issues.length > 0 && (
         <ChangeNotice

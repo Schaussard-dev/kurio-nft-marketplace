@@ -120,20 +120,60 @@ test.describe('payment failures', () => {
     await expect(pending).toHaveCount(0)
     await mock.scenario('default')
 
-    // …the quote is renewed by a realtime price change and a field is edited before trying again.
+    // The page offers to verify the unconfirmed order first.
+    await expect(page.getByTestId('pending-attempt')).toContainText('total 1.706 ETH')
+
+    // …the quote is renewed by a realtime price change, a field is edited and the wallet/network switched.
     expect(await mock.emit({ action: 'nft:update', nftId: 'nft_009', price: '1.89' })).toBe(200)
     await expect(page.getByTestId('checkout-total')).toHaveText('1.906 ETH')
     await showPayerFields(page, isMobile)
     await checkoutForm(page).getByLabel(/^Observação do colecionador/).fill('Outra observação')
+    await page.getByRole('radiogroup', { name: 'Carteira de pagamento' }).getByRole('radio', { name: /Reserva/ }).check()
+    await expect(page.getByTestId('checkout-total')).toHaveText('1.892 ETH')
 
+    // The review shows what will really be re-sent: the earlier attempt (Principal, Ethereum, 1.706).
     await openReview(page)
-    await expect(reviewDialog(page)).toContainText('Um pedido anterior ainda aguarda confirmação')
+    const review = reviewDialog(page)
+    await expect(review.getByTestId('review-total')).toHaveText('1.706 ETH')
+    await expect(review).toContainText('Rede Ethereum')
+    await expect(review).not.toContainText('Polygon')
+    await expect(review.getByTestId('replay-notice')).toContainText('Principal · 0xA91F…E82C via MetaMask · Rede Ethereum · total 1.706 ETH')
+    await expect(sendButton(page)).toHaveAccessibleDescription(/Vamos reenviar o pedido anterior/)
     await sendButton(page).click()
     await expect(page).toHaveURL(`/pedidos/${created.id}`)
     const orders = await listOrders(page)
     expect(orders.map((order) => order.id)).toEqual([created.id])
-    expect(orders[0].snapshot.total).toBe('1.706')
+    expect(orders[0].snapshot).toMatchObject({ total: '1.706', network: 'ethereum' })
     expect(new Set(posts.map((post) => post.headers()['idempotency-key'])).size).toBe(1)
+  })
+
+  test('a reload with an unconfirmed order shows "Verificar pedido" first, which finds the order already created', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await page.clock.install()
+    await gotoFresh('/')
+    await login('ana')
+    await mock.scenario('order-timeout')
+    await openCheckout(page)
+    await openReview(page)
+    const firstPost = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/api/orders'))
+    await sendButton(page).click()
+    await firstPost
+    await expect.poll(async () => (await listOrders(page)).length).toBe(1)
+    const [created] = await listOrders(page)
+
+    // The answer is lost (reload while the request hangs); the attempt survives in this tab.
+    await mock.scenario('default')
+    await openCheckout(page)
+    const banner = page.getByTestId('pending-attempt')
+    await expect(banner).toContainText('Um pedido anterior ficou sem confirmação')
+    await expect(banner).toContainText('total 1.706 ETH')
+    await banner.getByRole('button', { name: 'Verificar pedido' }).click()
+    await expect(page).toHaveURL(`/pedidos/${created.id}`)
+    expect((await listOrders(page)).map((order) => order.id)).toEqual([created.id])
   })
 
   test('sold-out: the edition sells out while ordering → OUT_OF_STOCK alert and checkout blocked until the cart is adjusted', async ({
