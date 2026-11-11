@@ -8,10 +8,11 @@ import { ArtImage } from './ArtImage'
 // Editorial pick drawn in the Figma sidebar; name and art come from the API.
 const FEATURED_NFT_ID = 'nft_009'
 
-/** Sidebar "NFT em destaque". Hidden when the NFT cannot be loaded (e.g. removed from the catalog). */
+/** Sidebar "NFT em destaque". Hidden when the NFT cannot be loaded and nothing is cached (e.g. removed from the catalog). */
 export function FeaturedNft() {
   const { data: nft, isError } = useQuery(nftQueryOptions(FEATURED_NFT_ID))
-  if (isError) return null
+  // A failed background refetch keeps showing cached data; hide only when there is nothing to show.
+  if (isError && !nft) return null
 
   return (
     <section aria-labelledby="destaque-titulo" className="overflow-hidden bg-gradient-to-b from-surface to-ink">

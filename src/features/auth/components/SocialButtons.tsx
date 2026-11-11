@@ -1,9 +1,8 @@
 import { Popover } from 'radix-ui'
 import type { ReactNode } from 'react'
+import { UNAVAILABLE_MESSAGE } from '@/shared/lib/unavailable'
 import { cn } from '@/shared/lib/utils'
 import type { AuthVariant } from './auth-styles'
-
-export const UNAVAILABLE_MESSAGE = 'Indisponível nesta demonstração'
 
 /** Out-of-scope actions (README §3): the trigger opens an honest notice instead of faking success. */
 export function UnavailablePopover({ children }: { children: ReactNode }) {

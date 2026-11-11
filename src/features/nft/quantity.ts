@@ -11,7 +11,8 @@ export interface ClampedQuantity {
 export function clampQuantity(requested: number, edition: Edition, alreadyInCart = 0): ClampedQuantity {
   const max = Math.max(0, Math.min(edition.available - alreadyInCart, edition.maxPerOrder))
   if (max === 0) return { value: 0, limited: true, max: 0 }
-  const value = Math.min(Math.max(1, Math.floor(requested)), max)
+  const wanted = Number.isFinite(requested) ? Math.floor(requested) : 1
+  const value = Math.min(Math.max(1, wanted), max)
   return { value, limited: value >= max, max }
 }
 

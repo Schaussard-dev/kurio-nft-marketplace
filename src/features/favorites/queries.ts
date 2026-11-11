@@ -5,7 +5,7 @@ import { queryKeys } from '@/app/query-client'
 import { useSession } from '@/features/auth/queries'
 import type { FavoritesResponse, NftSummary } from '@/shared/contracts'
 import { fetchFavorites, setFavorite } from './api'
-import { applyFavorite, type FavoriteChange } from './cache'
+import { applyFavorite, revertFavorite, type FavoriteChange } from './cache'
 
 export const FAVORITE_ERROR = 'Não foi possível atualizar seus favoritos. Tente novamente.'
 const TOGGLE_KEY = ['favorites', 'toggle'] as const
@@ -31,7 +31,8 @@ interface ToggleContext {
 
 /**
  * Optimistic toggle (spec §8): cancel the favorites query, snapshot it, write the new set; on error
- * restore the snapshot and tell the user; when the last pending toggle settles, refetch.
+ * undo that change (snapshot only supplies a removed summary, so concurrent toggles of other NFTs
+ * survive) and tell the user; when the last pending toggle settles, refetch.
  */
 export function useToggleFavorite() {
   const queryClient = useQueryClient()
@@ -47,8 +48,12 @@ export function useToggleFavorite() {
       queryClient.setQueryData<FavoritesResponse>(key, (data) => applyFavorite(data, change))
       return { key, snapshot }
     },
-    onError: (_error, _change, context) => {
-      if (context) queryClient.setQueryData(context.key, context.snapshot)
+    onError: (_error, change, context) => {
+      if (context) {
+        queryClient.setQueryData<FavoritesResponse>(context.key, (current) =>
+          revertFavorite(current, change, context.snapshot),
+        )
+      }
       toast.error(FAVORITE_ERROR)
     },
     onSettled: async (_data, _error, _change, context) => {
@@ -62,7 +67,8 @@ export function useToggleFavorite() {
 
 /**
  * Favorite state and toggle for any NFT. Guests are sent to /entrar and come back to the current page
- * (spec §9: "Favoritar exige login, voltando depois ao NFT").
+ * (spec §9: "Favoritar exige login, voltando depois ao NFT"). For a signed-in user nothing happens until
+ * the list has loaded (`ready`): toggling from an unknown state could send the wrong request.
  */
 export function useFavoriteToggle() {
   const session = useSession()
@@ -78,6 +84,7 @@ export function useFavoriteToggle() {
       void navigate({ to: '/entrar', search: { redirect: href } })
       return
     }
+    if (!favorites.isSuccess) return
     toggle.mutate({ nftId, favorite: !isFavorite(nftId), summary })
   }
   return { isFavorite, toggleFavorite, ready: !session || favorites.isSuccess }

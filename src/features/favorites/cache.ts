@@ -19,3 +19,16 @@ export function applyFavorite(data: FavoritesResponse | undefined, change: Favor
     items: change.summary ? [change.summary, ...items] : items,
   }
 }
+
+/**
+ * Rolls back one failed change on top of the current cache (not the whole snapshot), so toggles of
+ * other NFTs made meanwhile are kept. A failed removal gets its summary back from the snapshot.
+ */
+export function revertFavorite(
+  current: FavoritesResponse | undefined,
+  failed: FavoriteChange,
+  snapshot: FavoritesResponse | undefined,
+): FavoritesResponse {
+  const summary = snapshot?.items.find((item) => item.id === failed.nftId) ?? failed.summary
+  return applyFavorite(current, { nftId: failed.nftId, favorite: !failed.favorite, summary })
+}

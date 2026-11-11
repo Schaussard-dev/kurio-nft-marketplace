@@ -3,6 +3,7 @@ import { Heart, Search, ShoppingCart } from 'lucide-react'
 import { toast } from 'sonner'
 import type { NftSummary } from '@/shared/contracts'
 import { formatEth } from '@/shared/lib/format'
+import { UNAVAILABLE_MESSAGE } from '@/shared/lib/unavailable'
 import { cn } from '@/shared/lib/utils'
 import { ART_DESCRIPTIONS } from '../art'
 import { ArtImage } from './ArtImage'
@@ -14,8 +15,6 @@ export interface NftCardActions {
   onToggleFavorite?: (nft: NftSummary) => void
   isFavorite?: (nft: NftSummary) => boolean
 }
-
-const UNAVAILABLE = 'Indisponível nesta demonstração'
 
 const ACTION =
   'relative z-10 inline-flex size-9 items-center justify-center rounded-md bg-ink/90 text-foreground transition-colors hover:bg-primary hover:text-ink'
@@ -31,8 +30,8 @@ export function NftCard({
   isFavorite,
 }: { nft: NftSummary; className?: string } & NftCardActions) {
   const favorite = isFavorite?.(nft) ?? false
-  const addToCart = () => (onAddToCart ? onAddToCart(nft) : toast(UNAVAILABLE))
-  const toggleFavorite = () => (onToggleFavorite ? onToggleFavorite(nft) : toast(UNAVAILABLE))
+  const addToCart = () => (onAddToCart ? onAddToCart(nft) : toast(UNAVAILABLE_MESSAGE))
+  const toggleFavorite = () => (onToggleFavorite ? onToggleFavorite(nft) : toast(UNAVAILABLE_MESSAGE))
   const favoriteLabel = `${favorite ? 'Remover' : 'Adicionar'} ${nft.name} ${favorite ? 'da' : 'à'} lista de interesse`
   const favoriteIcon = <Heart aria-hidden className={cn('size-5', favorite && 'fill-current text-text-accent')} />
 

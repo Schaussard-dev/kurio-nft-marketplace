@@ -14,7 +14,7 @@ import { clampQuantity, resolveEdition } from '@/features/nft/quantity'
 import { toApiError } from '@/shared/api/api-error'
 import { Breadcrumbs } from '@/shared/layout/Breadcrumbs'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
-import { Button } from '@/shared/ui/button'
+import { Button, buttonVariants } from '@/shared/ui/button'
 
 interface NftSearch {
   /** Selected edition id; unknown or sold-out ids fall back to the default edition. */
@@ -45,7 +45,13 @@ function NftLoadError() {
       <TriangleAlert aria-hidden className="size-8 text-danger" />
       <p className="text-body-lg-18 font-bold text-foreground">Não foi possível carregar este NFT.</p>
       <p className="text-body-14 text-text-secondary">Verifique sua conexão e tente novamente.</p>
-      <Button onClick={() => void router.invalidate()}>Tentar novamente</Button>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button onClick={() => void router.invalidate()}>Tentar novamente</Button>
+        {/* Below 768px the detail has no app chrome, so the error must offer a way out itself. */}
+        <Link to="/" hash="catalogo" className={buttonVariants({ variant: 'outline' })}>
+          Voltar ao catálogo
+        </Link>
+      </div>
     </div>
   )
 }

@@ -35,6 +35,20 @@ test.describe('NFT detail', () => {
     await expect(page).toHaveURL(/:\d+\/(#catalogo)?$/)
   })
 
+  test('a failing API shows a retry and a way back to the catalog (also without app chrome on mobile)', async ({
+    page,
+    gotoFresh,
+    mock,
+  }) => {
+    await gotoFresh('/nft/nft_042', { scenario: 'server-error' })
+    await expect(page.getByRole('alert').filter({ hasText: 'Não foi possível carregar este NFT.' })).toBeVisible({
+      timeout: 15_000,
+    })
+    await mock.scenario('default')
+    await page.getByRole('link', { name: 'Voltar ao catálogo' }).click()
+    await expect(page).toHaveURL(/:\d+\/(#catalogo)?$/)
+  })
+
   test('a sold-out edition cannot be selected and says "Esgotada"', async ({ page, gotoFresh }) => {
     await gotoFresh('/nft/nft_042')
     const soldOut = editions(page).getByRole('radio', { name: /^1\/1.*Esgotada/ })

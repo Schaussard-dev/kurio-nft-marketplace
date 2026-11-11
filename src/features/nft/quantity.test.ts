@@ -36,6 +36,11 @@ describe('clampQuantity', () => {
     expect(clampQuantity(2, edition())).toEqual({ value: 2, limited: false, max: 3 })
   })
 
+  it('treats non-finite requests as 1', () => {
+    expect(clampQuantity(Number.NaN, edition())).toEqual({ value: 1, limited: false, max: 3 })
+    expect(clampQuantity(Number.POSITIVE_INFINITY, edition())).toEqual({ value: 1, limited: false, max: 3 })
+  })
+
   it('reports limited when the request lands exactly on the max', () => {
     expect(clampQuantity(3, edition())).toEqual({ value: 3, limited: true, max: 3 })
   })
