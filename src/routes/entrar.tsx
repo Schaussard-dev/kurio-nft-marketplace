@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { redirectIfAuthenticated, validateAuthSearch } from '@/features/auth/auth-route'
+import { AuthScreen } from '@/features/auth/components/AuthDialog'
 
 export const Route = createFileRoute('/entrar')({
-  validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
-    typeof search.redirect === 'string' ? { redirect: search.redirect } : {},
+  validateSearch: validateAuthSearch,
+  beforeLoad: ({ context, search }) => redirectIfAuthenticated(context.queryClient, search),
   component: LoginPage,
 })
 
-// Placeholder; Task 11 builds the login form.
 function LoginPage() {
-  return <h1 className="text-heading-28 text-foreground">Entrar</h1>
+  return <AuthScreen mode="login" search={Route.useSearch()} />
 }

@@ -42,7 +42,8 @@ test.describe('mock control endpoints', () => {
       const res = await fetch('/api/__mock/emit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'session:expire' }),
+        // order:resolve gets its handler with the orders feature (Task 18); pick another unregistered action then.
+        body: JSON.stringify({ action: 'order:resolve', orderId: 'ord_x' }),
       })
       return res.status
     })

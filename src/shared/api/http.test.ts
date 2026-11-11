@@ -82,6 +82,19 @@ describe('http', () => {
     expect(handler).not.toHaveBeenCalled()
   })
 
+  it('does not fire the handler when the request opts out with skipSessionExpiry', async () => {
+    const { request, setSessionExpiredHandler } = await load(
+      (c) => reply(c, 401, { error: { code: 'SESSION_EXPIRED', message: 'x' } }),
+      SESSION,
+    )
+    const handler = vi.fn()
+    setSessionExpiredHandler(handler)
+    await expect(request({ url: '/x', skipSessionExpiry: true }, z.unknown())).rejects.toMatchObject({
+      code: 'SESSION_EXPIRED',
+    })
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it('does not fire the handler for other 401 codes', async () => {
     const { request, setSessionExpiredHandler } = await load(
       (c) => reply(c, 401, { error: { code: 'INVALID_PASSWORD', message: 'x' } }),

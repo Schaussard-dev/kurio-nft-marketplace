@@ -1,20 +1,27 @@
 import { lazy, Suspense } from 'react'
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext, useRouterState } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 import { PageShell } from '@/shared/layout/PageShell'
+import { useMediaQuery } from '@/shared/lib/use-media-query'
 
 // Demo tooling: the chunk is only referenced (and therefore only built) in the mock build.
 const MockPanel =
   import.meta.env.VITE_ENABLE_MOCKS === 'true' ? lazy(() => import('@/features/mock-panel/MockPanel')) : null
+
+const AUTH_PATHS = new Set(['/entrar', '/cadastro'])
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: RootLayout,
 })
 
 function RootLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // Below 768px sign-in/sign-up are full screens without the app chrome (Mobile Login/Cadastro frames).
+  const isDialogWidth = useMediaQuery('(min-width: 768px)')
+  const bare = AUTH_PATHS.has(pathname) && !isDialogWidth
   return (
     <>
-      <PageShell>
+      <PageShell bare={bare}>
         <Outlet />
       </PageShell>
       {MockPanel && (

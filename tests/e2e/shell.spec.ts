@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 /** The page load event can fire before the MSW worker takes control of the page. */
 async function waitForMocks(page: Page) {
@@ -63,27 +64,24 @@ test.describe('app shell', () => {
     await expect(page.locator('main#conteudo')).toBeVisible()
   })
 
-  test('has no horizontal overflow at 390, 768 and 1440', async ({ page }) => {
-    // Seeded session so the guarded profile route renders instead of redirecting.
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        'kurio-session',
-        JSON.stringify({
-          token: 't',
-          expiresAt: '2099-01-01T00:00:00.000Z',
-          user: { id: 'u1', username: 'ana', email: 'ana@kurio.dev', displayName: 'Ana', avatarUrl: null },
-        }),
-      )
-    })
-    for (const width of [390, 768, 1440]) {
-      await page.setViewportSize({ width, height: 900 })
-      for (const path of ['/', '/em-breve', '/carrinho', '/entrar', '/perfil']) {
-        await page.goto(path)
-        await expect(page.locator('main#conteudo h1')).toBeVisible()
-        const overflow = await page.evaluate<number>('document.documentElement.scrollWidth - window.innerWidth')
-        expect(overflow, `${path} at ${width}px`).toBeLessThanOrEqual(0)
+  test('has no horizontal overflow at 390, 768 and 1440', async ({ page, login }) => {
+    // 3 widths x 6 pages, each a full load with the mock worker booting.
+    test.setTimeout(90_000)
+    const measure = async (paths: string[]) => {
+      for (const width of [390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 })
+        for (const path of paths) {
+          await page.goto(path)
+          await expect(page.locator('main#conteudo h1')).toBeVisible()
+          const overflow = await page.evaluate<number>('document.documentElement.scrollWidth - window.innerWidth')
+          expect(overflow, `${path} at ${width}px`).toBeLessThanOrEqual(0)
+        }
       }
     }
+    await measure(['/', '/em-breve', '/carrinho', '/entrar', '/cadastro'])
+    // A real session so the guarded profile route renders instead of redirecting.
+    await login('ana')
+    await measure(['/perfil'])
   })
 
   test('mock panel applies a scenario through reset', async ({ page, isMobile }) => {

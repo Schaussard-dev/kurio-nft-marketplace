@@ -21,7 +21,7 @@ export interface MockControl {
   /** Reseeds the mock DB (applying the scenario seed patch) and activates the scenario. */
   reset(scenario?: ScenarioName): Promise<void>
   /** Switches the active scenario (faults/latency) without reseeding. */
-  setScenario(scenario: ScenarioName, latencyOverride?: number | null): Promise<void>
+  scenario(scenario: ScenarioName, options?: { latencyOverride?: number | null }): Promise<void>
   /** Triggers a mock action (`/api/__mock/emit`); returns the HTTP status. */
   emit(body: Record<string, unknown> & { action: string }): Promise<number>
 }
@@ -30,8 +30,18 @@ export interface GotoOptions {
   scenario?: ScenarioName
 }
 
+export type DemoUser = 'ana' | 'bruno'
+
+/** Seeded fictional accounts (src/mocks/fixtures/users.ts). */
+export const DEMO_USERS: Record<DemoUser, { email: string; password: string; displayName: string }> = {
+  ana: { email: 'ana@kurio.dev', password: 'Kurio@2026', displayName: 'Ana Souza' },
+  bruno: { email: 'bruno@kurio.dev', password: 'Kurio@2026', displayName: 'Bruno Lima' },
+}
+
 interface Fixtures {
   mock: MockControl
+  /** Signs in through the real /entrar form and waits for the header account menu. */
+  login: (user: DemoUser) => Promise<void>
   /** Navigates with `?scenario=…&reset=1` (fresh seed) and waits until MSW controls the page. */
   gotoFresh: (path: string, options?: GotoOptions) => Promise<void>
 }
@@ -66,11 +76,24 @@ export const test = base.extend<Fixtures>({
       async reset(scenario) {
         expect(await callMock(page, 'reset', scenario ? { scenario } : {})).toBe(200)
       },
-      async setScenario(scenario, latencyOverride) {
+      async scenario(scenario, { latencyOverride } = {}) {
         const body = latencyOverride === undefined ? { scenario } : { scenario, latencyOverride }
         expect(await callMock(page, 'scenario', body)).toBe(200)
       },
       emit: (body) => callMock(page, 'emit', body),
+    })
+  },
+
+  login: async ({ page }, provide) => {
+    await provide(async (user) => {
+      const { email, password, displayName } = DEMO_USERS[user]
+      await page.goto('/entrar')
+      await waitForMocks(page)
+      const form = page.getByRole('form', { name: 'Entrar' })
+      await form.getByRole('textbox', { name: 'E-mail', exact: true }).fill(email)
+      await form.getByLabel('Senha', { exact: true }).fill(password)
+      await form.getByRole('button', { name: 'Entrar', exact: true }).click()
+      await expect(page.getByRole('button', { name: `Menu de ${displayName}` })).toBeVisible()
     })
   },
 

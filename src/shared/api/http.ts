@@ -3,6 +3,13 @@ import type { ZodType } from 'zod'
 import { ApiError, toApiError } from './api-error'
 import { getGuestCartId, sessionStore } from './session-storage'
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** The caller handles its own 401 (session check, logout): the global expiry handler is not called. */
+    skipSessionExpiry?: boolean
+  }
+}
+
 export const http = axios.create({
   // Same-origin /api unless overridden (mock worker and real API share the path).
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -29,8 +36,10 @@ http.interceptors.response.use(
     if (isCancel(error)) return Promise.reject(error)
     const apiError = toApiError(error)
     const sentToken = axios.isAxiosError(error) && Boolean(error.config?.headers?.get('Authorization'))
+    const skip = axios.isAxiosError(error) && error.config?.skipSessionExpiry === true
     if (
       sentToken &&
+      !skip &&
       apiError.status === 401 &&
       (apiError.code === 'SESSION_EXPIRED' || apiError.code === 'UNAUTHENTICATED')
     ) {

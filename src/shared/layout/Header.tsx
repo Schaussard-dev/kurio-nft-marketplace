@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { DropdownMenu } from 'radix-ui'
 import { LogIn, Search, ShoppingCart } from 'lucide-react'
-import { useSession, useSignOut } from '@/features/auth/queries'
+import { useLogout, useSession } from '@/features/auth/queries'
 import { cn } from '@/shared/lib/utils'
 import { buttonVariants } from '@/shared/ui/button'
 
@@ -68,7 +68,7 @@ const MENU_ITEM =
 
 function UserMenu({ displayName }: { displayName: string }) {
   const navigate = useNavigate()
-  const signOut = useSignOut()
+  const logout = useLogout()
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
@@ -93,7 +93,7 @@ function UserMenu({ displayName }: { displayName: string }) {
             Lista de interesse
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="my-1 h-px bg-border-strong" />
-          <DropdownMenu.Item className={cn(MENU_ITEM, 'font-bold')} onSelect={signOut}>
+          <DropdownMenu.Item className={cn(MENU_ITEM, 'font-bold')} disabled={logout.isPending} onSelect={() => logout.mutate()}>
             Sair
           </DropdownMenu.Item>
         </DropdownMenu.Content>

@@ -134,7 +134,7 @@ test.describe('catalog (Início)', () => {
     const retry = page.getByRole('button', { name: 'Tentar novamente' })
     await expect(retry).toBeVisible()
 
-    await mock.setScenario('default')
+    await mock.scenario('default')
     await retry.click()
     await expect(cards(page)).toHaveCount(9)
   })

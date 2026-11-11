@@ -21,6 +21,8 @@ export interface SessionRecord {
   token: string
   userId: string
   expiresAt: string
+  /** Authenticated requests served with this token (drives the `sessionTtlRequests` scenario flag). */
+  requestCount?: number
 }
 
 /** Same fields as the NftDetail contract (incl. reviews, editions, version). */

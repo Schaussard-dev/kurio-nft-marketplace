@@ -1,10 +1,15 @@
 import { useCallback } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { stripDefaults, withFilterChange, type CatalogSearch } from './search-params'
+import { catalogSearchSchema, stripDefaults, withFilterChange, type CatalogSearch } from './search-params'
 
-/** Validated catalog search params of `/` (defaults filled in). */
+const DEFAULT_SEARCH: CatalogSearch = catalogSearchSchema.parse({})
+
+/**
+ * Validated catalog search params of `/` (defaults filled in). Outside `/` (Início rendered behind
+ * the desktop sign-in dialog) the catalog shows its defaults.
+ */
 export function useCatalogSearch(): CatalogSearch {
-  return useSearch({ from: '/' })
+  return useSearch({ from: '/', shouldThrow: false }) ?? DEFAULT_SEARCH
 }
 
 interface CatalogNavigateOptions {
