@@ -288,6 +288,14 @@ function CheckoutFlow({
   }
   const [connectedTarget, setConnectedTarget] = useState<string | null>(null)
   const targetKey = `${walletChoice}|${connector}`
+  // Latest values for callbacks that outlive the render that created them (mutation results).
+  const connectedRef = useRef(connectedTarget)
+  const targetRef = useRef(targetKey)
+  useEffect(() => {
+    connectedRef.current = connectedTarget
+    targetRef.current = targetKey
+  }, [connectedTarget, targetKey])
+  const [flowNotice, setFlowNotice] = useState<string | null>(null)
   const connect = useConnectWallet()
   const createOrder = useCreateOrder()
   const sending = useRef(false)
@@ -364,8 +372,14 @@ function CheckoutFlow({
   /** Back to a normal review of the current form and quote, after a replay ended without an order. */
   function restartReview(error: string) {
     const current = latestQuote.current
-    setFlow(current ? { step: 'review', quote: current, error } : { step: 'idle' })
-    if (!current) toast.error(error)
+    // A review of the current data is only allowed once the wallet approved it (same rule as "Confirmar
+    // compra"): otherwise back to the form, where "Confirmar compra" asks the wallet first.
+    if (!current || connectedRef.current !== targetRef.current) {
+      setFlow({ step: 'idle' })
+      setFlowNotice(error)
+      return
+    }
+    setFlow({ step: 'review', quote: current, error })
   }
 
   function startConnect() {
@@ -393,6 +407,7 @@ function CheckoutFlow({
       () => {
         flushDraft()
         setBlockingError(null)
+        setFlowNotice(null)
         if (connectedTarget === targetKey) openReview()
         else startConnect()
       },
@@ -635,6 +650,11 @@ function CheckoutFlow({
           title="Ajuste as quantidades no carrinho para continuar"
           items={issues.map((issue) => `${issue.name}: ${outOfStockMessage(issue.available)}`)}
         />
+      )}
+      {flowNotice && flow.step === 'idle' && (
+        <p role="alert" className="rounded-sm border border-danger/60 bg-danger/10 px-4 py-3 text-body-15 text-foreground">
+          {flowNotice}
+        </p>
       )}
       {blockingError && (
         <div role="alert" className="flex flex-col gap-2 rounded-sm border border-danger/60 bg-danger/10 px-4 py-3">

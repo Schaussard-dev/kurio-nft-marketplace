@@ -176,6 +176,42 @@ test.describe('payment failures', () => {
     expect((await listOrders(page)).map((order) => order.id)).toEqual([created.id])
   })
 
+  test('a verified attempt that the server refuses never opens a review without a wallet approval for the current data', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await gotoFresh('/')
+    await login('ana')
+    await openCheckout(page)
+    await openReview(page)
+    // The order request never reaches the API (network down, the automatic resend too): an attempt is left.
+    await mock.scenario('offline')
+    await sendButton(page).click()
+    await expect(page.getByRole('dialog', { name: 'Confirmando pedido' }).getByRole('button', { name: 'Verificar pedido' })).toBeVisible()
+    await mock.scenario('default')
+    // Meanwhile the price changes, so the stored attempt's quote is stale.
+    expect(await mock.emit({ action: 'nft:update', nftId: 'nft_009', price: '1.89' })).toBe(200)
+
+    // New page load: no wallet approval in memory. The banner verifies the attempt; the server refuses it.
+    await openCheckout(page)
+    await page.getByTestId('pending-attempt').getByRole('button', { name: 'Verificar pedido' }).click()
+    await expect(page.getByRole('alert').filter({ hasText: 'O pedido anterior não foi registrado' })).toBeVisible()
+    await expect(reviewDialog(page)).toHaveCount(0)
+    await expect(page.getByTestId('pending-attempt')).toHaveCount(0)
+    expect(await listOrders(page)).toHaveLength(0)
+
+    // Continuing means a new approval in the wallet, then the review of the current data.
+    const connects: string[] = []
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && /\/api\/wallets\/[^/]+\/connect$/.test(r.url())) connects.push(r.url())
+    })
+    await openReview(page)
+    expect(connects).toHaveLength(1)
+    await expect(reviewDialog(page).getByTestId('review-total')).toHaveText('1.906 ETH')
+  })
+
   test('sold-out: the edition sells out while ordering → OUT_OF_STOCK alert and checkout blocked until the cart is adjusted', async ({
     page,
     gotoFresh,
