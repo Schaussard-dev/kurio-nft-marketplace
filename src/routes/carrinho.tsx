@@ -11,6 +11,7 @@ import { CouponForm } from '@/features/cart/components/CouponForm'
 import { EmptyCart } from '@/features/cart/components/EmptyCart'
 import { OrderSummary } from '@/features/cart/components/OrderSummary'
 import { OrderSummarySkeleton } from '@/features/cart/components/OrderSummarySkeleton'
+import { PriceChangeNotice } from '@/features/cart/components/PriceChangeNotice'
 import { CART_MUTATION_KEY, CART_NETWORK, useCart, useQuote, useRemoveCartLine } from '@/features/cart/queries'
 import { toApiError } from '@/shared/api/api-error'
 import type { CartLine } from '@/shared/contracts'
@@ -157,6 +158,7 @@ function CartPage() {
     content = (
       <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_332px] lg:items-start lg:gap-20">
         <div className="flex min-w-0 flex-col gap-4">
+          <PriceChangeNotice nftIds={lines?.map((line) => line.nftId) ?? []} />
           {issues.length > 0 && (
             <ChangeNotice
               id={STOCK_NOTICE_ID}

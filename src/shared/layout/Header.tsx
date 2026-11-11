@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { DropdownMenu } from 'radix-ui'
 import { LogIn, Search, ShoppingCart } from 'lucide-react'
 import { useLogout, useSession } from '@/features/auth/queries'
+import { ConnectionStatus } from '@/features/realtime/ConnectionStatus'
 import { cn } from '@/shared/lib/utils'
 import { buttonVariants } from '@/shared/ui/button'
 
@@ -146,6 +147,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
         </nav>
 
         <div className="flex items-center justify-end gap-2">
+          <ConnectionStatus />
           <SearchButton />
           <span className="hidden lg:inline-flex">
             <CartLink count={cartCount} />

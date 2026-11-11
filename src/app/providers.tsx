@@ -1,6 +1,7 @@
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import { useEffect, type ReactNode } from 'react'
 import { queryKeys } from '@/app/query-client'
+import { RealtimeProvider } from '@/features/realtime/RealtimeProvider'
 import { sessionStore } from '@/shared/api/session-storage'
 import { LiveRegionProvider } from '@/shared/ui/LiveRegion'
 import { Toaster } from '@/shared/ui/sonner'
@@ -15,8 +16,10 @@ export function Providers({ queryClient, children }: { queryClient: QueryClient;
   return (
     <QueryClientProvider client={queryClient}>
       <LiveRegionProvider>
-        {children}
-        <Toaster position="bottom-right" />
+        <RealtimeProvider>
+          {children}
+          <Toaster position="bottom-right" />
+        </RealtimeProvider>
       </LiveRegionProvider>
     </QueryClientProvider>
   )

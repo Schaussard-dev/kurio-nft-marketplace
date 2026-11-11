@@ -24,6 +24,10 @@ export interface MockControl {
   scenario(scenario: ScenarioName, options?: { latencyOverride?: number | null }): Promise<void>
   /** Triggers a mock action (`/api/__mock/emit`); returns the HTTP status. */
   emit(body: Record<string, unknown> & { action: string }): Promise<number>
+  /** Same as emit, also returning the JSON body (e.g. `nft:update` answers `{ ok, eventId, version }`). */
+  emitJson<T = Record<string, unknown>>(
+    body: Record<string, unknown> & { action: string },
+  ): Promise<{ status: number; body: T }>
 }
 
 export interface GotoOptions {
@@ -94,6 +98,10 @@ export async function waitForApiIdle(page: Page, { quietMs = 1000, timeout = 15_
  * service worker, so it would never reach MSW.
  */
 async function callMock(page: Page, path: string, body: unknown): Promise<number> {
+  return (await callMockJson(page, path, body)).status
+}
+
+async function callMockJson<T>(page: Page, path: string, body: unknown): Promise<{ status: number; body: T }> {
   await waitForMocks(page)
   return page.evaluate(
     async ({ path, body }) => {
@@ -102,10 +110,18 @@ async function callMock(page: Page, path: string, body: unknown): Promise<number
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
       })
-      return res.status
+      return { status: res.status, body: (await res.json().catch(() => null)) as T }
     },
     { path, body },
   )
+}
+
+/**
+ * Resolves once the app's Socket.IO client is connected (header status `data-status`). The mock socket
+ * server lives in the page, so an event emitted before the connection exists reaches nobody.
+ */
+export async function waitForRealtime(page: Page): Promise<void> {
+  await expect(page.getByTestId('socket-status')).toHaveAttribute('data-status', 'connected')
 }
 
 export const test = base.extend<Fixtures>({
@@ -119,6 +135,7 @@ export const test = base.extend<Fixtures>({
         expect(await callMock(page, 'scenario', body)).toBe(200)
       },
       emit: (body) => callMock(page, 'emit', body),
+      emitJson: <T>(body: Record<string, unknown> & { action: string }) => callMockJson<T>(page, 'emit', body),
     })
   },
 

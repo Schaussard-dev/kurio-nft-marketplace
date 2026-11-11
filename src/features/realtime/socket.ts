@@ -14,6 +14,8 @@ export function createSocket(token: string): Socket {
     transports: ['websocket'],
     auth: { token },
     autoConnect: false,
+    // One Manager per session socket: tearing it down never affects the next session's connection.
+    forceNew: true,
     reconnectionDelay: 500,
     reconnectionDelayMax: 3000,
   })

@@ -1,3 +1,4 @@
+import { HttpResponse } from 'msw'
 import { getDb } from '../db/store'
 import { registerMockAction } from '../handlers/mock-control'
 import { apiError } from '../network'
@@ -14,7 +15,9 @@ export function registerRealtimeMockActions(): void {
     const patch = nftPatchSchema.safeParse({ price, editions: editionPatch })
     const unknownEdition = editionPatch?.some((change) => !nft.editions.some((e) => e.id === change.id))
     if (!patch.success || unknownEdition) return apiError(422, 'VALIDATION_ERROR', 'Alteração de NFT inválida')
-    commitNftUpdate(nftId, patch.data)
+    // The eventId lets tests (and the demo panel) replay exactly this event later.
+    const { eventId, version } = commitNftUpdate(nftId, patch.data)
+    return HttpResponse.json({ ok: true, eventId, version })
   })
 
   registerMockAction('event:replay', ({ eventId }) => {
