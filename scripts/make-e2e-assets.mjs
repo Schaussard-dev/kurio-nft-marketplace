@@ -1,5 +1,5 @@
 // Generates the avatar fixtures used by tests/e2e/08-profile-wallets.spec.ts (deterministic).
-// avatar.png: small 64x64 gradient. big.png: seeded noise PNG just over 2 MB (does not compress).
+// avatar.png: small 64x64 gradient. (The >2 MB case is built in memory by the spec.)
 import sharp from 'sharp'
 import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
@@ -19,13 +19,3 @@ for (let y = 0; y < size; y++) {
 }
 await sharp(small, { raw: { width: size, height: size, channels: 3 } }).png().toFile(fileURLToPath(new URL('avatar.png', dir)))
 
-const side = 860
-const noise = Buffer.alloc(side * side * 3)
-let seed = 123456789
-for (let i = 0; i < noise.length; i++) {
-  seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
-  noise[i] = seed >>> 24
-}
-await sharp(noise, { raw: { width: side, height: side, channels: 3 } })
-  .png({ compressionLevel: 1 })
-  .toFile(fileURLToPath(new URL('big.png', dir)))

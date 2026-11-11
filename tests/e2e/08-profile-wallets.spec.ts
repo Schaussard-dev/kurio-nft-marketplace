@@ -1,7 +1,6 @@
 import { DEMO_USERS, expect, test, waitForMocks } from './fixtures'
 
 const AVATAR = 'tests/e2e/assets/avatar.png'
-const BIG = 'tests/e2e/assets/big.png'
 
 test.describe('perfil', () => {
   test.beforeEach(async ({ gotoFresh, login, page }) => {
@@ -50,6 +49,32 @@ test.describe('perfil', () => {
     await expect(name).toHaveAccessibleDescription('Campo obrigatório')
   })
 
+  test('rejects a whitespace-only display name', async ({ page }) => {
+    const form = page.getByRole('form', { name: 'Dados do perfil' })
+    const name = form.getByRole('textbox', { name: /^Nome de exibição/ })
+    await name.fill('   ')
+    await form.getByRole('button', { name: 'Salvar' }).click()
+    await expect(name).toHaveAttribute('aria-invalid', 'true')
+    await expect(name).toHaveAccessibleDescription('Campo obrigatório')
+    await expect(page.getByText('Perfil atualizado')).toHaveCount(0)
+  })
+
+  test('saves an ENS name typed with .eth without doubling the suffix', async ({ page }) => {
+    const form = page.getByRole('form', { name: 'Dados do perfil' })
+    const ens = form.getByRole('textbox', { name: /^Nome ENS/ })
+    await ens.fill('bad name')
+    await form.getByRole('button', { name: 'Salvar' }).click()
+    await expect(ens).toHaveAttribute('aria-invalid', 'true')
+    await ens.fill('foo.eth')
+    await form.getByRole('button', { name: 'Salvar' }).click()
+    await expect(page.getByText('Perfil atualizado')).toBeVisible()
+    await page.reload()
+    await waitForMocks(page)
+    await expect(
+      page.getByRole('form', { name: 'Dados do perfil' }).getByRole('textbox', { name: /^Nome ENS/ }),
+    ).toHaveValue('foo')
+  })
+
   test('rejects a taken username on the field', async ({ page }) => {
     const form = page.getByRole('form', { name: 'Dados do perfil' })
     const username = form.getByRole('textbox', { name: /^Nome de usuário/ })
@@ -82,8 +107,15 @@ test.describe('perfil', () => {
       if (request.url().includes('/api/me/avatar')) calls.push(request.method())
     })
     const field = page.getByRole('group', { name: 'Avatar' })
-    await field.getByLabel('Alterar avatar').setInputFiles(BIG)
+    await field.getByLabel('Alterar avatar').setInputFiles({
+      name: 'big.png',
+      mimeType: 'image/png',
+      buffer: Buffer.alloc(2 * 1024 * 1024 + 1),
+    })
     await expect(field.getByRole('alert')).toHaveText('Arquivo maior que 2 MB.')
+    await expect(field.getByRole('button', { name: 'Alterar', exact: true })).toHaveAccessibleDescription(
+      'Arquivo maior que 2 MB.',
+    )
     await expect(field.getByRole('img')).toHaveCount(0)
     expect(calls).toEqual([])
   })

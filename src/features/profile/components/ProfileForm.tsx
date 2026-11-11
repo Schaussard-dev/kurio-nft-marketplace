@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ChevronDown, LoaderCircle } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { AuthField } from '@/features/auth/components/AuthField'
 import { toApiError } from '@/shared/api/api-error'
 import { updateProfileInputSchema, type Profile, type UpdateProfileInput } from '@/shared/contracts'
@@ -16,10 +17,16 @@ const ENS_SUFFIX = '.eth'
 
 // Figma draws a ".eth" selector next to the name: the input holds the name without the suffix.
 const toFormEns = (ensName: string) => (ensName.endsWith(ENS_SUFFIX) ? ensName.slice(0, -ENS_SUFFIX.length) : ensName)
+// A pasted "foo.eth" must not become "foo.eth.eth": a trailing .eth is dropped before the suffix is added.
 const toStoredEns = (name: string) => {
-  const trimmed = name.trim()
-  return trimmed ? `${trimmed}${ENS_SUFFIX}` : ''
+  const label = name.trim().replace(/\.eth$/i, '')
+  return label ? `${label}${ENS_SUFFIX}` : ''
 }
+
+// The field holds the name without the suffix, so it is validated before the suffix is added.
+const formSchema = updateProfileInputSchema.extend({
+  ensName: z.string().regex(/^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*)?$/i, 'Use letras, números ou hífen'),
+})
 
 function toFormValues(profile: Profile): UpdateProfileInput {
   return {
@@ -40,7 +47,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
     reset,
     formState: { errors },
   } = useForm<UpdateProfileInput>({
-    resolver: zodResolver(updateProfileInputSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: toFormValues(profile),
   })
 

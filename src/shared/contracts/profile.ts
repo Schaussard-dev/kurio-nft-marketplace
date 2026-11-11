@@ -13,12 +13,15 @@ export const profileSchema = z.object({
 })
 export type Profile = z.infer<typeof profileSchema>
 
+/** Empty, or a dotted name ending in .eth (labels: letters, digits, hyphen). */
+export const ENS_NAME_PATTERN = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*\.eth)?$/i
+
 export const updateProfileInputSchema = z.object({
-  displayName: requiredStringSchema,
+  displayName: z.string().trim().min(1, 'Campo obrigatório'),
   username: usernameSchema,
   email: emailSchema,
   walletNickname: z.string(),
-  ensName: z.string(),
+  ensName: z.string().regex(ENS_NAME_PATTERN, 'Nome ENS inválido: use letras, números ou hífen'),
 })
 export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>
 

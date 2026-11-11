@@ -58,11 +58,16 @@ export function AvatarField({ displayName, avatarUrl }: { displayName: string; a
           type="file"
           accept="image/png,image/jpeg,image/webp"
           aria-label="Alterar avatar"
-          aria-describedby={error ? errorId : undefined}
           hidden
           onChange={(event) => onPick(event.target.files?.[0])}
         />
-        <Button type="button" disabled={busy} onClick={() => inputRef.current?.click()} className="h-14 px-6">
+        <Button
+          type="button"
+          disabled={busy}
+          aria-describedby={error ? errorId : undefined}
+          onClick={() => inputRef.current?.click()}
+          className="h-14 px-6"
+        >
           {setAvatar.isPending ? 'Enviando…' : 'Alterar'}
         </Button>
         <Button type="button" variant="ghost" disabled={busy || !avatarUrl} onClick={onRemove}>
