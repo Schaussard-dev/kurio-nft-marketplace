@@ -106,3 +106,8 @@
     opacity: 0.6;
   }
 }
+
+/* A page with its own fixed bottom bar (mobile NFT detail) lifts the demo panel trigger above it. */
+body:has([data-bottom-bar]) .mock-panel-trigger {
+  bottom: 12.5rem;
+}

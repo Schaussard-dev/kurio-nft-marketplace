@@ -16,9 +16,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  // Below 768px sign-in/sign-up are full screens without the app chrome (Mobile Login/Cadastro frames).
+  // Below 768px sign-in/sign-up and the NFT detail are full screens without the app chrome
+  // (Mobile Login/Cadastro/Detalhes frames; the detail has its own back button and bottom bar).
   const isDialogWidth = useMediaQuery('(min-width: 768px)')
-  const bare = AUTH_PATHS.has(pathname) && !isDialogWidth
+  const bare = (AUTH_PATHS.has(pathname) || pathname.startsWith('/nft/')) && !isDialogWidth
   return (
     <>
       <PageShell bare={bare}>

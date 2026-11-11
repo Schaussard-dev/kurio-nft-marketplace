@@ -23,7 +23,13 @@ const ACTION =
 export const CARD_IMAGE_SIZES = '(min-width: 1024px) 250px, (min-width: 768px) 30vw, 45vw'
 
 /** Catalog card: whole card links to the detail page; hover/focus reveals cart, favorite and view actions. */
-export function NftCard({ nft, onAddToCart, onToggleFavorite, isFavorite }: { nft: NftSummary } & NftCardActions) {
+export function NftCard({
+  nft,
+  className,
+  onAddToCart,
+  onToggleFavorite,
+  isFavorite,
+}: { nft: NftSummary; className?: string } & NftCardActions) {
   const favorite = isFavorite?.(nft) ?? false
   const addToCart = () => (onAddToCart ? onAddToCart(nft) : toast(UNAVAILABLE))
   const toggleFavorite = () => (onToggleFavorite ? onToggleFavorite(nft) : toast(UNAVAILABLE))
@@ -35,7 +41,7 @@ export function NftCard({ nft, onAddToCart, onToggleFavorite, isFavorite }: { nf
       data-testid="nft-card"
       data-category={nft.category}
       data-network={nft.network}
-      className="group relative flex flex-col max-md:even:mt-8"
+      className={cn('group relative flex flex-col max-md:even:mt-8', className)}
     >
       <div className="relative rounded-3xl bg-surface p-1 md:rounded-none md:px-1 md:py-5">
         <ArtImage

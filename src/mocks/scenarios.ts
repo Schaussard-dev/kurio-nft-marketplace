@@ -68,8 +68,8 @@ export const SCENARIOS: Record<ScenarioName, ScenarioConfig> = {
   'favorite-fail': {
     latency: DEFAULT_LATENCY,
     routeFaults: [
-      { method: 'POST', pathPattern: '/api/favorites*', status: 503, code: 'TRANSIENT' },
-      { method: 'DELETE', pathPattern: '/api/favorites*', status: 503, code: 'TRANSIENT' },
+      { method: 'PUT', pathPattern: '/api/favorites/*', status: 500, code: 'TRANSIENT' },
+      { method: 'DELETE', pathPattern: '/api/favorites/*', status: 500, code: 'TRANSIENT' },
     ],
   },
   'session-expired': { latency: DEFAULT_LATENCY, flags: { sessionTtlRequests: 3 } },

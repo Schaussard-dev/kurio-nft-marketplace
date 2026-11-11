@@ -1,9 +1,11 @@
 import { http, HttpResponse } from 'msw'
 import {
   catalogQuerySchema,
+  nftDetailSchema,
   nftSummarySchema,
   type CatalogQuery,
   type CatalogResponse,
+  type NftDetail,
   type NftSummary,
 } from '@/shared/contracts'
 import { compare } from '@/shared/lib/money'
@@ -74,7 +76,10 @@ function priceRange(nfts: NftRecord[]): CatalogResponse['facets']['priceRange'] 
   return { min, max }
 }
 
-const toSummary = (nft: NftRecord): NftSummary => nftSummarySchema.parse(nft)
+export const toSummary = (nft: NftRecord): NftSummary => nftSummarySchema.parse(nft)
+
+/** The detail payload: exactly the contract shape (Zod strips any field the record may carry beyond it). */
+export const toDetail = (nft: NftRecord): NftDetail => nftDetailSchema.parse(nft)
 
 /** Pure catalog query over the mock NFTs: filters, sort, page and facets (each facet ignores its own group). */
 export function queryCatalog(nfts: NftRecord[], query: CatalogQuery): CatalogResponse {
@@ -128,7 +133,7 @@ export const nftHandlers = [
     withNetwork(({ params }) => {
       const nft = getDb().nfts.find((item) => item.id === params.id)
       if (!nft) return apiError(404, 'NOT_FOUND', 'NFT não encontrado')
-      return HttpResponse.json(nft)
+      return HttpResponse.json(toDetail(nft))
     }),
   ),
 ]

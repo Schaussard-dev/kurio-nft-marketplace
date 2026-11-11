@@ -94,7 +94,7 @@ export default function MockPanel() {
           type="button"
           variant="secondary"
           size="sm"
-          className="fixed bottom-24 left-3 z-50 border border-border-strong lg:bottom-4"
+          className="mock-panel-trigger fixed bottom-24 left-3 z-50 border border-border-strong lg:bottom-4"
         >
           <FlaskConical aria-hidden />
           Simulação
