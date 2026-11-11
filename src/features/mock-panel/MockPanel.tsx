@@ -55,30 +55,31 @@ export default function MockPanel() {
   const [price, setPrice] = useState('')
   const [eventId, setEventId] = useState('')
 
-  async function run(request: () => Promise<Response>, successMessage: string, reload = false) {
+  async function run(request: () => Promise<Response>, successMessage: string, reload = false): Promise<boolean> {
     try {
       const res = await request()
       if (res.status === 501) {
         toast.error('Ação ainda não disponível')
-        return
+        return false
       }
       if (!res.ok) {
         toast.error('A simulação recusou a ação')
-        return
+        return false
       }
       if (reload) await queryClient.invalidateQueries()
       toast.success(successMessage)
+      return true
     } catch {
       toast.error('Não foi possível falar com a simulação')
+      return false
     }
   }
 
   const emit = (body: EmitBody, message: string) => run(() => post('emit', body), message)
 
   // /scenario alone would not apply seed patches, so a scenario change always goes through a reseed.
-  const applyScenario = (next: ScenarioName) => {
-    setScenario(next)
-    return run(() => post('reset', { scenario: next }), 'Cenário aplicado', true)
+  const applyScenario = async (next: ScenarioName) => {
+    if (await run(() => post('reset', { scenario: next }), 'Cenário aplicado', true)) setScenario(next)
   }
 
   const needNft = (action: () => void) => {

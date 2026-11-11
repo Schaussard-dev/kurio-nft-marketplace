@@ -55,7 +55,7 @@ function SearchButton() {
           field.focus()
           return
         }
-        void navigate({ to: '/', search: { q: '' }, hash: 'catalogo' })
+        void navigate({ to: '/', hash: 'catalogo' })
       }}
     >
       <Search className="size-6" aria-hidden />

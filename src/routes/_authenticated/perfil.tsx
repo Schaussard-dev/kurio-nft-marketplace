@@ -15,7 +15,7 @@ function ProfileLayout() {
   return (
     <div className="grid gap-6 lg:grid-cols-[288px_1fr]">
       <aside aria-label="Menu do perfil" className="min-w-0 self-start bg-surface">
-        <h2 className="px-4 pt-4 pb-3 text-title-22 font-bold text-foreground">Meu perfil</h2>
+        <p className="px-4 pt-4 pb-3 text-title-22 font-bold text-foreground">Meu perfil</p>
         <nav aria-label="Seções do perfil" className="flex overflow-x-auto lg:flex-col">
           <Link to="/perfil" activeOptions={{ exact: true }} activeProps={ACTIVE} className={ITEM}>
             <User className="size-5" aria-hidden />

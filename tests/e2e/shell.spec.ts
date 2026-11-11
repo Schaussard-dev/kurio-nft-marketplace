@@ -63,11 +63,26 @@ test.describe('app shell', () => {
     await expect(page.locator('main#conteudo')).toBeVisible()
   })
 
-  test('has no horizontal overflow', async ({ page }) => {
-    for (const path of ['/', '/em-breve', '/carrinho']) {
-      await page.goto(path)
-      const overflow = await page.evaluate<number>('document.documentElement.scrollWidth - window.innerWidth')
-      expect(overflow, path).toBeLessThanOrEqual(0)
+  test('has no horizontal overflow at 390, 768 and 1440', async ({ page }) => {
+    // Seeded session so the guarded profile route renders instead of redirecting.
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'kurio-session',
+        JSON.stringify({
+          token: 't',
+          expiresAt: '2099-01-01T00:00:00.000Z',
+          user: { id: 'u1', username: 'ana', email: 'ana@kurio.dev', displayName: 'Ana', avatarUrl: null },
+        }),
+      )
+    })
+    for (const width of [390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 })
+      for (const path of ['/', '/em-breve', '/carrinho', '/entrar', '/perfil']) {
+        await page.goto(path)
+        await expect(page.locator('main#conteudo h1')).toBeVisible()
+        const overflow = await page.evaluate<number>('document.documentElement.scrollWidth - window.innerWidth')
+        expect(overflow, `${path} at ${width}px`).toBeLessThanOrEqual(0)
+      }
     }
   })
 
@@ -77,11 +92,22 @@ test.describe('app shell', () => {
     await waitForMocks(page)
     await page.getByRole('button', { name: 'Simulação' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
+
     const resetRequest = page.waitForRequest(
       (r) => r.url().endsWith('/api/__mock/reset') && r.method() === 'POST',
     )
-    await page.getByRole('button', { name: 'Reset' }).click()
-    await resetRequest
+    await page.getByRole('combobox').click()
+    await page.getByRole('option', { name: 'Catálogo vazio' }).click()
+    const request = await resetRequest
+    expect(request.postDataJSON()).toEqual({ scenario: 'empty' })
+
+    // The select only reflects the scenario after the reseed succeeded, and every query is invalidated.
+    // No data-driven page exists yet, so the reload side effect is the success toast (invalidateQueries runs just before it).
+    await expect(page.getByText('Cenário aplicado')).toBeVisible()
+    await expect(page.getByRole('combobox')).toContainText('Catálogo vazio')
+
+    // Wallet disconnect has no server-side handler yet (501).
+    // TODO Task 17: this assertion must change once wallet:disconnect is implemented.
     await page.getByRole('button', { name: 'Desconectar carteira' }).click()
     await expect(page.getByText('Ação ainda não disponível').first()).toBeVisible()
   })
