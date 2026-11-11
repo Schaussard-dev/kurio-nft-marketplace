@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import type { z } from 'zod'
+import type { Network } from './common'
 import type { ArtKey } from '@/features/catalog/art'
 import {
   addCartItemInputSchema,
@@ -189,8 +190,12 @@ describe('nft', () => {
       reviewCount: 3,
       editions: [edition],
       gallery: ['emerald', 'ivory'],
+      reviews: [{ id: 'r1', author: 'Ana', rating: 5, comment: 'ótimo', createdAt: NOW }],
     }
     expect(nftDetailSchema.safeParse(detail).success).toBe(true)
+    const withoutReviews: Record<string, unknown> = { ...detail }
+    delete withoutReviews.reviews
+    expect(nftDetailSchema.safeParse(withoutReviews).success).toBe(false)
   })
 
   it('catalogQuerySchema defaults', () => {
@@ -205,6 +210,18 @@ describe('nft', () => {
     expect(r.minPrice).toBe('0.5')
     expect(catalogQuerySchema.safeParse({ page: '0' }).success).toBe(false)
     expect(catalogQuerySchema.safeParse({ networks: 'bitcoin' }).success).toBe(false)
+  })
+
+  it('catalogQuerySchema pageSize is optional, coerced and bounded', () => {
+    expect(catalogQuerySchema.parse({ pageSize: '12' }).pageSize).toBe(12)
+    expect(catalogQuerySchema.safeParse({ pageSize: '0' }).success).toBe(false)
+    expect(catalogQuerySchema.safeParse({ pageSize: '49' }).success).toBe(false)
+  })
+
+  it('catalogQuerySchema input type is precise for router validateSearch', () => {
+    type Input = z.input<typeof catalogQuerySchema>
+    expectTypeOf<Input['networks']>().toEqualTypeOf<Network | Network[] | undefined>()
+    expectTypeOf<Input['categories']>().toEqualTypeOf<string | string[] | undefined>()
   })
 
   it('catalogResponseSchema', () => {
