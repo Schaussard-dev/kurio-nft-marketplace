@@ -4,6 +4,7 @@ import { getDb, initDb, memoryStorage, mutate, setStorage } from '../db/store'
 import type { OrderRecord } from '../db/schema'
 import { MAX_EVENT_LOG, commitNftUpdate, commitOrderUpdate, commitWalletDisconnect, replayEvent } from './commit'
 import {
+  disconnectUser,
   dropAll,
   isDropped,
   readConnectToken,
@@ -100,6 +101,8 @@ describe('commitNftUpdate', () => {
 
   it('rejects invalid patches and unknown resources without side effects', () => {
     expect(() => commitNftUpdate('nft_042', { price: '-1' })).toThrow()
+    expect(() => commitNftUpdate('nft_042', {})).toThrow(/Empty NFT patch/)
+    expect(() => commitNftUpdate('nft_042', { editions: [] })).toThrow(/Empty NFT patch/)
     expect(() => commitNftUpdate('nft_999', { price: '1.00' })).toThrow(/Unknown NFT/)
     expect(() => commitNftUpdate('nft_042', { editions: [{ id: 'nope', available: 1 }] })).toThrow(/Unknown edition/)
     expect(getDb().eventLog).toEqual([])
@@ -180,6 +183,15 @@ describe('replayEvent', () => {
     ])
     expect(replayEvent('unknown')).toBe(false)
   })
+
+  it('forgets replayable envelopes on resetRealtimeServer', () => {
+    const envelope = commitNftUpdate('nft_042', { price: '1.29' })
+    resetRealtimeServer()
+    const ana = fakeConnection()
+    registerConnection('usr_ana', ana.io)
+    expect(replayEvent(envelope.eventId)).toBe(false)
+    expect(ana.emitted).toEqual([])
+  })
 })
 
 describe('mock socket server', () => {
@@ -193,6 +205,38 @@ describe('mock socket server', () => {
     expect(ana.emitted).toEqual([])
     restore()
     expect(isDropped()).toBe(false)
+  })
+
+  it('disconnectUser closes only that user connections and empties the room', () => {
+    const ana1 = fakeConnection()
+    const ana2 = fakeConnection()
+    const bruno = fakeConnection()
+    registerConnection('usr_ana', ana1.io)
+    registerConnection('usr_ana', ana2.io)
+    registerConnection('usr_bruno', bruno.io)
+    disconnectUser('usr_ana')
+    expect(ana1.isClosed()).toBe(true)
+    expect(ana2.isClosed()).toBe(true)
+    expect(bruno.isClosed()).toBe(false)
+
+    seedOrder()
+    commitOrderUpdate('ord_test', { status: 'confirmed' })
+    commitWalletDisconnect('usr_ana')
+    commitNftUpdate('nft_042', { price: '1.29' })
+    expect(ana1.emitted).toEqual([])
+    expect(ana2.emitted).toEqual([])
+    expect(bruno.emitted.map(([type]) => type)).toEqual(['nft.updated'])
+  })
+
+  it('stops pinging a connection once dropped', () => {
+    vi.useFakeTimers()
+    const ana = fakeConnection()
+    registerConnection('usr_ana', ana.io)
+    vi.advanceTimersByTime(25_000)
+    expect(ana.io.rawClient.send).toHaveBeenCalledTimes(1)
+    dropAll()
+    vi.advanceTimersByTime(100_000)
+    expect(ana.io.rawClient.send).toHaveBeenCalledTimes(1)
   })
 
   it('a timed drop restores by itself', () => {

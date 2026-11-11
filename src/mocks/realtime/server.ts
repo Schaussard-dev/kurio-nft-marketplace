@@ -94,6 +94,32 @@ export function emitToAll(envelope: EventEnvelope): void {
   for (const entry of connections) entry.io.client.emit(envelope.type, envelope)
 }
 
+/** Closes and forgets every connection of a user (session expiry/logout isolation). */
+export function disconnectUser(userId: string): void {
+  for (const entry of [...(rooms.get(userId) ?? [])]) {
+    unregister(entry)
+    entry.io.rawClient.close()
+  }
+}
+
+/** Recent envelopes kept in memory so `event:replay` can re-send one unchanged. */
+const MAX_REPLAYABLE = 200
+const replayable = new Map<string, EventEnvelope>()
+
+export function rememberForReplay(envelope: EventEnvelope): void {
+  replayable.set(envelope.eventId, envelope)
+  if (replayable.size > MAX_REPLAYABLE) replayable.delete(replayable.keys().next().value!)
+}
+
+/** Re-sends a past envelope unchanged to its original audience. Returns false when unknown. */
+export function replayEnvelope(eventId: string): boolean {
+  const envelope = replayable.get(eventId)
+  if (!envelope) return false
+  if (envelope.userId) emitToUser(envelope.userId, envelope)
+  else emitToAll(envelope)
+  return true
+}
+
 /** Mock-only probe (spike/e2e): tells each connection which user the server resolved. */
 export function emitWhoAmI(): void {
   for (const entry of connections) entry.io.client.emit('mock.whoami', { userId: entry.userId })
@@ -124,9 +150,10 @@ export function isDropped(): boolean {
   return dropped
 }
 
-/** Test helper: forgets all connections and drop state. */
+/** Test helper: forgets all connections, replayable envelopes and drop state. */
 export function resetRealtimeServer(): void {
   for (const entry of [...connections]) unregister(entry)
+  replayable.clear()
   restore()
 }
 
@@ -146,9 +173,12 @@ export function createSocketHandler() {
     // frame carrying `auth.token` arrives (sent right after the Engine.IO handshake).
     const io = toSocketIo(connection)
     let unregisterConnection = registerConnection(null, io)
+    let authenticated = false
     connection.client.addEventListener('message', (event) => {
+      if (authenticated) return
       const token = readConnectToken(event.data)
       if (token === undefined) return
+      authenticated = true
       unregisterConnection()
       unregisterConnection = registerConnection(resolveUserId(token), io)
     })

@@ -8,23 +8,24 @@ import {
   type OrderUpdatedData,
 } from '@/shared/contracts'
 import { bumpVersion, getDb, mutate } from '../db/store'
-import { emitToAll, emitToUser } from './server'
+import { emitToAll, emitToUser, rememberForReplay, replayEnvelope } from './server'
 
 /**
  * Commit pipeline: every stateful mock change that has a realtime event goes through here,
  * so the DB (read by REST handlers) and the socket never diverge (spec §6).
  */
 
-/** Bounds for the persisted eventId log and the in-memory envelopes kept for `event:replay`. */
+/** Bound for the persisted eventId log (full envelopes for replay live in server.ts, in memory). */
 export const MAX_EVENT_LOG = 500
-const MAX_REPLAYABLE = 200
 
-const replayable = new Map<string, EventEnvelope>()
-
-export const nftPatchSchema = z.object({
-  price: ethStringSchema.optional(),
-  editions: z.array(z.object({ id: z.string(), available: z.number().int().min(0) })).optional(),
-})
+export const nftPatchSchema = z
+  .object({
+    price: ethStringSchema.optional(),
+    editions: z.array(z.object({ id: z.string(), available: z.number().int().min(0) })).optional(),
+  })
+  .refine((patch) => patch.price !== undefined || (patch.editions?.length ?? 0) > 0, {
+    message: 'Empty NFT patch: provide price and/or editions',
+  })
 export type NftPatch = z.infer<typeof nftPatchSchema>
 
 export const orderPatchSchema = orderSchema.pick({ status: true, resolvedAt: true, declineReason: true }).partial()
@@ -45,8 +46,7 @@ function record(envelope: EventEnvelope): void {
     db.eventLog.push(envelope.eventId)
     if (db.eventLog.length > MAX_EVENT_LOG) db.eventLog.splice(0, db.eventLog.length - MAX_EVENT_LOG)
   })
-  replayable.set(envelope.eventId, envelope)
-  if (replayable.size > MAX_REPLAYABLE) replayable.delete(replayable.keys().next().value!)
+  rememberForReplay(envelope)
 }
 
 /** Updates price and/or edition availability, bumps the NFT version and broadcasts `nft.updated`. */
@@ -115,9 +115,5 @@ export function commitWalletDisconnect(userId: string): EventEnvelope {
 
 /** Re-sends a past envelope unchanged (duplicate/out-of-order delivery tests). Returns false when unknown. */
 export function replayEvent(eventId: string): boolean {
-  const envelope = replayable.get(eventId)
-  if (!envelope) return false
-  if (envelope.userId) emitToUser(envelope.userId, envelope)
-  else emitToAll(envelope)
-  return true
+  return replayEnvelope(eventId)
 }

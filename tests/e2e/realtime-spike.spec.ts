@@ -102,6 +102,17 @@ test.describe('realtime spike', () => {
       expect(envelope.version).toBeGreaterThan(1)
     }
 
+    // An empty patch (no price, no editions) is rejected and emits nothing.
+    const emptyStatus = await page.evaluate(async () => {
+      const res = await fetch('/api/__mock/emit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'nft:update', nftId: 'nft_042' }),
+      })
+      return res.status
+    })
+    expect(emptyStatus).toBe(422)
+
     // event:replay re-sends the exact same envelope.
     const first = (await eventsOf(page, 'ana')).find((e) => e.name === 'nft.updated')!.payload as { eventId: string }
     await emit(page, { action: 'event:replay', eventId: first.eventId })
@@ -113,6 +124,8 @@ test.describe('realtime spike', () => {
   })
 
   test('(b) the server resolves the session token to the user', async ({ page }) => {
+    const socketUrls: string[] = []
+    page.on('websocket', (socket) => socketUrls.push(socket.url()))
     await bootWithSession(page)
     await openSocket(page, 'ana', SPIKE_TOKEN)
     await openSocket(page, 'guest', '')
@@ -129,6 +142,21 @@ test.describe('realtime spike', () => {
     })
     expect(Object.keys(transportQuery)).not.toContain('token')
     expect(JSON.stringify(transportQuery)).not.toContain(SPIKE_TOKEN)
+    // Mocked sockets never reach the network (page "websocket" events stay empty), so also read
+    // the URL of the WebSocket instance the transport actually opened.
+    const openedUrl = await page.evaluate(() => {
+      const registry = (globalThis as Record<string, unknown>).__spike as Record<
+        string,
+        { socket: { io: { engine: { transport: { ws: { url: string } } } } } }
+      >
+      return registry.ana.socket.io.engine.transport.ws.url
+    })
+    expect(openedUrl).toContain('/socket.io/')
+    // Filter on /socket.io/: Vite's own HMR socket legitimately carries a ?token= of its own.
+    for (const url of [openedUrl, ...socketUrls.filter((u) => u.includes('/socket.io/'))]) {
+      expect(url).not.toContain(SPIKE_TOKEN)
+      expect(new URL(url).searchParams.has('token')).toBe(false)
+    }
 
     await emit(page, { action: 'whoami' })
 
