@@ -133,6 +133,45 @@ function genericCopy(name: string, collection: string, network: Network) {
   }
 }
 
+// Generated NFTs per category; with the 9 Figma NFTs, totals are 10 for arte-digital,
+// musica and colecionaveis (two pages at pageSize 9) and 5 for the other categories.
+const GENERATED_CATEGORY_COUNTS: Record<string, number> = {
+  'arte-digital': 7,
+  musica: 7,
+  colecionaveis: 8,
+  'arte-3d': 4,
+  fotografia: 5,
+  generativa: 5,
+  jogos: 5,
+  assinaturas: 5,
+  utilidade: 5,
+}
+
+/** Deterministic, shuffled category plan for the 51 generated NFTs. */
+function planGeneratedCategories(): string[] {
+  const plan = Object.entries(GENERATED_CATEGORY_COUNTS).flatMap(([id, count]) =>
+    Array.from({ length: count }, () => id),
+  )
+  const shuffleRng = createRng(77)
+  for (let i = plan.length - 1; i > 0; i--) {
+    const j = Math.floor(shuffleRng() * (i + 1))
+    ;[plan[i], plan[j]] = [plan[j]!, plan[i]!]
+  }
+  return plan
+}
+
+/** Price tiers (in cents) so prices spread over the whole 0.02-12.30 slider range. */
+function tieredCents(rng: () => number, tier: number): number {
+  const ranges: [number, number][] = [
+    [5, 150],
+    [150, 400],
+    [310, 800],
+    [600, 1229],
+  ]
+  const [min, max] = ranges[tier]!
+  return min + Math.floor(rng() * (max - min + 1))
+}
+
 export function buildNfts(): NftDetail[] {
   const rng = createRng(2026)
   const usedTokens = new Set(FIGMA_NFTS.map((n) => n.tokenNumber))
@@ -174,6 +213,9 @@ export function buildNfts(): NftDetail[] {
     })
   })
 
+  const generatedCategories = planGeneratedCategories()
+  const seenPerCategory = new Map<string, number>()
+
   for (let i = 0; i < 51; i++) {
     let tokenNumber = 1 + Math.floor(rng() * 999)
     while (usedTokens.has(tokenNumber)) tokenNumber = (tokenNumber % 999) + 1
@@ -181,13 +223,16 @@ export function buildNfts(): NftDetail[] {
 
     const id = nftId(tokenNumber)
     const name = `${pick(rng, ADJECTIVES)} ${pick(rng, NOUNS)} #${String(tokenNumber).padStart(3, '0')}`
-    const network = pick(rng, NETWORKS)
     const collection = pick(rng, COLLECTIONS)
-    const category = pick(rng, CATEGORIES).id
+    const category = generatedCategories[i]!
+    // Networks cycle per category so every category covers all three networks evenly.
+    const occurrence = seenPerCategory.get(category) ?? 0
+    seenPerCategory.set(category, occurrence + 1)
+    const network = NETWORKS[(occurrence + CATEGORIES.findIndex((c) => c.id === category)) % 3]!
     const art = pick(rng, ARTS)
 
     // Force the extremes of the price slider drawn in Figma (0,02 - 12,30).
-    const cents = i === 0 ? 2 : i === 1 ? 1230 : 2 + Math.floor(rng() * rng() * 1229)
+    const cents = i === 0 ? 2 : i === 1 ? 1230 : tieredCents(rng, i % 4)
     const hasPrevious = rng() < 0.2
     const previousPrice = hasPrevious ? formatCents(Math.min(1230, cents + 5 + Math.floor(rng() * 40))) : null
     const rare = rng() < 0.15

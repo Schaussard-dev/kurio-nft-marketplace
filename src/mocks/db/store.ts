@@ -45,7 +45,13 @@ function load(): MockDb | null {
     const raw = resolveStorage().getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<MockDb>
-    return parsed.version === 1 ? (parsed as MockDb) : null
+    const arrays = ['users', 'sessions', 'nfts', 'carts', 'favorites', 'wallets', 'orders', 'idempotency', 'coupons', 'eventLog'] as const
+    const valid =
+      parsed.version === 1 &&
+      arrays.every((key) => Array.isArray(parsed[key])) &&
+      typeof parsed.resourceVersions === 'object' &&
+      parsed.resourceVersions !== null
+    return valid ? (parsed as MockDb) : null
   } catch {
     return null
   }

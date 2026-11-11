@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { nftDetailSchema, walletSchema } from '@/shared/contracts'
 import { createRng } from './prng'
+import type { OrderRecord } from './schema'
 import { createSeed } from './seed'
-import { bumpVersion, getDb, initDb, memoryStorage, mutate, resetDb, setStorage } from './store'
+import { STORAGE_KEY, bumpVersion, getDb, initDb, memoryStorage, mutate, resetDb, setStorage } from './store'
 
-const STORAGE_KEY = 'kurio-mock-db:v1'
 
 describe('createRng', () => {
   it('is deterministic and within [0, 1)', () => {
@@ -88,5 +88,102 @@ describe('store', () => {
     expect(bumpVersion('nft:nft_042')).toBe(2)
     expect(bumpVersion('nft:nft_042')).toBe(3)
     expect(getDb().nfts.find((n) => n.id === 'nft_042')!.version).toBe(3)
+  })
+})
+
+describe('seed variety', () => {
+  const countBy = <T>(items: T[], key: (item: T) => string) => {
+    const map = new Map<string, number>()
+    for (const item of items) map.set(key(item), (map.get(key(item)) ?? 0) + 1)
+    return map
+  }
+
+  it('spreads categories and networks deterministically', async () => {
+    const { nfts } = await createSeed()
+    const perCategory = countBy(nfts, (n) => n.category)
+    expect(perCategory.size).toBe(9)
+    for (const count of perCategory.values()) expect(count).toBeGreaterThanOrEqual(5)
+    expect([...perCategory.values()].filter((c) => c >= 10).length).toBeGreaterThanOrEqual(3)
+    const perPair = countBy(nfts, (n) => `${n.category}|${n.network}`)
+    for (const [category, count] of perPair) {
+      const total = perCategory.get(category.split('|')[0]!)!
+      expect(count).toBeGreaterThanOrEqual(total >= 10 ? 2 : 1)
+    }
+    for (const [category, total] of perCategory) {
+      for (const network of ['ethereum', 'polygon', 'solana']) {
+        expect(perPair.get(`${category}|${network}`) ?? 0, `${category} ${network} of ${total}`).toBeGreaterThanOrEqual(1)
+      }
+    }
+    expect(perPair.get('musica|polygon')).toBeGreaterThanOrEqual(2)
+  })
+
+  it('spreads prices over the slider range', async () => {
+    const { nfts } = await createSeed()
+    const prices = nfts.map((n) => Number(n.price))
+    expect(Math.min(...prices)).toBe(0.02)
+    expect(Math.max(...prices)).toBe(12.3)
+    expect(prices.filter((p) => p > 3).length).toBeGreaterThanOrEqual(8)
+  })
+
+  it('keeps recent NFTs for the "new" tab and the coupons deterministic', async () => {
+    const db = await createSeed()
+    const limit = Date.parse('2026-11-01T12:00:00.000Z') - 30 * 86_400_000
+    expect(db.nfts.filter((n) => Date.parse(n.createdAt) > limit).length).toBeGreaterThanOrEqual(8)
+    const coupon = (code: string) => db.coupons.find((c) => c.code === code)!
+    expect(coupon('KURIO10').percent).toBe(10)
+    expect(coupon('GENESIS5').percent).toBe(5)
+    expect(Date.parse(coupon('LANCAMENTO24').expiresAt!)).toBeLessThan(Date.parse('2026-11-01T12:00:00.000Z'))
+  })
+})
+
+describe('store isolation', () => {
+  beforeEach(async () => {
+    setStorage(memoryStorage())
+    await initDb()
+  })
+
+  it('resetDb restores nested data mutated in place', async () => {
+    mutate((db) => {
+      const nft = db.nfts.find((n) => n.id === 'nft_042')!
+      nft.editions[2]!.available = 0
+      nft.reviews.pop()
+      db.wallets[0]!.nickname = 'Mudada'
+      db.orders.push({ id: 'ord_x' } as unknown as OrderRecord)
+    })
+    await resetDb()
+    const fresh = await createSeed()
+    expect(getDb()).toEqual(fresh)
+    expect(getDb().orders).toEqual([])
+  })
+
+  it('createSeed shares no references between calls or with the live db', async () => {
+    const before = await createSeed()
+    mutate((db) => {
+      db.nfts[0]!.editions[0]!.available = 77
+      db.wallets[0]!.nickname = 'Mudada'
+      db.coupons[0]!.percent = 99
+      db.favorites.push({ userId: 'usr_bruno', nftId: 'nft_009' })
+    })
+    expect(await createSeed()).toEqual(before)
+  })
+
+  it('a persisted reload still parses every NFT', async () => {
+    const storage = memoryStorage()
+    setStorage(storage)
+    await initDb()
+    mutate((db) => {
+      db.eventLog.push('persisted')
+    })
+    await initDb()
+    expect(getDb().nfts).toHaveLength(60)
+    for (const nft of getDb().nfts) expect(nftDetailSchema.safeParse(nft).success).toBe(true)
+  })
+
+  it('falls back to the seed when the persisted blob is structurally invalid', async () => {
+    const storage = memoryStorage()
+    storage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, users: [] }))
+    setStorage(storage)
+    await initDb()
+    expect(getDb().nfts).toHaveLength(60)
   })
 })
