@@ -6,6 +6,7 @@ import { MAX_EVENT_LOG, commitNftUpdate, commitOrderUpdate, commitWalletDisconne
 import {
   dropAll,
   isDropped,
+  readConnectToken,
   registerConnection,
   resetRealtimeServer,
   resolveUserId,
@@ -210,6 +211,16 @@ describe('mock socket server', () => {
     vi.advanceTimersByTime(50_000)
     expect(ana.io.rawClient.send).toHaveBeenCalledTimes(2)
     expect(ana.io.rawClient.send).toHaveBeenCalledWith('2')
+  })
+
+  it('reads auth.token only from default-namespace CONNECT frames', () => {
+    expect(readConnectToken('40{"token":"abc"}')).toBe('abc')
+    expect(readConnectToken('40{"token":""}')).toBeNull()
+    expect(readConnectToken('40')).toBeNull()
+    expect(readConnectToken('40{broken')).toBeNull()
+    expect(readConnectToken('42["nft.updated",{}]')).toBeUndefined()
+    expect(readConnectToken('3')).toBeUndefined()
+    expect(readConnectToken(new ArrayBuffer(2))).toBeUndefined()
   })
 
   it('resolves only valid, unexpired session tokens', () => {

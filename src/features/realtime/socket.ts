@@ -6,15 +6,13 @@ export function resolveSocketUrl(): string {
 }
 
 /**
- * Creates a lazy Socket.IO client. The session token travels both in the CONNECT `auth`
- * payload (what a real Socket.IO server reads) and in the handshake query string
- * (what the mock server can read, see spec §6 "Spike results"). Guests pass an empty token.
+ * Creates a lazy Socket.IO client. The session token travels only in the CONNECT `auth`
+ * payload, never in the URL (keeps it out of logs and history). Guests pass an empty token.
  */
 export function createSocket(token: string): Socket {
   return io(resolveSocketUrl(), {
     transports: ['websocket'],
     auth: { token },
-    query: { token },
     autoConnect: false,
     reconnectionDelay: 500,
     reconnectionDelayMax: 3000,

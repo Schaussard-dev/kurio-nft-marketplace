@@ -32,6 +32,25 @@ function resolveSocketUrl(): string {
   return import.meta.env.VITE_SOCKET_URL || globalThis.location.origin
 }
 
+/**
+ * Reads `auth.token` from a raw Socket.IO CONNECT frame on the default namespace
+ * (Engine.IO "4" message + Socket.IO "0" connect: `40{"token":"…"}`).
+ * The binding never surfaces CONNECT packets, so the server inspects raw client frames.
+ * Returns undefined for any other frame, null for a CONNECT without a usable token.
+ */
+export function readConnectToken(frame: unknown): string | null | undefined {
+  if (typeof frame !== 'string' || !frame.startsWith('40')) return undefined
+  const payload = frame.slice(2)
+  if (!payload.startsWith('{')) return null
+  try {
+    const auth: unknown = JSON.parse(payload)
+    const token = typeof auth === 'object' && auth !== null ? Reflect.get(auth, 'token') : undefined
+    return typeof token === 'string' && token !== '' ? token : null
+  } catch {
+    return null
+  }
+}
+
 /** Unknown, missing or expired tokens connect as guests (public events only). */
 export function resolveUserId(token: string | null): string | null {
   if (!token) return null
@@ -123,7 +142,15 @@ export function createSocketHandler() {
       connection.client.close(1006, 'Mock socket dropped')
       return
     }
-    const token = connection.client.url.searchParams.get('token')
-    registerConnection(resolveUserId(token), toSocketIo(connection))
+    // Starts as a guest (public broadcast set); joins the user room once the CONNECT
+    // frame carrying `auth.token` arrives (sent right after the Engine.IO handshake).
+    const io = toSocketIo(connection)
+    let unregisterConnection = registerConnection(null, io)
+    connection.client.addEventListener('message', (event) => {
+      const token = readConnectToken(event.data)
+      if (token === undefined) return
+      unregisterConnection()
+      unregisterConnection = registerConnection(resolveUserId(token), io)
+    })
   })
 }

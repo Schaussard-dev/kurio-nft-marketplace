@@ -119,6 +119,17 @@ test.describe('realtime spike', () => {
     await expect.poll(() => isConnected(page, 'ana')).toBe(true)
     await expect.poll(() => isConnected(page, 'guest')).toBe(true)
 
+    // The token travels only in the CONNECT auth payload, never in the WebSocket URL.
+    const transportQuery = await page.evaluate(() => {
+      const registry = (globalThis as Record<string, unknown>).__spike as Record<
+        string,
+        { socket: { io: { engine: { transport: { query: Record<string, string> } } } } }
+      >
+      return registry.ana.socket.io.engine.transport.query
+    })
+    expect(Object.keys(transportQuery)).not.toContain('token')
+    expect(JSON.stringify(transportQuery)).not.toContain(SPIKE_TOKEN)
+
     await emit(page, { action: 'whoami' })
 
     await expect
