@@ -43,7 +43,7 @@ function SocialGlyph({ name }: { name: 'LinkedIn' | 'YouTube' }) {
   )
 }
 
-const COLUMN_TITLE = 'mb-3 text-title-20 leading-6 font-bold text-foreground'
+const COLUMN_TITLE = 'mb-3 text-body-lg-18 leading-6 font-bold text-foreground'
 const COLUMN_LIST = 'flex flex-col gap-2.5 text-body-15 text-foreground'
 
 function Newsletter() {
@@ -56,7 +56,7 @@ function Newsletter() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3 lg:pl-6">
-      <h2 className="text-title-20 leading-6 font-bold text-foreground">Antecipe-se ao próximo lançamento</h2>
+      <h2 className="text-body-lg-18 leading-6 font-bold text-foreground">Antecipe-se ao próximo lançamento</h2>
       <div className="flex">
         <label htmlFor="newsletter-email" className="sr-only">
           E-mail
@@ -68,11 +68,11 @@ function Newsletter() {
           placeholder="digite seu e-mail..."
           className="h-10 min-w-0 flex-1 rounded-l-md bg-band px-3 text-caption-13 text-foreground placeholder:text-muted"
         />
-        <Button type="submit" className="h-10 rounded-l-none px-4 text-body-15">
+        <Button type="submit" className="h-10 rounded-l-none px-4 text-body-lg-18">
           Enviar
         </Button>
       </div>
-      <p className="text-body-14 text-text-secondary">
+      <p className="text-caption-13 text-text-secondary">
         Receba lançamentos selecionados, histórias de criadores e novidades do mercado.
       </p>
       <p role="status" className="text-body-14 text-text-accent">
@@ -84,19 +84,19 @@ function Newsletter() {
 
 export function Footer() {
   return (
-    <footer className="mx-auto w-full max-w-[1200px] px-4 pb-6">
+    <footer className="mx-auto w-full max-w-[1232px] px-4 pb-6">
       <div className="bg-surface">
         <div className="grid gap-8 p-6 lg:grid-cols-[1fr_1fr_1fr_1.25fr] lg:gap-0 lg:px-10 lg:pt-8 lg:pb-9">
           {FEATURES.map((f) => (
             <section key={f.letter} className="flex flex-col gap-2 lg:border-r lg:border-primary lg:px-6">
               <span
                 aria-hidden
-                className="mb-2 flex size-[74px] items-center justify-center rounded-full bg-primary text-title-22 font-bold text-ink"
+                className="mb-2 flex size-[74px] items-center justify-center rounded-full bg-primary text-heading-24 font-bold text-ink"
               >
                 {f.letter}
               </span>
-              <h2 className="text-title-20 leading-6 font-bold text-foreground">{f.title}</h2>
-              <p className="text-body-15 leading-[22px] text-text-secondary">{f.text}</p>
+              <h2 className="text-body-lg-17 leading-6 font-bold text-foreground">{f.title}</h2>
+              <p className="text-body-14 leading-5 text-text-secondary">{f.text}</p>
             </section>
           ))}
           <Newsletter />

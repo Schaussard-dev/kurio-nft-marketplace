@@ -8,7 +8,7 @@ import { buttonVariants } from '@/shared/ui/button'
 
 const MARKET_PREFIXES = ['/nft', '/carrinho', '/pagamento']
 
-const NAV_LINK = 'relative inline-flex h-full items-center px-1 text-body-15 transition-colors hover:text-text-accent'
+const NAV_LINK = 'relative inline-flex h-full items-center px-1 text-body-lg-16 transition-colors hover:text-text-accent'
 const NAV_ACTIVE =
   "font-bold text-text-accent after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-primary after:content-['']"
 
@@ -112,7 +112,7 @@ function AccountArea() {
   const session = useSession()
   if (session) return <UserMenu displayName={session.user.displayName} avatarUrl={session.user.avatarUrl} />
   return (
-    <Link to="/entrar" className={cn(buttonVariants({ size: 'sm' }), 'h-9 gap-2 px-3 text-body-15')}>
+    <Link to="/entrar" className={cn(buttonVariants({ size: 'sm' }), 'h-9 gap-2 px-3 text-body-lg-16 font-medium')}>
       <LogIn className="size-5" aria-hidden />
       Entrar
     </Link>
@@ -125,7 +125,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const homeActive = pathname === '/'
 
   return (
-    <header className="mx-auto w-full max-w-[1200px] px-4">
+    <header className="mx-auto w-full max-w-[1232px] px-4">
       <div className="flex h-[68px] items-center justify-between gap-4 border-b border-primary/30 lg:grid lg:grid-cols-[1fr_auto_1fr]">
         <Link to="/" className="text-body-14 font-bold tracking-[1.4px] text-foreground" aria-label="Kurio, página inicial">
           KURIO
