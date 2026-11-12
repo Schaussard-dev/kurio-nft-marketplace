@@ -29,7 +29,7 @@ export function SummaryRow({
           data-testid={`${testIdPrefix}-${row}`}
           className={cn(
             'flex h-7 items-center whitespace-nowrap',
-            total ? 'text-title-22 font-bold text-text-accent' : 'text-body-lg-16 text-foreground md:text-body-15',
+            total ? 'text-body-lg-18 font-bold text-text-accent' : row === 'discount' ? 'text-body-15 text-foreground' : 'text-body-lg-16 text-foreground md:text-body-lg-18',
           )}
         >
           {children}

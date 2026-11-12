@@ -113,7 +113,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
             <Star aria-hidden className="size-4 fill-current text-text-accent" />
             <span className="sr-only">Nota </span>
             {formatRating(nft.rating)}
-            <span>
+            <span className="text-body-14">
               <span className="sr-only">, </span>({nft.reviewCount}
               <span className="sr-only"> avaliações</span>)
             </span>

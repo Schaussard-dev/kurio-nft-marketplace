@@ -53,7 +53,7 @@ export function JournalSection() {
                   search={{ secao: 'diario' }}
                   className="mt-auto pt-1 text-caption-12 font-bold text-text-accent hover:underline"
                 >
-                  Ler mais <span aria-hidden>→</span>
+                  Ler mais <span aria-hidden className="font-normal">→</span>
                   <span className="sr-only">: {post.title}</span>
                 </Link>
               </div>

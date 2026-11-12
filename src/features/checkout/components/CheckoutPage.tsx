@@ -752,7 +752,7 @@ function CheckoutFlow({
                 coupon={coupon}
               />
               <section aria-labelledby="carteira-rede-titulo" className="flex flex-col gap-5">
-                <h2 id="carteira-rede-titulo" className="text-center text-body-lg-16 font-bold text-foreground">
+                <h2 id="carteira-rede-titulo" className="text-center text-body-lg-17 font-bold text-foreground">
                   Carteira e rede
                 </h2>
                 <ConnectorPicker
@@ -778,7 +778,7 @@ function CheckoutFlow({
               <WalletPicker wallets={registered} registration={walletRegistration} manageHref={manageHref} variant="cards" />
             </section>
             <section aria-labelledby="carteira-rede-titulo" className="flex flex-col gap-6">
-              <h2 id="carteira-rede-titulo" className="text-body-lg-17 font-bold text-foreground">
+              <h2 id="carteira-rede-titulo" className="text-body-lg-16 font-bold text-foreground">
                 Carteira e rede
               </h2>
               <ConnectorPicker

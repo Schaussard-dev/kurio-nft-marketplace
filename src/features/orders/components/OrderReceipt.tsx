@@ -58,7 +58,7 @@ export function OrderReceipt({ order }: { order: Order }) {
         </h1>
       </header>
 
-      <dl className="grid grid-cols-2 gap-y-4 border-y border-primary px-6 py-4 text-body-14 leading-5 sm:grid-cols-4 sm:gap-y-0 sm:px-10">
+      <dl className="grid grid-cols-2 gap-y-4 border-y border-primary px-6 py-4 text-body-15 leading-5 sm:grid-cols-4 [&_dt]:text-body-14 sm:gap-y-0 sm:px-10">
         <div className="pr-3 sm:border-r sm:border-primary">
           <dt className="font-bold text-text-secondary">ID da transação</dt>
           <dd className="text-text-secondary">{shortHash(order.txHash)}</dd>
@@ -143,7 +143,7 @@ export function OrderReceipt({ order }: { order: Order }) {
             <dd className="text-body-lg-18">{formatEth(snapshot.networkFee, { minDecimals: 3 })}</dd>
           </div>
           <div className="flex justify-between gap-4 font-bold">
-            <dt className="text-foreground">Total</dt>
+            <dt className="text-body-lg-16 text-foreground">Total</dt>
             <dd data-testid="receipt-total" className="text-body-lg-18 text-text-accent">
               {formatEth(snapshot.total)}
             </dd>

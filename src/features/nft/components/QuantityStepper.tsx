@@ -21,7 +21,7 @@ const STEP: Record<NonNullable<QuantityStepperProps['variant']>, string> = {
 }
 
 const VALUE: Record<NonNullable<QuantityStepperProps['variant']>, string> = {
-  pill: 'text-title-20',
+  pill: 'text-body-lg-18 md:text-title-20',
   'pill-sm': 'text-body-lg-17',
   round: 'text-body-lg-16',
 }
