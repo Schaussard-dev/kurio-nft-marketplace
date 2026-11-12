@@ -107,6 +107,13 @@ describe('common', () => {
     expect(ethStringSchema.safeParse('-1').success).toBe(false)
   })
 
+  it('loginInputSchema says an empty e-mail is required, not invalid (QA-10)', () => {
+    const issue = (email: string) =>
+      loginInputSchema.safeParse({ email, password: 'x' }).error?.issues.find((i) => i.path[0] === 'email')?.message
+    expect(issue('')).toBe('Campo obrigatório')
+    expect(issue('nope')).toBe('E-mail inválido')
+  })
+
   it('networkSchema is the three networks', () => {
     expect(networkSchema.options).toEqual(['ethereum', 'polygon', 'solana'])
   })

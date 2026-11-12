@@ -88,7 +88,9 @@ function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: 
           className="z-50 min-w-48 rounded-lg border border-border-strong bg-surface p-1"
         >
           <DropdownMenu.Item asChild className={MENU_ITEM}>
-            <Link to="/perfil">Perfil</Link>
+            <Link to="/perfil" activeOptions={{ exact: true }}>
+              Perfil
+            </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Item asChild className={MENU_ITEM}>
             <Link to="/perfil/carteiras">Carteiras</Link>
@@ -135,7 +137,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
           </Link>
           <Link
             to="/"
-            hash="catalogo"
+            hash="catalogo" activeOptions={{ includeHash: true }}
             className={cn(NAV_LINK, marketActive && NAV_ACTIVE)}
             aria-current={marketActive ? 'page' : undefined}
           >

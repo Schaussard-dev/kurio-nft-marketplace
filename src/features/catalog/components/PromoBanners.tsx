@@ -43,7 +43,7 @@ export function PromoBanners() {
             <Link
               to="/"
               search={promo.search}
-              hash="catalogo"
+              hash="catalogo" activeOptions={{ includeHash: true }}
               resetScroll={false}
               className="inline-flex h-10 w-[140px] items-center justify-center gap-1 rounded-md bg-primary text-body-14 font-medium text-ink transition-colors hover:bg-primary-light"
             >

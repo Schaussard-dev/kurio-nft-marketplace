@@ -11,7 +11,7 @@ export function EmptyCart() {
         Seu carrinho está vazio
       </h2>
       <p className="text-body-14 leading-6 text-text-secondary">Explore o mercado e adicione NFTs para vê-los aqui.</p>
-      <Link to="/" hash="catalogo" className={buttonVariants({ variant: 'outline' })}>
+      <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className={buttonVariants({ variant: 'outline' })}>
         Explorar o mercado
       </Link>
     </div>

@@ -20,6 +20,7 @@ import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { cn } from '@/shared/lib/utils'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { useAnnounce } from '@/shared/ui/LiveRegion'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 interface CartSearch {
   /** Coupon code; validated by the API quote, carried to /pagamento when accepted. */
@@ -93,13 +94,7 @@ function CartPage() {
   const remove = useRemoveCartLine()
   const issues = stockIssues(cart.data)
 
-  useEffect(() => {
-    const previous = document.title
-    document.title = 'Carrinho · Kurio'
-    return () => {
-      document.title = previous
-    }
-  }, [])
+  useDocumentTitle('Carrinho')
 
   const setCoupon = (code: string | undefined) =>
     void navigate({ search: code ? { cupom: code } : {}, replace: true, resetScroll: false })
@@ -236,7 +231,7 @@ function CartPage() {
                 Conectar e finalizar
               </Link>
             )}
-            <Link to="/" hash="catalogo" className="text-body-lg-17 text-text-accent underline-offset-4 hover:underline">
+            <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className="text-body-lg-17 text-text-accent underline-offset-4 hover:underline">
               Continuar explorando
             </Link>
           </div>

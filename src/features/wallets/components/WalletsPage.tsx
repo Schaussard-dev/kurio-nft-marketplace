@@ -5,9 +5,11 @@ import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { useWallets } from '../queries'
 import { WalletSection } from './WalletSection'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 /** "Carteiras": primary and secondary wallet management; `redirect` returns to checkout after the first save. */
 export function WalletsPage({ redirect }: { redirect?: string }) {
+  useDocumentTitle('Carteiras')
   const router = useRouter()
   const { data, isError, isFetching, refetch } = useWallets()
   const hadWallet = Boolean(data?.primary || data?.secondary)

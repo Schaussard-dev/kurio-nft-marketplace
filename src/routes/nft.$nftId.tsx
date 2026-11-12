@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, notFound, useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
 import { ChevronLeft, TriangleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { ADDED_MESSAGE, useCart, useGuardedAddToCart, useQuickAddToCart } from '@/features/cart/queries'
 import { FavoriteButton } from '@/features/favorites/components/FavoriteButton'
@@ -13,10 +13,11 @@ import { MobileBuyBar, NftInfo, type PurchaseProps } from '@/features/nft/compon
 import { NftNotFound } from '@/features/nft/components/NftNotFound'
 import { nftQueryOptions } from '@/features/nft/queries'
 import { clampQuantity, resolveEdition } from '@/features/nft/quantity'
-import { toApiError } from '@/shared/api/api-error'
+import { loadErrorHint, toApiError } from '@/shared/api/api-error'
 import { Breadcrumbs } from '@/shared/layout/Breadcrumbs'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { Button, buttonVariants } from '@/shared/ui/button'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 interface NftSearch {
   /** Selected edition id; unknown or sold-out ids fall back to the default edition. */
@@ -40,17 +41,17 @@ export const Route = createFileRoute('/nft/$nftId')({
   component: NftDetailPage,
 })
 
-function NftLoadError() {
+function NftLoadError({ error }: { error: unknown }) {
   const router = useRouter()
   return (
     <div role="alert" className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-lg bg-surface px-6 py-16 text-center">
       <TriangleAlert aria-hidden className="size-8 text-danger" />
       <p className="text-body-lg-18 font-bold text-foreground">Não foi possível carregar este NFT.</p>
-      <p className="text-body-14 text-text-secondary">Verifique sua conexão e tente novamente.</p>
+      <p className="text-body-14 text-text-secondary">{loadErrorHint(error)}</p>
       <div className="flex flex-wrap justify-center gap-3">
         <Button onClick={() => void router.invalidate()}>Tentar novamente</Button>
         {/* Below 768px the detail has no app chrome, so the error must offer a way out itself. */}
-        <Link to="/" hash="catalogo" className={buttonVariants({ variant: 'outline' })}>
+        <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className={buttonVariants({ variant: 'outline' })}>
           Voltar ao catálogo
         </Link>
       </div>
@@ -93,13 +94,7 @@ function NftDetailPage() {
   const inCart = useCart().data?.lines.find((line) => line.editionId === edition?.id)?.quantity ?? 0
   const quantity = edition ? clampQuantity(requested, edition, inCart) : { value: 0, limited: true, max: 0 }
 
-  useEffect(() => {
-    const previous = document.title
-    document.title = `${nft.name} · Kurio`
-    return () => {
-      document.title = previous
-    }
-  }, [nft.name])
+  useDocumentTitle(nft.name)
 
   const selectEdition = (editionId: string) => {
     setRequested(1)

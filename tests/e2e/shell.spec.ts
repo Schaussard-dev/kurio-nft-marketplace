@@ -116,3 +116,71 @@ test.describe('app shell', () => {
     await expect(page.getByText('Ação ainda não disponível')).toHaveCount(0)
   })
 })
+
+test.describe('tab titles (QA-01, WCAG 2.4.2)', () => {
+  test('every public route names its page in the tab title', async ({ page }) => {
+    const titles: [string, string][] = [
+      ['/', 'Kurio — Marketplace de NFTs'],
+      ['/entrar', 'Entrar · Kurio'],
+      ['/cadastro', 'Criar conta · Kurio'],
+      ['/em-breve?secao=criadores', 'Em breve · Kurio'],
+      ['/nao-existe', 'Página não encontrada · Kurio'],
+    ]
+    for (const [path, title] of titles) {
+      await page.goto(path)
+      await expect(page, path).toHaveTitle(title)
+    }
+  })
+
+  test('every private route names its page in the tab title', async ({ page, gotoFresh, login }) => {
+    await gotoFresh('/')
+    await login('ana')
+    const titles: [string, string][] = [
+      ['/perfil', 'Perfil do colecionador · Kurio'],
+      ['/perfil/carteiras', 'Carteiras · Kurio'],
+      ['/perfil/favoritos', 'Lista de interesse · Kurio'],
+      ['/pedidos/ord_inexistente', 'Pedido · Kurio'],
+    ]
+    for (const [path, title] of titles) {
+      await page.goto(path)
+      await expect(page, path).toHaveTitle(title)
+    }
+  })
+})
+
+test.describe('aria-current (QA-02)', () => {
+  /** Accessible names of the visible elements announced as the current page. */
+  async function currentPageLinks(page: Page): Promise<string[]> {
+    const names: string[] = []
+    for (const el of await page.locator('[aria-current="page"]:visible').all()) {
+      names.push(((await el.getAttribute('aria-label')) ?? (await el.textContent()) ?? '').trim())
+    }
+    return names
+  }
+
+  test('only links to the page being shown are marked as current', async ({ page, gotoFresh, login, isMobile }) => {
+    test.skip(isMobile, 'desktop header and footer')
+    await gotoFresh('/?page=3')
+    await expect(page.getByRole('link', { name: 'Página 3' })).toBeVisible()
+    // Not "Página 1", nor the links that jump to #catalogo (Mercado, EXPLORAR).
+    expect((await currentPageLinks(page)).sort()).toEqual(['Início', 'Kurio, página inicial', 'Página 3'].sort())
+
+    await login('ana')
+    await page.goto('/perfil/favoritos')
+    await expect(page.getByRole('heading', { name: 'Lista de interesse' })).toBeVisible()
+    // The sidebar and footer "Lista de interesse" links; not the footer "Meu perfil" (/perfil).
+    expect(await currentPageLinks(page)).toEqual(['Lista de interesse', 'Lista de interesse'])
+  })
+})
+
+test('mock panel shows the scenario applied through the URL and resets within it (QA-03)', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop project only')
+  await page.goto('/?scenario=server-error&reset=1')
+  await waitForMocks(page)
+  await page.getByRole('button', { name: 'Simulação' }).click()
+  await expect(page.getByRole('combobox')).toContainText('Erro de servidor')
+
+  const resetRequest = page.waitForRequest((r) => r.url().endsWith('/api/__mock/reset') && r.method() === 'POST')
+  await page.getByRole('button', { name: 'Reset' }).click()
+  expect((await resetRequest).postDataJSON()).toEqual({ scenario: 'server-error' })
+})

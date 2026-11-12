@@ -94,7 +94,7 @@ export function Hero() {
           <Link
             to="/"
             search={exploreSearch}
-            hash="catalogo"
+            hash="catalogo" activeOptions={{ includeHash: true }}
             resetScroll={false}
             className="mt-1 inline-flex items-center gap-3 text-caption-12 font-bold text-text-accent lg:mt-8 lg:h-10 lg:w-[140px] lg:justify-center lg:rounded-md lg:bg-primary lg:text-body-lg-16 lg:text-ink lg:hover:bg-primary-light"
           >

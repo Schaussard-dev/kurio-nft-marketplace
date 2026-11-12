@@ -1,7 +1,9 @@
 import { FlaskConical } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-// Type-only: no mock runtime code enters the app bundle.
+// The panel itself is only loaded in demo builds (lazy, behind VITE_ENABLE_MOCKS): the production bundle
+// never reaches these mock modules (scripts/check-prod-bundle.mjs).
+import { getMockConfig } from '@/mocks/config'
 import type { ScenarioName } from '@/mocks/scenarios'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -45,27 +47,26 @@ async function post(path: string, body: unknown): Promise<Response> {
   })
 }
 
-/** Survives the reload after a reseed: the active scenario and the confirmation to show once. */
+/** Survives the reload after a reseed: the confirmation to show once. */
 const PANEL_STATE_KEY = 'kurio-mock-panel'
 interface PanelState {
-  scenario: ScenarioName
-  flash?: string
+  flash: string
 }
 
 function readPanelState(): PanelState | null {
   try {
     const raw = sessionStorage.getItem(PANEL_STATE_KEY)
     const parsed = raw ? (JSON.parse(raw) as Partial<PanelState>) : null
-    if (!parsed || typeof parsed.scenario !== 'string' || !(parsed.scenario in SCENARIO_LABELS)) return null
-    return { scenario: parsed.scenario, flash: typeof parsed.flash === 'string' ? parsed.flash : undefined }
+    return parsed && typeof parsed.flash === 'string' ? { flash: parsed.flash } : null
   } catch {
     return null
   }
 }
 
-function writePanelState(state: PanelState): void {
+function writePanelState(state: PanelState | null): void {
   try {
-    sessionStorage.setItem(PANEL_STATE_KEY, JSON.stringify(state))
+    if (state) sessionStorage.setItem(PANEL_STATE_KEY, JSON.stringify(state))
+    else sessionStorage.removeItem(PANEL_STATE_KEY)
   } catch {
     // Storage unavailable: the reload still applies the reseed, only the confirmation is lost.
   }
@@ -74,7 +75,8 @@ function writePanelState(state: PanelState): void {
 export default function MockPanel() {
   const [initial] = useState(readPanelState)
   const [open, setOpen] = useState(Boolean(initial?.flash))
-  const [scenario, setScenario] = useState<ScenarioName>(initial?.scenario ?? 'default')
+  // The mock config is the source of truth: `?scenario=`, the control API and this panel all write it.
+  const [scenario, setScenario] = useState<ScenarioName>(() => getMockConfig().scenario)
   const [latency, setLatency] = useState('')
   const [nftId, setNftId] = useState('')
   const [price, setPrice] = useState('')
@@ -84,14 +86,14 @@ export default function MockPanel() {
   useEffect(() => {
     if (!initial?.flash) return
     toast.success(initial.flash, { id: 'mock-panel-flash' })
-    writePanelState({ scenario: initial.scenario })
+    writePanelState(null)
   }, [initial])
 
-  /** `reseed` = the request rewound the mock DB to that scenario: the page reloads afterwards. */
+  /** `reseed` = the request rewound the mock DB: the page reloads afterwards. */
   async function run(
     request: () => Promise<Response>,
     successMessage: string,
-    reseed?: { scenario: ScenarioName },
+    reseed = false,
   ): Promise<boolean> {
     try {
       const res = await request()
@@ -106,7 +108,7 @@ export default function MockPanel() {
       if (reseed) {
         // A reseed rewinds the mock DB (versions, sessions, carts): only a fresh page load drops every
         // client-side trace of the old data (query cache, realtime version barrier, socket room).
-        writePanelState({ scenario: reseed.scenario, flash: successMessage })
+        writePanelState({ flash: successMessage })
         window.location.reload()
         return true
       }
@@ -122,7 +124,7 @@ export default function MockPanel() {
 
   // /scenario alone would not apply seed patches, so a scenario change always goes through a reseed.
   const applyScenario = async (next: ScenarioName) => {
-    if (await run(() => post('reset', { scenario: next }), 'Cenário aplicado', { scenario: next })) setScenario(next)
+    if (await run(() => post('reset', { scenario: next }), 'Cenário aplicado', true)) setScenario(next)
   }
 
   const needNft = (action: () => void) => {
@@ -131,7 +133,14 @@ export default function MockPanel() {
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        // Re-read on open: the scenario may have changed through the control API since the last render.
+        if (next) setScenario(getMockConfig().scenario)
+        setOpen(next)
+      }}
+    >
       <SheetTrigger asChild>
         <Button
           type="button"
@@ -196,7 +205,7 @@ export default function MockPanel() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => void run(() => post('reset', { scenario }), 'Dados reiniciados', { scenario })}
+            onClick={() => void run(() => post('reset', { scenario }), 'Dados reiniciados', true)}
           >
             Reset
           </Button>

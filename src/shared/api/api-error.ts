@@ -74,3 +74,11 @@ export function toApiError(e: unknown): ApiError {
     message: e instanceof Error ? e.message : 'Erro desconhecido.',
   })
 }
+
+/** Second line of a load-error state: the connection only when the request never reached the server. */
+export function loadErrorHint(e: unknown): string {
+  const { code } = toApiError(e)
+  return code === 'NETWORK' || code === 'TIMEOUT'
+    ? 'Verifique sua conexão e tente novamente.'
+    : 'O serviço está instável no momento. Tente novamente em instantes.'
+}

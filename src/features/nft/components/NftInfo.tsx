@@ -46,8 +46,8 @@ function addToCart({ nft, edition, quantity, onAddToCart, adding }: PurchaseProp
 }
 
 /** "Máximo de N por pedido" / "Edição indisponível", announced politely (spec §9). */
-function PurchaseHint({ quantity, inCart = 0, className }: { quantity: ClampedQuantity; inCart?: number; className?: string }) {
-  const message = purchaseHint(quantity, inCart)
+function PurchaseHint({ purchase, className }: { purchase: PurchaseProps; className?: string }) {
+  const message = purchaseHint(purchase.quantity, purchase.inCart ?? 0, purchase.edition?.available ?? 0)
   return (
     <p aria-live="polite" className={cn('min-h-4 text-caption-13 text-text-accent', className)}>
       {message}
@@ -162,7 +162,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
               <FavoriteButton nft={nft} />
             </div>
           </div>
-          <PurchaseHint quantity={quantity} inCart={purchase.inCart} />
+          <PurchaseHint purchase={purchase} />
         </div>
       )}
 
@@ -194,7 +194,7 @@ export function MobileBuyBar(purchase: PurchaseProps) {
           <span data-testid="nft-price">{formatEth(nft.price)}</span>
         </p>
       </div>
-      <PurchaseHint quantity={quantity} inCart={purchase.inCart} className="mt-1" />
+      <PurchaseHint purchase={purchase} className="mt-1" />
       <div className="mt-2 flex items-center gap-4">
         <button
           type="button"

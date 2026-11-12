@@ -81,6 +81,7 @@ test.describe('purchase', () => {
     await expect(receipt).toContainText('Emerald Ape #042')
     await expect(receipt).toContainText('Sage Nomad #009')
     await expect(receipt).toContainText('Transação confirmada na Ethereum.')
+    await expect(receipt.getByRole('link', { name: /^Ver no Etherscan/ })).toBeVisible()
     // "Carteira" names the approving wallet app (Figma), with the wallet used below it.
     await expect(receipt.getByTestId('receipt-wallet')).toHaveText('MetaMaskPrincipal · 0xA91F…E82C')
     // The confirmed order is no longer tracked as pending.
@@ -148,5 +149,7 @@ test.describe('purchase', () => {
     const receipt = page.getByRole('region', { name: 'Seus NFTs agora estão na sua carteira' })
     await expect(receipt.getByTestId('receipt-wallet')).toContainText('Coinbase Wallet')
     await expect(receipt).toContainText('Transação confirmada na Polygon.')
+    // QA-04: the explorer link follows the network the order settled on.
+    await expect(receipt.getByRole('link', { name: /^Ver no Polygonscan/ })).toBeVisible()
   })
 })

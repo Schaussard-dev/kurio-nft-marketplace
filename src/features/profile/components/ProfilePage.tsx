@@ -4,9 +4,11 @@ import { Skeleton } from '@/shared/ui/Skeleton'
 import { useProfile } from '../queries'
 import { PasswordForm } from './PasswordForm'
 import { ProfileForm } from './ProfileForm'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 /** "Dados do perfil": profile data, avatar and the separate password form. */
 export function ProfilePage() {
+  useDocumentTitle('Perfil do colecionador')
   const { data, isError, isFetching, refetch } = useProfile()
 
   return (

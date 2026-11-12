@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { buttonVariants } from '@/shared/ui/button'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 const SECTION_LABELS: Record<string, string> = {
   criadores: 'Criadores',
@@ -31,6 +32,7 @@ export const Route = createFileRoute('/em-breve')({
 })
 
 function ComingSoonPage() {
+  useDocumentTitle('Em breve')
   const { secao } = Route.useSearch()
   const label = secao ? (SECTION_LABELS[secao] ?? 'Esta seção') : 'Esta seção'
   return (

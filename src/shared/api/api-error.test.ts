@@ -1,6 +1,6 @@
 import { AxiosError, CanceledError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { describe, expect, it } from 'vitest'
-import { ApiError, toApiError } from './api-error'
+import { ApiError, loadErrorHint, toApiError } from './api-error'
 
 function axiosErrorWith(status: number, data: unknown): AxiosError {
   const config = { headers: {} } as InternalAxiosRequestConfig
@@ -80,5 +80,22 @@ describe('toApiError', () => {
   it('treats bodiless 408 and 429 as transient', () => {
     expect(toApiError(axiosErrorWith(408, null)).code).toBe('TRANSIENT')
     expect(toApiError(axiosErrorWith(429, '')).isTransient).toBe(true)
+  })
+})
+
+describe('loadErrorHint (QA-08)', () => {
+  it('asks to check the connection only when the request never reached the server', () => {
+    expect(loadErrorHint(new ApiError({ status: 0, code: 'NETWORK', message: '' }))).toBe(
+      'Verifique sua conexão e tente novamente.',
+    )
+    expect(loadErrorHint(new ApiError({ status: 0, code: 'TIMEOUT', message: '' }))).toBe(
+      'Verifique sua conexão e tente novamente.',
+    )
+  })
+
+  it('blames the service, not the connection, when the server answered with an error', () => {
+    expect(loadErrorHint(new ApiError({ status: 503, code: 'TRANSIENT', message: '' }))).toBe(
+      'O serviço está instável no momento. Tente novamente em instantes.',
+    )
   })
 })

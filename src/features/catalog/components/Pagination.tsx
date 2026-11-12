@@ -30,6 +30,9 @@ function PageLink({ page, label, children, current }: { page: number; label: str
       from="/"
       to="/"
       search={(prev) => stripDefaults({ ...prev, page })}
+      // The router marks a Link active (aria-current="page") on a partial search match: "Página 1"
+      // (no `page` param) would be current on every page. Only the exact search is the current page.
+      activeOptions={{ exact: true }}
       resetScroll={false}
       onClick={scrollToCatalog}
       aria-label={label}

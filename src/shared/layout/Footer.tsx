@@ -118,7 +118,7 @@ export function Footer() {
             <h2 className={COLUMN_TITLE}>Meu perfil</h2>
             <ul className={COLUMN_LIST}>
               <li>
-                <Link to="/perfil" className="hover:text-text-accent">
+                <Link to="/perfil" activeOptions={{ exact: true }} className="hover:text-text-accent">
                   Meu perfil
                 </Link>
               </li>

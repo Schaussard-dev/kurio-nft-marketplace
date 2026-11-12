@@ -6,6 +6,7 @@ import type { Order } from '@/shared/contracts'
 import { formatDate, formatDiscount, formatEth, shortHash } from '@/shared/lib/format'
 import { compare } from '@/shared/lib/money'
 import { buttonVariants } from '@/shared/ui/button'
+import { explorerLinkLabel } from '../explorer'
 
 /** The Figma envelope with its "THANK YOU" card, drawn inline (no extra request). */
 function EnvelopeIcon() {
@@ -159,7 +160,8 @@ export function OrderReceipt({ order }: { order: Order }) {
           rel="noopener noreferrer"
           className={buttonVariants({ size: 'lg', className: 'self-center text-body-lg-16' })}
         >
-          Ver no Etherscan<span className="sr-only"> (simulação, abre em nova aba)</span>
+          {explorerLinkLabel(snapshot.network)}
+          <span className="sr-only"> (simulação, abre em nova aba)</span>
         </a>
       </div>
     </section>

@@ -13,7 +13,8 @@ export const isoDateTimeSchema = z.iso.datetime()
 
 export const requiredStringSchema = z.string().min(1, 'Campo obrigatório')
 
-export const emailSchema = z.email('E-mail inválido')
+/** Empty reads as missing ("Campo obrigatório"), anything else not an address as invalid. */
+export const emailSchema = requiredStringSchema.pipe(z.email('E-mail inválido'))
 
 export const paginatedSchema = <T extends z.ZodType>(item: T) =>
   z.object({

@@ -1,5 +1,6 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { SearchX, TriangleAlert } from 'lucide-react'
+import { loadErrorHint } from '@/shared/api/api-error'
 import type { CatalogResponse } from '@/shared/contracts'
 import { Button } from '@/shared/ui/button'
 import { NftCard, type NftCardActions } from './NftCard'
@@ -19,14 +20,14 @@ interface NftGridProps extends NftCardActions {
 
 /** Catalog results with loading (skeletons), empty, error and background-refresh states. */
 export function NftGrid({ query, onClearFilters, onFirstPage, ...actions }: NftGridProps) {
-  const { data, isError, isFetching, refetch } = query
+  const { data, error, isError, isFetching, refetch } = query
 
   if (isError && !data) {
     return (
       <div role="alert" className="flex flex-col items-center gap-4 rounded-lg bg-surface px-6 py-16 text-center">
         <TriangleAlert aria-hidden className="size-8 text-danger" />
         <p className="text-body-lg-18 font-bold text-foreground">Não foi possível carregar os NFTs.</p>
-        <p className="text-body-14 text-text-secondary">Verifique sua conexão e tente novamente.</p>
+        <p className="text-body-14 text-text-secondary">{loadErrorHint(error)}</p>
         <Button onClick={() => void refetch()} disabled={isFetching}>
           Tentar novamente
         </Button>

@@ -11,7 +11,7 @@ export function NftNotFound() {
       <p className="text-body-lg-16 leading-6 text-text-secondary">
         Este NFT não existe ou foi removido do mercado. Explore o catálogo para encontrar outras obras.
       </p>
-      <Link to="/" hash="catalogo" className={buttonVariants()}>
+      <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className={buttonVariants()}>
         Voltar ao catálogo
       </Link>
     </section>

@@ -9,6 +9,7 @@ import type { AuthSearch } from '../auth-route'
 import { isPrivatePath } from '../private-paths'
 import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 export type AuthMode = 'login' | 'register'
 
@@ -131,6 +132,7 @@ function AuthPage({ mode, search, children }: { mode: AuthMode; search: AuthSear
 
 /** /entrar and /cadastro: dialog over Início on ≥768px, full page below (spec §4). */
 export function AuthScreen({ mode, search }: { mode: AuthMode; search: AuthSearch }) {
+  useDocumentTitle(COPY[mode].title)
   const isDialog = useMediaQuery('(min-width: 768px)')
   const variant = isDialog ? 'dialog' : 'page'
   const form =

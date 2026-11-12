@@ -5,11 +5,13 @@ import { NftCard } from '@/features/catalog/components/NftCard'
 import { NftCardSkeleton } from '@/features/catalog/components/NftCardSkeleton'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { useFavoriteToggle, useFavorites } from '../queries'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 const GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-6 md:gap-y-10'
 
 /** "Lista de interesse": the signed-in user's favorites (private route). */
 export function FavoritesPage() {
+  useDocumentTitle('Lista de interesse')
   const query = useFavorites()
   const { isFavorite, toggleFavorite } = useFavoriteToggle()
   const { quickAdd, isAdding } = useQuickAddToCart()
@@ -34,7 +36,7 @@ export function FavoritesPage() {
         <p className="text-body-14 leading-6 text-text-secondary">
           Toque no coração de um NFT para guardá-lo aqui e acompanhar o preço.
         </p>
-        <Link to="/" hash="catalogo" className={buttonVariants({ variant: 'outline' })}>
+        <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className={buttonVariants({ variant: 'outline' })}>
           Explorar o mercado
         </Link>
       </div>

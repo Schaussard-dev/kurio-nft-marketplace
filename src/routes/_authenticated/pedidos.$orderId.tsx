@@ -10,6 +10,7 @@ import { toApiError } from '@/shared/api/api-error'
 import type { OrderStatus } from '@/shared/contracts'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { useAnnounce } from '@/shared/ui/LiveRegion'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 export const Route = createFileRoute('/_authenticated/pedidos/$orderId')({
   component: OrderPage,
@@ -32,6 +33,7 @@ function OrderNotFound() {
 }
 
 function OrderPage() {
+  useDocumentTitle('Pedido')
   const { orderId } = Route.useParams()
   const { data: order, error, isPending, isFetching, refetch } = useOrder(orderId)
   const announce = useAnnounce()

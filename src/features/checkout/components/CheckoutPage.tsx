@@ -64,6 +64,7 @@ import { PendingOrderDialog } from './PendingOrderDialog'
 import { QuoteChangedDialog } from './QuoteChangedDialog'
 import { ReviewDialog } from './ReviewDialog'
 import { WalletPicker } from './WalletPicker'
+import { useDocumentTitle } from '@/shared/lib/use-document-title'
 
 type Flow =
   | { step: 'idle' }
@@ -155,13 +156,7 @@ export function CheckoutPage({ cupom, onCouponChange }: { cupom?: string; onCoup
   const wallets = useWallets()
   const cart = useCart()
 
-  useEffect(() => {
-    const previous = document.title
-    document.title = 'Pagamento · Kurio'
-    return () => {
-      document.title = previous
-    }
-  }, [])
+  useDocumentTitle('Pagamento')
 
   let content
   if (profile.isError || wallets.isError) {
