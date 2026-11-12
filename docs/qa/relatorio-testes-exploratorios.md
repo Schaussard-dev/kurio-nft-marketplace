@@ -90,3 +90,19 @@ Esses itens já têm cobertura automatizada: specs e2e de realtime, a11y (axe) e
 | QA-10 | `emailSchema` = obrigatório → formato: vazio diz "Campo obrigatório" em todos os formulários | `src/shared/contracts/contracts.test.ts` |
 
 S4 mantidos como registro: QA-06, QA-07, QA-09, QA-11, QA-12, QA-13 e QA-14.
+
+## Rodada 2 — ajuste mobile (achados do usuário em celular real)
+
+A 1ª rodada não pegou estes casos por dois motivos: o mobile era emulado por iframe, sem toque, e a checagem só olhava a rolagem do documento. Sheets e diálogos (`position: fixed`) escapavam dessa checagem, e parte das telas foi capturada antes de os dados carregarem. A nova auditoria cobre 25 estados (sheets, diálogos, revisão, recibo, painel) em 320/360/375/390/414 px com toque emulado. Para cada elemento visível, ela considera o retângulo de recorte dos ancestrais e acusa o que sai da tela ou é cortado sem reticências.
+
+| ID | Sev. | Problema | Causa | Correção |
+|---|---|---|---|---|
+| QA-15 | S2 | Banner não arrasta; só os pontos (24 px) trocam o slide | Só o slide ativo era renderizado; nenhum gesto | Trilho com `scroll-snap` abaixo de 1024 px (arraste nativo com inércia, pontos sincronizados com a rolagem, slides fora da tela `inert`); área de toque dos pontos 44 px de altura no espaçamento do Figma; desktop inalterado |
+| QA-16 | S2 | Rodapé do filtro ("Limpar filtros" / "Ver resultados") sai da tela em 320–390 px | `flex-1` + `whitespace-nowrap` + `min-width: auto`: os dois rótulos (~380 px) não cabem em ~350 px | Ações empilhadas em largura total, principal em cima |
+| QA-17 | S2 | Carrinho com cupom estica a página (até 401 px em 360) | Rótulo e valor do resumo com `nowrap` | Rótulo quebra linha (`min-w-0`), valor não encolhe; `gap-2` mantém uma linha no desktop (antes transbordava 1 px) |
+| QA-18 | S3 | Abas do catálogo cortadas ("Em al…") abaixo de 414 px | Lista rolável com barra oculta: o corte parecia defeito | Fonte e espaçamento fluidos (`clamp`) abaixo de `md`: os três rótulos do Figma cabem de 320 px em diante |
+| QA-19 | S3 | Abas do detalhe cortadas ("Avaliações de colecion…") | Rótulos longos (adição nossa; o Figma mobile não tem abas) | "Detalhes" / "Avaliações (19)" visíveis no mobile; o nome acessível mantém o rótulo completo (WCAG 2.5.3) |
+| QA-20 | S3 | Nomes dos cards truncados ("Emerald Ape …") | `truncate` numa coluna de ~150 px | `line-clamp-2`: o nome inteiro em até 2 linhas, como no Figma |
+| QA-21 | S4 | "Mais desta coleção" / "Colecionadores também viram" começam colados na borda | `snap-start` encaixa na borda do contêiner sangrado (`-mx-4`), não no gutter | `scroll-px-4` |
+
+**Regressão:** `tests/e2e/13-mobile-fit.spec.ts` (filtro, abas, nomes, arraste do banner com eventos de toque, carrossel no gutter, resumo do carrinho, em 320/360/390/414 px). Baselines visuais mobile regeneradas (diferenças conferidas uma a uma); desktop e tablet inalterados.

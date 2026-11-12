@@ -30,10 +30,15 @@ const LOAD_LAZY_CONTENT = `(async () => {
   }
   window.scrollTo(0, 0)
 })()`
-const IMAGES_LOADED = `Array.from(document.images).every((image) => image.complete && image.naturalWidth > 0)`
+// Only rendered images: a lazy image under display:none (e.g. the inactive desktop hero slides) never loads
+// and never shows in the screenshot.
+const IMAGES_LOADED = `Array.from(document.images)
+  .filter((image) => image.getClientRects().length > 0)
+  .every((image) => image.complete && image.naturalWidth > 0)`
 const FONTS_AND_IMAGES_DECODED = `(async () => {
   await document.fonts.ready
-  await Promise.all(Array.from(document.images).map((image) => image.decode().catch(() => undefined)))
+  const rendered = Array.from(document.images).filter((image) => image.getClientRects().length > 0)
+  await Promise.all(rendered.map((image) => image.decode().catch(() => undefined)))
 })()`
 
 async function settle(page: Page) {

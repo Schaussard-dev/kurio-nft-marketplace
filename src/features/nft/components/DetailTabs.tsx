@@ -23,16 +23,19 @@ function LongDescription({ text }: { text: string }) {
   )
 }
 
-/** "Detalhes do NFT" and "Avaliações de colecionadores (n)" (read-only), Radix tabs. */
+/**
+ * "Detalhes do NFT" and "Avaliações de colecionadores (n)" (read-only), Radix tabs. Below md the visible labels
+ * shorten to "Detalhes" / "Avaliações (n)" so both fit a 320px phone; the rest stays in the accessible name.
+ */
 export function DetailTabs({ nft }: { nft: NftDetail }) {
   return (
     <Tabs.Root defaultValue="details" className="flex flex-col">
       <Tabs.List aria-label="Informações do NFT" className="flex gap-8 overflow-x-auto border-b border-border-strong">
         <Tabs.Trigger value="details" className={TRIGGER}>
-          Detalhes do NFT
+          Detalhes<span className="max-md:sr-only"> do NFT</span>
         </Tabs.Trigger>
         <Tabs.Trigger value="reviews" className={TRIGGER}>
-          Avaliações de colecionadores ({nft.reviewCount})
+          Avaliações<span className="max-md:sr-only"> de colecionadores</span> ({nft.reviewCount})
         </Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="details" className="pt-5">

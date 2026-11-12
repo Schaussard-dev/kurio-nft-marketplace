@@ -26,10 +26,11 @@ export function AlsoViewed({ excludeIds }: { excludeIds: string[] }) {
       <h2 id="tambem-viram-titulo" className="border-b border-border-strong pb-3 text-title-20 font-bold text-text-accent">
         Colecionadores também viram
       </h2>
+      {/* Bleeds to the screen edge (-mx-4); scroll-px-4 makes snap-start land on the page gutter. */}
       <ul
         aria-label="NFTs que colecionadores também viram"
         aria-busy={!items}
-        className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 lg:grid-cols-5"
+        className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:scroll-px-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 lg:grid-cols-5"
       >
         {items
           ? items.map((item) => (

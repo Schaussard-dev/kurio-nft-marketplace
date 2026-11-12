@@ -21,9 +21,10 @@ export function SummaryRow({
 }) {
   const total = row === 'total'
   return (
-    <div className={cn('flex items-start justify-between gap-3', total && 'mt-4')}>
-      <dt className={cn('text-body-lg-17 leading-7 whitespace-nowrap text-foreground', total && 'font-bold')}>{label}</dt>
-      <dd className="flex flex-col items-end gap-1 text-right">
+    <div className={cn('flex items-start justify-between gap-2', total && 'mt-4')}>
+      {/* The label wraps on narrow phones; the amount never shrinks or wraps. */}
+      <dt className={cn('min-w-0 text-body-lg-17 leading-7 text-foreground', total && 'font-bold')}>{label}</dt>
+      <dd className="flex shrink-0 flex-col items-end gap-1 text-right">
         <span
           data-testid={`${testIdPrefix}-${row}`}
           className={cn(

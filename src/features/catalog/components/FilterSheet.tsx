@@ -43,19 +43,16 @@ export function FilterSheet() {
         <div className="overflow-y-auto px-5 py-2">
           <FilterPanel facets={data?.facets} search={search} onChange={(patch) => void navigateCatalog(patch)} />
         </div>
-        <SheetFooter className="flex-row gap-3 px-5 pb-6">
+        {/* Stacked full-width actions: side by side, the two labels do not fit a 320–390px phone. */}
+        <SheetFooter className="flex-col gap-3 px-5 pb-6">
+          <SheetClose asChild>
+            <Button className="h-11 w-full">Ver resultados{total !== undefined ? ` (${total})` : ''}</Button>
+          </SheetClose>
           {hasActiveFilters(search) && (
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => void navigateCatalog(CLEARED_FILTERS)}
-            >
+            <Button variant="outline" className="h-11 w-full" onClick={() => void navigateCatalog(CLEARED_FILTERS)}>
               Limpar filtros
             </Button>
           )}
-          <SheetClose asChild>
-            <Button className="flex-1">Ver resultados{total !== undefined ? ` (${total})` : ''}</Button>
-          </SheetClose>
         </SheetFooter>
       </SheetContent>
     </Sheet>
