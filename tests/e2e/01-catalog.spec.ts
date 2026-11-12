@@ -98,6 +98,25 @@ test.describe('catalog (Início)', () => {
     await expect(page.getByRole('button', { name: 'Filtros, 2 ativos', exact: true })).toBeVisible()
   })
 
+  test('the filter sheet never shows the previous count while the new one loads (FR-13)', async ({
+    page,
+    gotoFresh,
+    isMobile,
+    mock,
+  }) => {
+    test.skip(!isMobile, 'the filter sheet exists below 1024px')
+    await gotoFresh('/')
+    await expect(cards(page)).toHaveCount(9)
+    await mock.scenario('slow')
+    const sheet = await openFilters(page, isMobile)
+    const results = sheet.getByRole('button', { name: /Ver resultados/ })
+    await expect(results).toHaveText('Ver resultados (60)')
+    await sheet.getByRole('checkbox', { name: /^Fotografia/ }).check()
+    await expect(results).toHaveText('Ver resultados')
+    await expect(results).toHaveText(/^Ver resultados \(\d+\)$/, { timeout: 10_000 })
+    await expect(results).not.toHaveText('Ver resultados (60)')
+  })
+
   test('pagination, sorting, history and reload stay in sync with the URL', async ({ page, gotoFresh }) => {
     await gotoFresh('/')
     await expect(cards(page)).toHaveCount(9)

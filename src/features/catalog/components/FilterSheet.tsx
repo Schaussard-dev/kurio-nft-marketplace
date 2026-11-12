@@ -14,10 +14,11 @@ const countActive = (search: ReturnType<typeof useCatalogSearch>) =>
 export function FilterSheet() {
   const search = useCatalogSearch()
   // Same query key as the grid: shares its cache, so this adds no request.
-  const { data } = useQuery(catalogQueryOptions(search))
+  const { data, isPlaceholderData } = useQuery(catalogQueryOptions(search))
   const navigateCatalog = useCatalogNavigate()
   const active = countActive(search)
-  const total = data?.total
+  // While the new combination loads, the cached data is the previous one: never show its count.
+  const total = isPlaceholderData ? undefined : data?.total
 
   return (
     <Sheet>

@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Skeleton } from '@/shared/ui/Skeleton'
 import { Slider } from '@/shared/ui/slider'
+import { priceLabel } from '../price-label'
 import type { CatalogSearch } from '../search-params'
 import { CatalogSearchField } from './CatalogSearchField'
 import { FeaturedNft } from './FeaturedNft'
@@ -78,7 +79,7 @@ function PriceFilter({ range, search, onChange }: { range: Facets['priceRange'];
     clamp(search.maxPrice ? toCents(search.maxPrice, 'ceil') : bounds[1]),
   ])
   const disabled = bounds[0] >= bounds[1]
-  const text = `${formatCentsBr(draft[0])} - ${formatCentsBr(draft[1])} ETH`
+  const text = priceLabel({ bounds, draft, applied: search })
 
   return (
     <div role="group" aria-labelledby="filtro-preco">
@@ -99,7 +100,7 @@ function PriceFilter({ range, search, onChange }: { range: Facets['priceRange'];
           { 'aria-label': 'Preço máximo', 'aria-valuetext': `${formatCentsBr(draft[1])} ETH` },
         ]}
       />
-      <p className="mt-4 pl-3 text-body-15 text-foreground">Preço: {text}</p>
+      <p className="mt-4 pl-3 text-body-15 text-foreground">{text}</p>
       <Button
         size="sm"
         className="mt-3 ml-3 h-9 px-3 text-body-lg-16"

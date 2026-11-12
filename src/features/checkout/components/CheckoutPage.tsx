@@ -163,9 +163,11 @@ export function CheckoutPage({ cupom, onCouponChange }: { cupom?: string; onCoup
     content = (
       <LoadError
         message="Não foi possível carregar seus dados de pagamento."
+        // One click retries everything that failed (the cart too), not just the first error shown.
         onRetry={() => {
           void profile.refetch()
           void wallets.refetch()
+          if (cart.isError) void cart.refetch()
         }}
       />
     )

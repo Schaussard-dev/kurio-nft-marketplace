@@ -118,3 +118,22 @@ test.describe('failures', () => {
     await expect(error).toHaveCount(0)
   })
 })
+
+test('/pagamento with every request failing recovers with a single "Tentar novamente" (FR-17)', async ({
+  page,
+  gotoFresh,
+  login,
+  mock,
+}) => {
+  test.setTimeout(60_000)
+  await gotoFresh('/')
+  await login('ana')
+  await mock.scenario('offline')
+  await page.goto('/pagamento')
+  const retry = page.getByRole('button', { name: 'Tentar novamente' })
+  await expect(retry).toBeVisible({ timeout: 15_000 })
+  await mock.scenario('default')
+  await retry.click()
+  await expect(page.getByTestId('checkout-total')).toHaveText(/ETH$/, { timeout: 15_000 })
+  await expect(retry).toHaveCount(0)
+})
