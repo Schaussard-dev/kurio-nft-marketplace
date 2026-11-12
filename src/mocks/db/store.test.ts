@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nftDetailSchema, walletSchema } from '@/shared/contracts'
 import { createRng } from './prng'
 import type { OrderRecord } from './schema'
@@ -101,6 +101,55 @@ describe('store', () => {
     expect(bumpVersion('nft:nft_042')).toBe(2)
     expect(bumpVersion('nft:nft_042')).toBe(3)
     expect(getDb().nfts.find((n) => n.id === 'nft_042')!.version).toBe(3)
+  })
+
+  it('resetDb never moves resource versions backwards', async () => {
+    bumpVersion('nft:nft_042')
+    bumpVersion('nft:nft_042')
+    bumpVersion('wallet:usr_ana')
+    await resetDb()
+    expect(getDb().resourceVersions['nft:nft_042']).toBe(3)
+    expect(getDb().nfts.find((n) => n.id === 'nft_042')!.version).toBe(3)
+    expect(getDb().resourceVersions['wallet:usr_ana']).toBe(2)
+    expect(getDb().resourceVersions[`nft:${getDb().nfts.at(-1)!.id}`]).toBe(1)
+    // The next event is newer than anything a client saw before the reset.
+    expect(bumpVersion('nft:nft_042')).toBe(4)
+  })
+})
+
+describe('store shared between tabs', () => {
+  // Two module instances over one storage stand in for two tabs over one localStorage.
+  async function twoTabs() {
+    const shared = memoryStorage()
+    vi.resetModules()
+    const tabA = await import('./store')
+    vi.resetModules()
+    const tabB = await import('./store')
+    tabA.setStorage(shared)
+    tabB.setStorage(shared)
+    await tabA.initDb()
+    await tabB.initDb()
+    return { shared, tabA, tabB }
+  }
+
+  it('a mutation never overwrites what another tab wrote', async () => {
+    const { shared, tabA, tabB } = await twoTabs()
+    tabA.mutate((db) => void db.eventLog.push('from-a'))
+    tabB.mutate((db) => void db.eventLog.push('from-b'))
+    tabA.mutate((db) => void db.eventLog.push('from-a-again'))
+
+    const stored = JSON.parse(shared.getItem(STORAGE_KEY)!) as { eventLog: string[] }
+    expect(stored.eventLog).toEqual(['from-a', 'from-b', 'from-a-again'])
+    // Reads are fresh too: tab B sees tab A's latest write without mutating.
+    expect(tabB.getDb().eventLog).toEqual(['from-a', 'from-b', 'from-a-again'])
+  })
+
+  it('a session created in one tab is known to the other tab', async () => {
+    const { tabA, tabB } = await twoTabs()
+    tabA.mutate((db) => {
+      db.sessions.push({ token: 'tok-from-a', userId: 'usr_ana', expiresAt: '2030-01-01T00:00:00.000Z' })
+    })
+    expect(tabB.getDb().sessions.some((s) => s.token === 'tok-from-a')).toBe(true)
   })
 })
 
