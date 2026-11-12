@@ -47,6 +47,27 @@ test.describe('loading states (scenario slow)', () => {
     await expect(page.locator('[data-skeleton]')).toHaveCount(0)
   })
 
+  test('a private page reloaded on a slow network shows the app frame and a skeleton while the session is checked', async ({
+    page,
+    gotoFresh,
+    login,
+    mock,
+  }) => {
+    await gotoFresh('/')
+    await login('ana')
+    await page.goto('/perfil')
+    await expect(page.getByRole('heading', { level: 1, name: 'Perfil do colecionador' })).toBeVisible()
+    await mock.scenario('slow')
+    await page.reload()
+    // The session check alone takes 2.5 s here: the page must not stay blank meanwhile.
+    const pending = page.getByRole('status', { name: 'Carregando página' })
+    await expect(pending).toBeVisible({ timeout: 1500 })
+    await expect(page.getByRole('banner')).toBeVisible()
+    await expect(pending.locator('[data-skeleton]').first()).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Perfil do colecionador' })).toBeVisible({ timeout: 15_000 })
+    await expect(pending).toHaveCount(0)
+  })
+
   test('skeletons shimmer, and stand still with prefers-reduced-motion', async ({ page, gotoFresh }) => {
     await gotoFresh('/', { scenario: 'slow' })
     const skeleton = grid(page).locator('[data-skeleton]').first()

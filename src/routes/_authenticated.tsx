@@ -3,6 +3,7 @@ import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { queryKeys } from '@/app/query-client'
 import { sessionQueryOptions } from '@/features/auth/queries'
 import { redirectAfterExpiry, takeExpiredHint } from '@/features/auth/session-events'
+import { PageSkeleton } from '@/shared/layout/PageSkeleton'
 
 /**
  * Re-checks a cached session in the background. A rejected token has already ended the session
@@ -34,4 +35,8 @@ export const Route = createFileRoute('/_authenticated')({
     }
   },
   component: Outlet,
+  // A cold load waits for GET /me before rendering: show the app frame and a skeleton instead of a blank page.
+  pendingComponent: PageSkeleton,
+  pendingMs: 300,
+  pendingMinMs: 300,
 })
