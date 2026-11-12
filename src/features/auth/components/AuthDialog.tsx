@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useRef, useState, type ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { HomeContent } from '@/features/catalog/components/HomeContent'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { cn } from '@/shared/lib/utils'
@@ -36,26 +36,40 @@ const closeTarget = (search: AuthSearch) => {
   return isPrivatePath(target) ? '/' : target
 }
 
+/**
+ * What had the focus before the auth dialog opened (e.g. the header "Entrar" link). Opened by navigation,
+ * the dialog has no Radix trigger to hand the focus back to. Module-level because switching
+ * Entrar ⇄ Criar conta remounts the dialog: the new one must keep the original opener.
+ */
+let authDialogOpener: HTMLElement | null = null
+const AUTH_DIALOG = '[data-auth-dialog]'
+
 /** Desktop (≥768px): Figma's dialog over Início. Esc / close returns to the public redirect target or Início. */
 export function AuthDialog({ mode, search, children }: { mode: AuthMode; search: AuthSearch; children: ReactNode }) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
-  // Opened by navigation, the dialog has no Radix trigger to hand the focus back to on close:
-  // remember what had it (e.g. the header "Entrar" link) and return it there while it still exists.
-  const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null))
   const copy = COPY[mode]
   return (
     <Dialog open onOpenChange={(open) => !open && void navigate({ href: closeTarget(search) })}>
       <DialogContent
         ref={contentRef}
+        data-auth-dialog=""
         onOpenAutoFocus={(event) => {
+          // Still focused here: the opener, or (tab switch) the previous dialog's link or <body>; keep the original.
+          const active = document.activeElement
+          if (active instanceof HTMLElement && active !== document.body && !active.closest(AUTH_DIALOG)) {
+            authDialogOpener = active
+          }
           // Start on the first field, not on the tab links.
           event.preventDefault()
           contentRef.current?.querySelector<HTMLInputElement>('form input')?.focus()
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault()
-          if (opener?.isConnected) opener.focus()
+          // A tab switch mounted the next auth dialog, which keeps the focus.
+          if (document.querySelector(AUTH_DIALOG)) return
+          if (authDialogOpener?.isConnected) authDialogOpener.focus()
+          authDialogOpener = null
         }}
         className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto rounded-none border-0 border-b-8 border-primary bg-surface p-0 sm:max-w-[505px] [&_[data-slot=dialog-close]]:text-text-accent [&_[data-slot=dialog-close]_svg]:size-5"
       >

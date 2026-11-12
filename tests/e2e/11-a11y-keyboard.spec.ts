@@ -6,17 +6,37 @@ import { connectDialog, reviewDialog, sendButton } from './checkout-helpers'
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 /**
- * The focused element shows a focus indicator: an outline or a box-shadow ring on the element itself,
- * or on its ::before/::after (the catalog card link draws its ring on the stretched ::after).
+ * The focused element (never <body>) matches :focus-visible and shows a focus indicator: a painted
+ * outline (style not none, width > 0, colour alpha > 0) or a ring-shaped box-shadow layer (spread >= 1px,
+ * colour alpha > 0; decorative drop shadows use blur, not spread) on the element or its ::before/::after
+ * (the catalog card link draws its ring on the stretched ::after).
  * Runs as a string script: the e2e tsconfig has no DOM types.
  */
-const FOCUS_INDICATOR = `(() => {
+// String.raw keeps the regex backslashes intact in the page script.
+const FOCUS_INDICATOR = String.raw`(() => {
   const el = document.activeElement
-  if (!el || el === document.body) return { tag: 'body', visible: true }
-  const ring = (style) =>
-    (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) ||
-    (style.boxShadow !== 'none' && style.boxShadow !== '')
-  const visible = [null, '::before', '::after'].some((pseudo) => ring(getComputedStyle(el, pseudo)))
+  if (!el || el === document.body || el === document.documentElement) return { tag: 'body', visible: false }
+  const alpha = (color) => {
+    if (!color || color === 'transparent') return 0
+    const slash = color.match(/\/\s*([\d.]+)(%?)\s*\)/)
+    if (slash) return parseFloat(slash[1]) / (slash[2] ? 100 : 1)
+    const rgba = color.match(/^rgba\(([^)]*)\)/)
+    if (rgba) return parseFloat(rgba[1].split(',')[3])
+    return 1
+  }
+  const COLOR = /(rgba?|hsla?|oklch|oklab|lab|lch|color)\([^)]*\)|transparent/
+  const outline = (style) =>
+    style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0 && alpha(style.outlineColor) > 0
+  const ringShadow = (style) =>
+    style.boxShadow !== 'none' &&
+    style.boxShadow.split(/,(?![^(]*\))/).some((layer) => {
+      const color = (layer.match(COLOR) || [''])[0]
+      const lengths = layer.replace(COLOR, '').match(/-?[\d.]+px/g) || []
+      return alpha(color) > 0 && parseFloat(lengths[3] || '0') >= 1
+    })
+  const pseudos = [null, '::before', '::after']
+  const visible =
+    el.matches(':focus-visible') && pseudos.some((pseudo) => { const st = getComputedStyle(el, pseudo); return outline(st) || ringShadow(st) })
   const name = el.getAttribute('aria-label') || el.textContent?.trim().slice(0, 40) || el.id || ''
   return { tag: el.tagName.toLowerCase() + (name ? ' "' + name + '"' : ''), visible }
 })()`
@@ -53,6 +73,14 @@ async function expectFocusTrapped(page: Page, container: Locator, presses = 25) 
       expect(await container.evaluate((el) => el.contains(el.ownerDocument.activeElement))).toBe(true)
     }
   }
+}
+
+/** The page is the one asked for, its own content is on screen and nothing is still loading. */
+async function expectPageReady(page: Page, path: string, anchor: Locator) {
+  await expect(page).toHaveURL((url) => url.pathname === path)
+  await expect(anchor).toBeVisible()
+  await waitForApiIdle(page)
+  await expect(page.locator('[data-skeleton]:visible')).toHaveCount(0)
 }
 
 async function expectNoAxeViolations(page: Page) {
@@ -166,6 +194,19 @@ test.describe('keyboard', () => {
     await expect(dialog).toHaveCount(0)
     await expect(page).toHaveURL('/')
     await expect(entrar).toBeFocused()
+
+    // Switching to "Criar conta" inside the dialog remounts it; closing still returns to the header link.
+    await page.keyboard.press('Enter')
+    await expect(dialog).toBeVisible()
+    await tabTo(page, dialog.getByRole('link', { name: 'Criar conta' }), { back: true })
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL('/cadastro')
+    const register = page.getByRole('dialog', { name: 'Criar conta' })
+    await expect(register.getByRole('textbox', { name: /^Nome de usuário/ })).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(register).toHaveCount(0)
+    await expect(page).toHaveURL('/')
+    await expect(entrar).toBeFocused()
   })
 
   test('the mobile filter sheet traps the focus and gives it back on close', async ({ page, gotoFresh, isMobile }) => {
@@ -247,10 +288,18 @@ test.describe('navigation semantics', () => {
 test.describe('axe (WCAG 2.1 A/AA)', () => {
   test.describe.configure({ timeout: 90_000 })
 
-  for (const path of ['/', '/nft/nft_042', '/carrinho', '/entrar', '/em-breve']) {
+  // Each page is scanned only once its own content is on screen (not a redirect, skeleton or error).
+  const GUEST_PAGES: [string, (page: Page) => Locator][] = [
+    ['/', (page) => page.getByTestId('nft-card').first()],
+    ['/nft/nft_042', (page) => page.getByRole('heading', { level: 1, name: 'Emerald Ape #042' })],
+    ['/carrinho', (page) => page.getByRole('heading', { name: 'Seu carrinho está vazio' })],
+    ['/entrar', (page) => page.getByRole('form', { name: 'Entrar' })],
+    ['/em-breve', (page) => page.getByRole('heading', { level: 1, name: 'Em breve' })],
+  ]
+  for (const [path, anchor] of GUEST_PAGES) {
     test(`${path} has no violations`, async ({ page, gotoFresh }) => {
       await gotoFresh(path)
-      await waitForApiIdle(page)
+      await expectPageReady(page, path, anchor(page))
       await expectNoAxeViolations(page)
     })
   }
@@ -258,17 +307,28 @@ test.describe('axe (WCAG 2.1 A/AA)', () => {
   test('/carrinho with items has no violations', async ({ page, gotoFresh, isMobile }) => {
     await gotoFresh('/nft/nft_042')
     await page.getByRole('button', { name: isMobile ? 'Comprar NFT' : 'COMPRAR', exact: true }).click()
-    await expect(page).toHaveURL('/carrinho')
-    await waitForApiIdle(page)
+    await expectPageReady(page, '/carrinho', page.getByText('Emerald Ape #042').first())
     await expectNoAxeViolations(page)
   })
 
-  for (const path of ['/pagamento', '/perfil', '/perfil/carteiras', '/perfil/favoritos']) {
+  const SIGNED_IN_PAGES: [string, (page: Page) => Locator][] = [
+    ['/pagamento', (page) => page.getByTestId('checkout-total').filter({ hasText: /ETH$/ })],
+    ['/perfil', (page) => page.getByRole('form', { name: 'Dados do perfil' })],
+    ['/perfil/carteiras', (page) => page.getByRole('main').getByRole('region').first()],
+    [
+      '/perfil/favoritos',
+      (page) =>
+        page
+          .getByRole('list', { name: 'Lista de interesse' })
+          .or(page.getByRole('heading', { name: 'Sua lista de interesse está vazia' })),
+    ],
+  ]
+  for (const [path, anchor] of SIGNED_IN_PAGES) {
     test(`${path} (signed in) has no violations`, async ({ page, gotoFresh, login }) => {
       await gotoFresh('/')
       await login('ana')
       await page.goto(path)
-      await waitForApiIdle(page)
+      await expectPageReady(page, path, anchor(page))
       await expectNoAxeViolations(page)
     })
   }
@@ -292,7 +352,8 @@ test.describe('axe (WCAG 2.1 A/AA)', () => {
 })
 
 test.describe('zoom', () => {
-  // A 720px-wide window rendered at 2x, then CSS zoom 200%: the layout gets 360 CSS px (WCAG 1.4.10 reflow).
+  // WCAG 1.4.10 reflow: a 720px window at 2x with CSS zoom 200% stands for a 1440px screen zoomed to 200%,
+  // leaving 360 effective CSS px; the page must not scroll sideways. (CSS zoom keeps the 720px breakpoints.)
   test.use({ viewport: { width: 720, height: 900 }, deviceScaleFactor: 2, isMobile: false, hasTouch: false })
 
   test('/pagamento (and the other main pages) at 200% zoom have no horizontal scroll', async ({ page, gotoFresh, login }) => {
