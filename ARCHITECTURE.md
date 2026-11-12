@@ -250,11 +250,11 @@ Essas rotas não passam por `withNetwork` (exceto o ping): falhas e latência de
 
 | Aspecto | Implementação |
 |---|---|
-| Armazenamento | `localStorage['kurio-session']` = `Session` (token opaco, não a senha), validado com Zod a cada leitura. Assinantes (`sessionStore.subscribe`) mantêm a query `['session']` e o socket em sincronia. |
+| Armazenamento | `localStorage['kurio-session']` = `Session` (token opaco, não a senha), validado com Zod a cada leitura. Assinantes (`sessionStore.subscribe`) mantêm a query `['session']` e o socket em sincronia, inclusive quando outra aba entra ou sai (evento `storage`). Um `401` só encerra a sessão se veio do token atual. |
 | Envio | Interceptor do Axios: `Authorization: Bearer <token>`. O socket recebe o token **só** no `auth` do CONNECT, nunca na URL. |
 | Validação | `GET /auth/session` (query `['session']`, `staleTime` 5 min). Sem token salvo, nenhuma requisição. Falha de rede mantém a sessão salva. `401` encerra a sessão. |
 | Validade | No servidor simulado: 30 min, renovados a cada requisição autenticada. O cliente não confia em `expiresAt`: quem decide é o `401` da API. |
-| Expiração | Qualquer `401` (`SESSION_EXPIRED`/`UNAUTHENTICATED`) numa requisição que levou token chama `endSession('expired')`: limpa o token, remove todas as queries `['user', …]`, grava `['session'] = null`, avisa os assinantes (o socket é recriado como visitante e os avisos de preço somem), salva a rota atual em `sessionStorage['kurio-resume']` e navega para `/entrar?redirect=…&reason=expired`. Vários `401` em paralelo redirecionam uma vez só. |
+| Expiração | Qualquer `401` (`SESSION_EXPIRED`/`UNAUTHENTICATED`) numa requisição que levou o token atual chama `endSession('expired')`: limpa o token, remove todas as queries `['user', …]` e as cotações do carrinho logado (`['quote', 'user:<id>', …]`), grava `['session'] = null`, avisa os assinantes (o socket é recriado como visitante e os avisos de preço somem), salva a rota atual e o id do usuário em `sessionStorage['kurio-resume']` (só esse usuário a recebe de volta no login) e navega para `/entrar?redirect=…&reason=expired`. Vários `401` em paralelo redirecionam uma vez só. |
 | Retomada | Depois do login, volta para o `redirect` (validado como caminho interno). O rascunho do checkout (`sessionStorage['kurio-checkout-draft:<userId>']`, sem segredos) é restaurado. |
 | Logout | `POST /auth/logout` (melhor esforço: se a API falhar, a sessão local termina mesmo assim) → mesma limpeza da expiração, mas apaga a retomada e **todos** os rascunhos do checkout, e volta para `/`. |
 | Troca de usuário | Login de outro usuário na mesma aba encerra a sessão anterior (`'switch'`) antes de gravar a nova: cache privado, rascunhos e socket do anterior saem antes de qualquer dado do novo. |
@@ -305,7 +305,7 @@ src/mocks/
 
 - **Transporte REST:** Service Worker do MSW 2.15 (`public/mockServiceWorker.js`), com `onUnhandledRequest: 'bypass'` para assets. A aplicação só monta depois que o worker controla a página. O atributo `data-mocks="ready"` no `<html>` marca esse momento para os testes: antes do `MOCK_ACTIVATE`, o worker já pode controlar a página mas ainda deixa passar as requisições.
 - **Transporte Socket.IO:** `ws.link()` do MSW + `@mswjs/socket.io-binding` 0.2.0. A interceptação do `WebSocket` roda **na thread principal**, não no Service Worker.
-- **Persistência e reset:** o banco é salvo em `localStorage` a cada mutation e sustenta o refresh. O reset recria o seed e aplica o patch do cenário. Os efeitos de "uma vez" (`price-change`, `sold-out`, `order-timeout`) ficam em memória e são zerados no reset.
+- **Persistência e reset:** o banco é salvo em `localStorage` a cada mutation e sustenta o refresh. Entre abas, `getDb()` compara o valor salvo com o último que a aba leu ou gravou e adota o mais novo, então uma mutation nunca sobrescreve o que outra aba gravou. O reset recria o seed e aplica o patch do cenário, sem deixar versões de recurso voltarem (cada uma fica com o maior valor entre a anterior e a do seed), para o cliente não descartar os próximos eventos. Os efeitos de "uma vez" (`price-change`, `sold-out`, `order-timeout`) ficam em memória e são zerados no reset.
 - **Determinismo:** seed fixo (data de referência `2026-11-01`, PRNG com seed). A latência de cada cenário segue uma sequência com seed própria, reiniciada a cada ativação.
 - **Agendador de pedidos:** um pedido nasce `pending` com `resolveAt` persistido (2,5 s; 60 s no `order-timeout`). Ele é resolvido por timer, no boot da mock e em todo `GET /orders…` com prazo vencido. Só pedidos `pending` são resolvidos, então estoque e carrinho mudam uma vez só.
 
@@ -320,7 +320,7 @@ Validado em `tests/e2e/realtime-spike.spec.ts` (projeto `spike`, contra `npm run
 | Ping/pong | O handshake anuncia `pingInterval` 25 s / `pingTimeout` 5 s, mas o binding nunca envia ping (sem ping, o cliente cai a cada ~30 s) | O servidor simulado envia o ping Engine.IO (`"2"`) a cada 25 s por conexão |
 | Queda e reconexão | `close()` do servidor dispara a reconexão do cliente (backoff 500 ms a 3 s) | `socket:drop` fecha tudo e recusa novas conexões (`error` + `close`, para o cliente emitir `connect_error` e continuar tentando) até `socket:restore` |
 | Transporte | Só `websocket`; long-polling não é interceptado | `transports: ['websocket']` no cliente |
-| Escopo | Um servidor simulado **por aba** | O banco é compartilhado entre abas via `localStorage`, mas um evento emitido numa aba não chega às outras |
+| Escopo | Um servidor simulado **por aba** | O banco é compartilhado entre abas via `localStorage` (cada aba relê o banco salvo antes de ler ou gravar quando outra aba o alterou), mas um evento emitido numa aba não chega às outras |
 | Salas | O binding não tem salas | Mapa `userId → conexões` na mock (`server.ts`) |
 | Replay | Os envelopes para `event:replay` ficam em memória (últimos 200) | Depois de um reload, um `eventId` antigo responde `404` |
 
@@ -403,7 +403,7 @@ As cores do Figma passam em contraste ≥ 4,5:1 nos pares de texto pequeno (`src
 
 - **Custos da simulação no build de demonstração:** chunk do MSW (cerca de 180 KB gzip), espera pelo Service Worker antes do primeiro render e latência proposital. Isso derruba a Performance mobile do Lighthouse (ver [`lighthouse/summary.md`](lighthouse/summary.md)). O build sem mocks (`npm run build`) não carrega nada disso.
 - **Build sem mocks e sem backend:** `npm run build` é a versão para uma API real. Servido sozinho, as chamadas `/api` falham e o `socket.io-client` tenta reconectar indefinidamente (a pílula mostra "Reconectando…" e o console registra erros). O deploy usa o build de demonstração.
-- **Socket simulado por aba**, só transporte websocket, replays em memória (ver tabela do spike). O cenário ativo também é por aba.
+- **Socket simulado por aba**, só transporte websocket, replays em memória (ver tabela do spike). O cenário ativo também é por aba. O banco e a sessão são compartilhados entre abas, mas os eventos em tempo real não: outra aba vê a mudança no próximo refetch.
 - **Tentativa de pedido sobrevive ao logout na mesma aba:** a tentativa sem resposta (payload com os dados do pagador, sem senha) fica em `sessionStorage` por usuário até uma resposta definitiva ou até a aba fechar. É uma escolha deliberada a favor de nunca duplicar uma compra. Em dispositivo compartilhado, feche a aba depois do logout.
 - **`INVALID_RESPONSE` num 2xx de `POST /orders`** mantém a tentativa guardada (a resposta não prova nada), então a aba só reenvia aquela tentativa até ser fechada. A simulação não gera esse caso.
 - **Sem `sessionStorage`** (modo restrito do navegador), a proteção contra duplicidade vale só enquanto o diálogo do checkout está aberto.

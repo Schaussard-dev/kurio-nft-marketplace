@@ -101,9 +101,12 @@ Demonstração local igual ao deploy: `npm run build:demo && npm run preview`.
 
 A camada de mocks fica toda em `src/mocks/`. Ela é carregada por `src/main.tsx` só quando `VITE_ENABLE_MOCKS=true`. Componentes, hooks e o cliente Axios não sabem que a API é simulada.
 
-- **Persistência:** o banco simulado fica em `localStorage` (`kurio-mock-db:v1`) e sobrevive ao refresh. Ele é compartilhado entre abas da mesma origem.
+- **Persistência:** o banco simulado fica em `localStorage` (`kurio-mock-db:v1`) e sobrevive ao refresh. Ele é compartilhado entre abas da mesma origem: antes de cada leitura ou gravação, a aba relê o banco salvo se outra aba o alterou, então pedidos, cadastros, sessões e estoque de uma aba valem nas outras e nenhuma gravação apaga a de outra aba.
+- **Sessão entre abas:** `kurio-session` também fica em `localStorage`. Login ou logout numa aba vale para as próximas requisições das outras, e o cabeçalho delas acompanha. Um `401` de um token que já foi substituído não encerra a sessão nova.
+- **Eventos não cruzam abas:** o servidor Socket.IO simulado é **por aba**. Um `nft.updated` ou `order.updated` emitido numa aba só chega aos sockets dessa aba; as outras veem a mudança no próximo refetch.
 - **Cenário ativo:** fica em `sessionStorage` (`kurio-mock-config`), ou seja, **por aba**. Uma aba nova começa em `default`.
 - **Determinismo:** a latência sai de um PRNG com seed por cenário. Cada ativação do cenário repete a mesma sequência.
+- **Troca de senha:** não encerra as outras sessões do mesmo usuário (outras abas e navegadores continuam logados até o token expirar ou o logout).
 
 ### Cenários
 
@@ -136,6 +139,8 @@ A camada de mocks fica toda em `src/mocks/`. Ela é carregada por `src/main.tsx`
 | `POST /api/__mock/reset` / `/api/__mock/scenario` / `/api/__mock/emit` | Mesmo controle por código. Ver abaixo. |
 
 O reset não apaga a sessão salva no navegador (`kurio-session`). Depois de um reset, o token antigo não existe no banco novo e a primeira chamada autenticada responde `401`, o que encerra a sessão como uma expiração. Para começar do zero, entre de novo.
+
+Um `mock('reset')` pelo console (sem recarregar) mantém o realtime funcionando: as versões dos recursos nunca voltam para as do seed, então o próximo `nft.updated` é aplicado normalmente. O que já está em tela só mostra o seed restaurado no próximo refetch; para ver tudo de uma vez, recarregue a página (é o que o "Reset" do painel faz).
 
 **Ações do painel:** cenário, latência fixa (ms; vazio volta à do cenário), Reset, Expirar sessão, Derrubar conexão, Restaurar conexão, Desconectar carteira, alterar preço de um NFT (ID + novo preço), esgotar todas as edições de um NFT e reenviar um evento pelo ID.
 
