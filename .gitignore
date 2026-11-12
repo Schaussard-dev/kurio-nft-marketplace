@@ -9,3 +9,6 @@ lighthouse/.tmp/
 *.tsbuildinfo
 
 design/raw/
+
+# Local AI assistant instructions (not part of the deliverable)
+CLAUDE.md
