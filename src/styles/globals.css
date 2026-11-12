@@ -140,3 +140,20 @@ body:has([data-bottom-bar]) .mock-panel-trigger {
 #conteudo:has([data-page-loading]) {
   min-height: calc(100dvh - 68px);
 }
+
+/* Below 1024px the bottom of the screen holds the tab bar (or the NFT buy bar): toasts sit above it. */
+@media (max-width: 1023.98px) {
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
+  }
+  body:has([data-bottom-bar]) [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(12.5rem + env(safe-area-inset-bottom)) !important;
+  }
+}
+/* Short screens keep those bars in the page flow (see the bars), so toasts go back to the corner. */
+@media (max-height: 480px) {
+  [data-sonner-toaster][data-y-position="bottom"],
+  body:has([data-bottom-bar]) [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: 1rem !important;
+  }
+}
