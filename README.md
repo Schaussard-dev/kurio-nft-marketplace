@@ -50,7 +50,7 @@ Nenhum arquivo `.env` precisa ser criado. O repositório versiona `.env.developm
 
 ## Variáveis de ambiente
 
-Modelo em [`.env.example`](.env.example). Para sobrescrever localmente, use `.env.local` (ignorado pelo Git).
+Modelo em [`.env.example`](.env.example). Para sobrescrever localmente, use `.env.development.local` (ignorado pelo Git). Evite `VITE_ENABLE_MOCKS=true` em `.env` ou `.env.local`: esses arquivos também são lidos por `npm run build`, que passaria a embutir os mocks (e `npm run check:prod-bundle` falharia).
 
 | Variável | Padrão | Onde é usada | Efeito |
 |---|---|---|---|
@@ -220,6 +220,7 @@ Todos os roteiros partem de `http://localhost:5173` (`npm run dev`) ou do previe
 
 **Durante o checkout (cenário `price-change`):**
 1. `/?scenario=price-change&reset=1`, entre como Ana, `/carrinho` → "Conectar e finalizar".
+   No painel "Simulação", defina a latência fixa em `1500` ms: com a latência padrão (150–400 ms) a página pode recotar antes de a revisão abrir, e a revisão já mostra 1.806 (sem `409`). É o mesmo ajuste usado em `tests/e2e/09-realtime-checkout.spec.ts`.
 2. Em `/pagamento`, "Confirmar compra". A aprovação simulada da carteira sobe o preço do Sage Nomad em 0,10 ETH (`nft.updated`), e o total da página vai de 1.706 para 1.806 ETH.
 3. "Enviar pedido" na revisão envia a cotação antiga, e a API responde `409 QUOTE_STALE`. O diálogo "O valor do pedido mudou" mostra antes e agora. Nenhum pedido é criado até "Confirmar novo valor".
 
@@ -241,7 +242,7 @@ Todos os roteiros partem de `http://localhost:5173` (`npm run dev`) ou do previe
 ### Eventos duplicados ou antigos
 
 1. Pelo console: `const { eventId } = await mock('emit', { action: 'nft:update', nftId: 'nft_042', price: '1.29' })`, depois `await mock('emit', { action: 'nft:update', nftId: 'nft_042', price: '1.49' })`.
-2. `await mock('emit', { action: 'event:replay', eventId })` reenvia o evento antigo (versão menor). O cliente o descarta pelo `eventId` já visto e pela versão monotônica: o preço continua 1.49 e nada é anunciado de novo. O painel tem o mesmo "Reenviar" a partir do ID do evento.
+2. `await mock('emit', { action: 'event:replay', eventId })` reenvia o evento antigo (versão menor). O cliente o descarta pelo `eventId` já visto e pela versão monotônica: o preço continua 1.49 e nada é anunciado de novo. O painel tem o mesmo "Reenviar último evento" a partir do ID do evento.
 
 ## Política de cache, retry e sincronização
 
