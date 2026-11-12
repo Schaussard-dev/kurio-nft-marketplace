@@ -2,7 +2,7 @@ import { Mail, ShoppingCart, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { FavoriteButton } from '@/features/favorites/components/FavoriteButton'
 import type { Edition, NftDetail } from '@/shared/contracts'
-import { formatEth } from '@/shared/lib/format'
+import { formatEth, formatRating } from '@/shared/lib/format'
 import { UNAVAILABLE_MESSAGE } from '@/shared/lib/unavailable'
 import { cn } from '@/shared/lib/utils'
 import { buttonVariants } from '@/shared/ui/button'
@@ -35,7 +35,6 @@ interface NftInfoProps extends PurchaseProps {
 }
 
 const META = 'text-body-14 leading-6 text-muted md:text-body-15'
-const ratingText = (rating: number) => rating.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 
 function addToCart({ nft, edition, quantity, onAddToCart, adding }: PurchaseProps, goToCart: boolean) {
   if (!edition || quantity.value === 0 || adding) return
@@ -113,7 +112,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
           <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-body-15 text-foreground">
             <Star aria-hidden className="size-4 fill-current text-text-accent" />
             <span className="sr-only">Nota </span>
-            {ratingText(nft.rating)}
+            {formatRating(nft.rating)}
             <span>
               <span className="sr-only">, </span>({nft.reviewCount}
               <span className="sr-only"> avaliações</span>)

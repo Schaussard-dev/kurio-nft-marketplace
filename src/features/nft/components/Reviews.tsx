@@ -1,15 +1,13 @@
 import { Star } from 'lucide-react'
 import type { Review } from '@/shared/contracts'
-import { formatDate } from '@/shared/lib/format'
+import { formatDate, formatRating } from '@/shared/lib/format'
 import { cn } from '@/shared/lib/utils'
-
-const ratingText = (rating: number) => rating.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 
 /** Five stars filled up to the rounded rating; one accessible name for the whole row. */
 export function Stars({ rating, className }: { rating: number; className?: string }) {
   const filled = Math.round(rating)
   return (
-    <span role="img" aria-label={`Nota ${ratingText(rating)} de 5`} className={cn('inline-flex gap-0.5', className)}>
+    <span role="img" aria-label={`Nota ${formatRating(rating)} de 5`} className={cn('inline-flex gap-0.5', className)}>
       {Array.from({ length: 5 }, (_, index) => (
         <Star
           key={index}
@@ -31,7 +29,7 @@ export function Reviews({ reviews, rating }: { reviews: Review[]; rating: number
       <p className="flex items-center gap-2 text-body-15 text-foreground">
         <Stars rating={rating} />
         <span>
-          {ratingText(rating)} de 5 · {reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'}
+          {formatRating(rating)} de 5 · {reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'}
         </span>
       </p>
       <ul className="flex flex-col divide-y divide-border">

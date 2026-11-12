@@ -35,3 +35,8 @@ export function shortHash(hash: string): string {
   const body = hash.replace(/^0x/i, '').toUpperCase()
   return `0x${body.slice(0, 4)}…${body.slice(-4)}`
 }
+
+/** Review rating (0–5, not money) in pt-BR with at most one decimal: 4.75 -> "4,8". */
+export function formatRating(rating: number): string {
+  return rating.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+}

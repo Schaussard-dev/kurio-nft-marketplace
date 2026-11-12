@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDiscount, formatEth, shortHash } from './format'
+import { formatDate, formatDiscount, formatEth, formatRating, shortHash } from './format'
 
 describe('format', () => {
   it('formats ETH with min 2 decimals', () => {
@@ -20,5 +20,9 @@ describe('format', () => {
   })
   it('shortens hash', () => {
     expect(shortHash('0xa91f0000000000000000000000000000000ee82c')).toBe('0xA91F…E82C')
+  })
+  it('formats a rating with a pt-BR decimal comma and at most one decimal', () => {
+    expect(formatRating(4.75)).toBe('4,8')
+    expect(formatRating(5)).toBe('5')
   })
 })

@@ -45,7 +45,8 @@ export const orderSchema = z.object({
   resolvedAt: isoDateTimeSchema.nullable(),
   declineReason: z.string().nullable(),
   txHash: z.string(),
-  explorerUrl: z.string(),
+  /** Rendered as a link: only http(s) (never javascript:/data:). */
+  explorerUrl: z.url({ protocol: /^https?$/ }),
   /** The Idempotency-Key that created it (owner only): lets the client match an unresolved attempt. */
   idempotencyKey: z.string(),
   snapshot: z.object({

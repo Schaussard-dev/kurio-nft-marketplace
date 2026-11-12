@@ -281,6 +281,9 @@ describe('orders', () => {
   it('orderSchema', () => {
     expect(orderSchema.safeParse(order).success).toBe(true)
     expect(orderSchema.safeParse({ ...order, status: 'done' }).success).toBe(false)
+    expect(orderSchema.safeParse({ ...order, explorerUrl: 'javascript:alert(1)' }).success).toBe(false)
+    expect(orderSchema.safeParse({ ...order, explorerUrl: 'ftp://etherscan.io/tx/0xabc' }).success).toBe(false)
+    expect(orderSchema.safeParse({ ...order, explorerUrl: 'tx/0xabc' }).success).toBe(false)
   })
 
   it('createOrderInputSchema', () => {
