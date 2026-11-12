@@ -61,6 +61,28 @@ test.describe('catalog (Início)', () => {
     for (const attr of attrs) expect(attr).toEqual({ category: 'musica', network: 'polygon' })
   })
 
+  test('a hand-written link with plain values applies them, and the app writes plain values back', async ({
+    page,
+    gotoFresh,
+    isMobile,
+  }) => {
+    await gotoFresh('/?minPrice=3.62&categories=arte-digital&q=a')
+    const expected = await page.evaluate(async () => {
+      const res = await fetch('/api/nfts?minPrice=3.62&categories=arte-digital&q=a')
+      return ((await res.json()) as { items: { name: string }[] }).items.map((item) => item.name)
+    })
+    expect(expected.length).toBeGreaterThan(0)
+    await settled(page)
+    await expect.poll(() => cardNames(page)).toEqual(expected)
+    await expect(page.getByRole('searchbox', { name: 'Buscar NFTs' })).toHaveValue('a')
+
+    const filters = await openFilters(page, isMobile)
+    await filters.getByRole('checkbox', { name: /^Música/ }).check()
+    await expect.poll(() => new URL(page.url()).searchParams.getAll('categories')).toEqual(['arte-digital', 'musica'])
+    expect(page.url()).not.toContain('%22')
+    expect(page.url()).toContain('minPrice=3.62')
+  })
+
   test('pagination, sorting, history and reload stay in sync with the URL', async ({ page, gotoFresh }) => {
     await gotoFresh('/')
     await expect(cards(page)).toHaveCount(9)

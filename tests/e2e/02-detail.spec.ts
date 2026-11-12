@@ -57,6 +57,10 @@ test.describe('NFT detail', () => {
     // Default = first edition with stock.
     await expect(editions(page).getByRole('radio', { name: /^1\/10/ })).toHaveAttribute('aria-checked', 'true')
 
+    // force skips scrolling: bring the chip out from under the mobile buy bar first.
+
+    await soldOut.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+
     await soldOut.click({ force: true })
     await expect(soldOut).toHaveAttribute('aria-checked', 'false')
     await expect(page).not.toHaveURL(/edition=nft_042_e1/)

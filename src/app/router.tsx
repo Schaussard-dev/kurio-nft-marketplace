@@ -2,6 +2,7 @@ import { createRouter } from '@tanstack/react-router'
 import { routeTree } from '@/routeTree.gen'
 import { NotFound } from '@/app/NotFound'
 import { createQueryClient } from '@/app/query-client'
+import { parseSearch, stringifySearch } from '@/app/search-serialization'
 import { bindSessionNavigator, endSession, onSessionEnded, registerSessionStartHook } from '@/features/auth/session-events'
 import { mergeGuestCartAfterSignIn } from '@/features/cart/merge'
 import { clearAllCheckoutDrafts } from '@/features/checkout/draft'
@@ -15,6 +16,9 @@ export const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultNotFoundComponent: NotFound,
+  // Plain, shareable query strings (?categories=a&maxPrice=12.00) instead of JSON-encoded values.
+  parseSearch,
+  stringifySearch,
 })
 
 // Session expiry: any authenticated request answered with 401 ends the session and goes to /entrar.
