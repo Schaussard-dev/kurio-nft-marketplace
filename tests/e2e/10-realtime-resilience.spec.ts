@@ -66,10 +66,13 @@ test.describe('realtime resilience', () => {
     expect(first.status).toBe(200)
     expect(typeof first.body.eventId).toBe('string')
     await expect(priceNotice(page)).toContainText('mudou de 1.19 para 1.29 ETH')
+    // announce() lands 50 ms later and a newer announce cancels a pending one: let it land before the next event.
+    await expect.poll(announcements).toContain('O preço de Emerald Ape #042 mudou de 1.19 para 1.29 ETH')
 
     expect(await mock.emit({ action: 'nft:update', nftId: 'nft_042', price: '1.39' })).toBe(200)
     await expect(priceNotice(page)).toContainText('mudou de 1.29 para 1.39 ETH')
     await expect(ape.getByTestId('line-total')).toHaveText('1.39 ETH')
+    await expect.poll(announcements).toContain('O preço de Emerald Ape #042 mudou de 1.29 para 1.39 ETH')
 
     // The server re-sends the identical (older) 1.29 envelope.
     expect(await mock.emit({ action: 'event:replay', eventId: first.body.eventId })).toBe(200)
