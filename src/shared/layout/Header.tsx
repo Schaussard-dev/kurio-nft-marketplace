@@ -69,8 +69,9 @@ const MENU_ITEM =
 
 function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: string | null }) {
   const logout = useLogout()
+  // Non-modal: the rest of the page stays exposed to assistive tech while the menu is open.
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root modal={false}>
       <DropdownMenu.Trigger
         aria-label={`Menu de ${displayName}`}
         className="inline-flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary text-body-15 font-bold text-ink hover:bg-primary-light"

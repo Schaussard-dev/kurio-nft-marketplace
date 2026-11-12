@@ -124,3 +124,14 @@ body:has([data-bottom-bar]) .mock-panel-trigger {
     padding-bottom: 4rem;
   }
 }
+
+/* Reduced motion: sheets and dialogs appear in place (no slide, zoom or fade). */
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="sheet-content"],
+  [data-slot="sheet-overlay"],
+  [data-slot="dialog-content"],
+  [data-slot="dialog-overlay"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}

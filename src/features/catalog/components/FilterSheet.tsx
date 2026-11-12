@@ -22,7 +22,8 @@ export function FilterSheet() {
   return (
     <Sheet>
       <SheetTrigger
-        aria-label="Filtros"
+        // The badge is visual only: the name carries the count ("Filtros, 2 ativos").
+        aria-label={active === 0 ? 'Filtros' : `Filtros, ${active} ${active === 1 ? 'ativo' : 'ativos'}`}
         className="relative inline-flex size-[45px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-light to-primary-dark text-ink"
       >
         <SlidersHorizontal aria-hidden className="size-5" />

@@ -68,6 +68,23 @@ test.describe('loading states (scenario slow)', () => {
     await expect(pending).toHaveCount(0)
   })
 
+  test('with prefers-reduced-motion, sheets and dialogs open without sliding or zooming (FR-20)', async ({
+    page,
+    gotoFresh,
+    isMobile,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await gotoFresh('/')
+    await waitForApiIdle(page)
+    await (isMobile
+      ? page.getByRole('button', { name: /^Filtros/ })
+      : page.getByRole('banner').getByRole('link', { name: 'Entrar' })
+    ).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    expect(await dialog.evaluate((el) => el.ownerDocument.defaultView!.getComputedStyle(el).animationName)).toBe('none')
+  })
+
   test('skeletons shimmer, and stand still with prefers-reduced-motion', async ({ page, gotoFresh }) => {
     await gotoFresh('/', { scenario: 'slow' })
     const skeleton = grid(page).locator('[data-skeleton]').first()

@@ -225,6 +225,32 @@ test.describe('keyboard', () => {
     await expect(trigger).toBeFocused()
   })
 
+  test('every dialog and sheet "Fechar" button is a 32px target (FR-09)', async ({ page, gotoFresh, isMobile }) => {
+    await gotoFresh('/')
+    await waitForApiIdle(page)
+    const open = isMobile
+      ? page.getByRole('button', { name: /^Filtros/ })
+      : page.getByRole('banner').getByRole('link', { name: 'Entrar' })
+    await open.click()
+    const close = page.getByRole('dialog').getByRole('button', { name: 'Fechar', exact: true })
+    await expect(close).toBeVisible()
+    // Measure once the opening zoom/slide has finished.
+    await close.evaluate('Promise.all(document.getAnimations().map((a) => a.finished))')
+    const box = (await close.boundingBox())!
+    expect(box.width).toBeGreaterThanOrEqual(32)
+    expect(box.height).toBeGreaterThanOrEqual(32)
+    expect(await close.evaluate((el) => el.ownerDocument.defaultView!.getComputedStyle(el).opacity)).toBe('1')
+  })
+
+  test('the account menu, open, keeps the page available to assistive tech (FR-19)', async ({ page, gotoFresh, login, isMobile }) => {
+    test.skip(isMobile, 'the account menu is the desktop header menu')
+    await gotoFresh('/')
+    await login('ana')
+    await page.getByRole('button', { name: /^Menu de/ }).click()
+    await expect(page.getByRole('menu')).toBeVisible()
+    await expectNoAxeViolations(page)
+  })
+
   test('submitting the registration with errors focuses the first invalid field, with linked messages', async ({
     page,
     gotoFresh,

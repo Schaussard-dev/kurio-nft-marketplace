@@ -9,7 +9,7 @@ const param = (page: Page, key: string) => new URL(page.url()).searchParams.get(
 /** Desktop filters live in the sidebar; mobile opens them in the "Filtros" sheet. */
 async function openFilters(page: Page, isMobile: boolean): Promise<Locator> {
   if (!isMobile) return page.getByRole('complementary', { name: 'Filtros' })
-  await page.getByRole('button', { name: 'Filtros', exact: true }).click()
+  await page.getByRole('button', { name: /^Filtros/ }).click()
   const sheet = page.getByRole('dialog', { name: 'Filtros' })
   await expect(sheet).toBeVisible()
   return sheet
@@ -81,6 +81,21 @@ test.describe('catalog (Início)', () => {
     await expect.poll(() => new URL(page.url()).searchParams.getAll('categories')).toEqual(['arte-digital', 'musica'])
     expect(page.url()).not.toContain('%22')
     expect(page.url()).toContain('minPrice=3.62')
+  })
+
+  test('the mobile filter button says how many filters are active (FR-14)', async ({ page, gotoFresh, isMobile }) => {
+    test.skip(!isMobile, 'the filter button exists below 1024px')
+    await gotoFresh('/')
+    await expect(page.getByRole('button', { name: 'Filtros', exact: true })).toBeVisible()
+    // The trigger is inert while the modal sheet is open: read its name after closing it.
+    let filters = await openFilters(page, isMobile)
+    await filters.getByRole('checkbox', { name: /^Música/ }).check()
+    await closeFilters(page, isMobile)
+    await expect(page.getByRole('button', { name: 'Filtros, 1 ativo', exact: true })).toBeVisible()
+    filters = await openFilters(page, isMobile)
+    await filters.getByRole('checkbox', { name: /^Polygon/ }).check()
+    await closeFilters(page, isMobile)
+    await expect(page.getByRole('button', { name: 'Filtros, 2 ativos', exact: true })).toBeVisible()
   })
 
   test('pagination, sorting, history and reload stay in sync with the URL', async ({ page, gotoFresh }) => {

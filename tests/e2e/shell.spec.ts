@@ -204,17 +204,18 @@ test('on a phone the demo panel button is compact and covers no control at the e
   const trigger = page.getByRole('button', { name: 'Simulação' })
   const box = (await trigger.boundingBox())!
   expect(box.width).toBeLessThanOrEqual(44)
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await page.evaluate('window.scrollTo(0, document.documentElement.scrollHeight)')
   await page.waitForTimeout(300)
-  const covered = await page.evaluate(() => {
-    const t = document.querySelector('.mock-panel-trigger')!.getBoundingClientRect()
+  // String script: the e2e tsconfig has no DOM types.
+  const covered = await page.evaluate(`(() => {
+    const t = document.querySelector('.mock-panel-trigger').getBoundingClientRect()
     return [...document.querySelectorAll('main a, main button, main input, main select')]
       .filter((el) => {
         const r = el.getBoundingClientRect()
         return r.width > 0 && r.height > 0 && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top
       })
-      .map((el) => el.getAttribute('aria-label') || el.textContent?.trim().slice(0, 30))
-  })
+      .map((el) => el.getAttribute('aria-label') || el.textContent.trim().slice(0, 30))
+  })()`)
   expect(covered).toEqual([])
 })
 
