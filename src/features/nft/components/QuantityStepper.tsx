@@ -20,6 +20,12 @@ const STEP: Record<NonNullable<QuantityStepperProps['variant']>, string> = {
   round: 'size-9 border border-border-strong bg-ink/40 text-foreground hover:bg-surface-2 aria-disabled:hover:bg-ink/40',
 }
 
+const VALUE: Record<NonNullable<QuantityStepperProps['variant']>, string> = {
+  pill: 'text-title-20',
+  'pill-sm': 'text-body-lg-17',
+  round: 'text-body-lg-16',
+}
+
 /**
  * − value + (Figma pills). Buttons at a bound stay focusable with `aria-disabled` so keyboard focus is
  * never lost; the limit message lives next to the purchase actions (aria-live).
@@ -40,7 +46,7 @@ export function QuantityStepper({ value, max, onChange, className, itemName, var
       >
         <Minus aria-hidden className={icon} strokeWidth={3} />
       </button>
-      <output data-testid="quantity-value" aria-live="polite" className="min-w-5 text-center text-body-lg-18 text-foreground">
+      <output data-testid="quantity-value" aria-live="polite" className={cn('min-w-5 text-center text-foreground', VALUE[variant])}>
         {value}
       </output>
       <button

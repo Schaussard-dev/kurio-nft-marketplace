@@ -34,7 +34,7 @@ interface NftInfoProps extends PurchaseProps {
   variant: 'desktop' | 'mobile'
 }
 
-const META = 'text-body-14 leading-6 text-muted md:text-body-15'
+const META = 'text-body-15 leading-6 text-muted'
 
 function addToCart({ nft, edition, quantity, onAddToCart, adding }: PurchaseProps, goToCart: boolean) {
   if (!edition || quantity.value === 0 || adding) return
@@ -108,7 +108,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
     <div className="flex min-w-0 flex-col gap-4">
       {mobile ? (
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-title-22 font-bold text-foreground">{nft.name}</h1>
+          <h1 className="text-title-20 font-bold text-foreground">{nft.name}</h1>
           <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-body-15 text-foreground">
             <Star aria-hidden className="size-4 fill-current text-text-accent" />
             <span className="sr-only">Nota </span>
@@ -137,7 +137,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
 
       <div className="flex flex-col gap-2">
         {!mobile && <h2 className="text-body-15 font-bold text-foreground">Sobre este NFT:</h2>}
-        <p className={cn('text-text-secondary', mobile ? 'text-body-lg-16 leading-7' : 'text-body-14 leading-6')}>
+        <p className={cn('text-text-secondary', 'text-body-14 leading-6')}>
           {nft.description}
         </p>
       </div>
@@ -155,7 +155,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
                 aria-busy={purchase.adding || undefined}
                 aria-disabled={purchase.adding || undefined}
                 onClick={() => addToCart(purchase, true)}
-                className={cn(buttonVariants(), 'h-10 w-[130px] text-caption-13')}
+                className={cn(buttonVariants(), 'h-10 w-[130px] text-body-14')}
               >
                 COMPRAR
               </button>
@@ -184,12 +184,12 @@ export function MobileBuyBar(purchase: PurchaseProps) {
     <div data-bottom-bar className="fixed inset-x-0 bottom-0 z-40 rounded-t-[32px] border-t border-border-strong bg-surface px-6 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span aria-hidden className="text-body-lg-16 font-bold text-foreground">
+          <span aria-hidden className="text-body-15 font-medium text-foreground">
             Qtd.
           </span>
           <QuantityStepper value={quantity.value} max={quantity.max} onChange={onQuantityChange} />
         </div>
-        <p className="text-heading-24 text-text-accent">
+        <p className="text-title-20 font-bold text-text-accent">
           <span className="sr-only">Preço: </span>
           <span data-testid="nft-price">{formatEth(nft.price)}</span>
         </p>
@@ -202,7 +202,7 @@ export function MobileBuyBar(purchase: PurchaseProps) {
           aria-busy={purchase.adding || undefined}
           aria-disabled={purchase.adding || undefined}
           onClick={() => addToCart(purchase, true)}
-          className="h-14 flex-1 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-17 font-bold text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="h-14 flex-1 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-16 font-bold text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           Comprar NFT
         </button>

@@ -63,9 +63,9 @@ export function EditionPicker({ editions, selectedId, onSelect, className }: Edi
               onClick={() => !soldOut && onSelect(edition.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={cn(
-                'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-caption-13 transition-colors md:h-7 md:px-2.5 md:text-caption-12',
+                'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-body-14 transition-colors md:h-7 md:px-2.5',
                 checked
-                  ? 'border-text-accent font-bold text-text-accent'
+                  ? 'border-text-accent font-medium text-text-accent'
                   : 'border-border-strong text-text-secondary hover:border-text-accent',
                 soldOut && 'cursor-not-allowed text-muted hover:border-border-strong',
               )}

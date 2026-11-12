@@ -32,11 +32,14 @@ export function NftCard({
   onToggleFavorite,
   isFavorite,
   eager = false,
+  compact = false,
 }: {
   nft: NftSummary
   className?: string
   /** Above-the-fold card (first row of the catalog): load its image right away instead of lazily. */
   eager?: boolean
+  /** Related-NFT rows (detail, cart): the smaller Figma name/price sizes on desktop. */
+  compact?: boolean
 } & NftCardActions) {
   const favorite = isFavorite?.(nft) ?? false
   const adding = isAddingToCart?.(nft) ?? false
@@ -109,7 +112,7 @@ export function NftCard({
       </div>
 
       {/* Names wrap to a second line instead of being cut: on a 320–390px phone the column is ~150px. */}
-      <h3 className="mt-3 line-clamp-2 px-4 text-body-15 leading-5 break-words text-foreground md:px-0 md:text-body-lg-16">
+      <h3 className={cn('mt-3 line-clamp-2 px-4 text-body-15 leading-5 break-words text-foreground md:px-0', !compact && 'md:text-body-lg-16')}>
         {/* Stretched link: the whole card opens the detail page; action buttons sit above it (z-10). */}
         <Link
           to="/nft/$nftId"
@@ -119,7 +122,7 @@ export function NftCard({
           {nft.name}
         </Link>
       </h3>
-      <p className="mt-1.5 flex flex-wrap items-baseline gap-x-3 px-4 text-body-lg-16 font-bold text-text-accent md:px-0 md:text-body-lg-18">
+      <p className={cn('mt-1.5 flex flex-wrap items-baseline gap-x-3 px-4 text-body-lg-16 font-bold text-text-accent md:px-0', !compact && 'md:text-body-lg-18')}>
         <span>
           <span className="sr-only">Preço: </span>
           {formatEth(nft.price)}

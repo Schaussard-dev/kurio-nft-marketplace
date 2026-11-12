@@ -12,7 +12,7 @@ export function CatalogTabs() {
         <Tabs.Trigger
           key={tab.value}
           value={tab.value}
-          className="relative shrink-0 py-1 text-[length:clamp(12px,3.6vw,14px)] leading-4 whitespace-nowrap text-foreground transition-colors hover:text-text-accent data-[state=active]:font-bold data-[state=active]:text-text-accent data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-primary data-[state=active]:after:content-[''] md:text-body-15 md:font-medium"
+          className="relative shrink-0 py-1 text-[length:clamp(12px,3.6vw,14px)] leading-4 whitespace-nowrap text-foreground transition-colors hover:text-text-accent data-[state=active]:font-bold data-[state=active]:text-text-accent data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-primary data-[state=active]:after:content-[''] md:text-body-15 md:data-[state=active]:font-medium"
         >
           {tab.label}
         </Tabs.Trigger>

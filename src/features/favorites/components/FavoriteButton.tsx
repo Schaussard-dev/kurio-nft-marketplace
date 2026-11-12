@@ -48,7 +48,7 @@ export function FavoriteButton({ nft, variant = 'labelled', className }: Favorit
       aria-disabled={pending}
       aria-busy={pending}
       onClick={onClick}
-      className={cn(buttonVariants({ variant: 'outline' }), 'h-10 gap-2 px-3 font-medium aria-disabled:cursor-progress aria-disabled:opacity-60', className)}
+      className={cn(buttonVariants({ variant: 'outline' }), 'h-10 gap-2 px-3 text-body-14 font-medium aria-disabled:cursor-progress aria-disabled:opacity-60', className)}
     >
       {heart}
       {label}

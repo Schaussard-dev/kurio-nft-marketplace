@@ -38,6 +38,7 @@ export function MoreFromCollection({
         {items
           ? items.map((item) => (
               <NftCard
+                compact
                 key={item.id}
                 nft={item}
                 className={ITEM}

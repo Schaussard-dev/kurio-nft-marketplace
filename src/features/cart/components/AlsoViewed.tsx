@@ -23,7 +23,7 @@ export function AlsoViewed({ excludeIds }: { excludeIds: string[] }) {
 
   return (
     <section aria-labelledby="tambem-viram-titulo" className="flex flex-col gap-6">
-      <h2 id="tambem-viram-titulo" className="border-b border-border-strong pb-3 text-title-20 font-bold text-text-accent">
+      <h2 id="tambem-viram-titulo" className="border-b border-border-strong pb-3 text-body-lg-17 font-bold text-text-accent">
         Colecionadores também viram
       </h2>
       {/* Bleeds to the screen edge (-mx-4); scroll-px-4 makes snap-start land on the page gutter. */}
@@ -35,6 +35,7 @@ export function AlsoViewed({ excludeIds }: { excludeIds: string[] }) {
         {items
           ? items.map((item) => (
               <NftCard
+                compact
                 key={item.id}
                 nft={item}
                 className={ITEM}
