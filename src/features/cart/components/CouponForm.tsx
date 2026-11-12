@@ -75,7 +75,7 @@ export function CouponForm({ code, applied, error, checking, onApply, onRemove, 
           aria-invalid={shownError ? true : undefined}
           aria-describedby={shownError ? errorId : undefined}
           className={cn(
-            'min-w-0 flex-1 bg-transparent text-body-14 text-foreground outline-none placeholder:text-muted',
+            'min-w-0 flex-1 bg-transparent text-body-14 text-foreground placeholder:text-muted focus-visible:-outline-offset-2',
             mobile ? 'px-6 text-body-15' : 'px-3',
           )}
         />

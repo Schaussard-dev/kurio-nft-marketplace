@@ -352,6 +352,14 @@ function CheckoutFlow({
     clearAttempt(userId)
     setPendingAttempt(null)
   }
+  // A banner present at mount is not announced by a role="status" region: say it once per attempt.
+  const announcedAttempt = useRef<string | null>(null)
+  const attemptBannerShown = pendingAttempt !== null && flow.step === 'idle'
+  useEffect(() => {
+    if (!attemptBannerShown || !pendingAttempt || announcedAttempt.current === pendingAttempt.key) return
+    announcedAttempt.current = pendingAttempt.key
+    announce('Um pedido anterior ficou sem confirmação. Verifique-o antes de continuar.')
+  }, [attemptBannerShown, pendingAttempt, announce])
 
   /** Review of the current quote, or, while an attempt is unresolved, of exactly what that attempt sent. */
   function openReview() {
@@ -653,8 +661,8 @@ function CheckoutFlow({
   const notices = (
     <>
       {pendingAttempt && flow.step === 'idle' && (
-        <div
-          role="status"
+        <section
+          aria-label="Pedido anterior sem confirmação"
           data-testid="pending-attempt"
           className="flex flex-col gap-3 rounded-sm border border-primary/60 bg-primary/10 px-4 py-3"
         >
@@ -666,7 +674,7 @@ function CheckoutFlow({
           <Button type="button" variant="outline" className="h-11 self-start" onClick={verifyOrder}>
             Verificar pedido
           </Button>
-        </div>
+        </section>
       )}
       <PriceChangeNotice nftIds={lines.map((line) => line.nftId)} />
       {issues.length > 0 && (

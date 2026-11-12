@@ -56,7 +56,7 @@ export function CatalogSection({ showSidebar }: { showSidebar: boolean }) {
           <CatalogTabs />
           <SortSelect value={search.sort} onChange={(sort) => void navigateCatalog({ sort })} />
         </div>
-        <Tabs.Content value={search.tab} className="mt-8 outline-none">
+        <Tabs.Content value={search.tab} className="mt-8">
           <NftGrid
             query={query}
             onClearFilters={() => void navigateCatalog(CLEARED_FILTERS)}

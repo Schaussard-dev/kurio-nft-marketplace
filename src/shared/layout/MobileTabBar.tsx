@@ -12,7 +12,8 @@ export function MobileTabBar({ cartCount = 0 }: { cartCount?: number }) {
   const favoritesActive = pathname === '/perfil/favoritos'
   const cartActive = pathname === '/carrinho'
   const profileActive = pathname.startsWith('/perfil') && !favoritesActive
-  const on = 'text-text-accent'
+  // Active = accent color plus a dot under the icon: never color (or the Figma fills) alone (spec §10).
+  const on = "text-text-accent after:absolute after:bottom-0.5 after:size-1.5 after:rounded-full after:bg-current after:content-['']"
 
   return (
     <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-40 lg:hidden">

@@ -180,7 +180,7 @@ export function Footer() {
           </nav>
           <div>
             <h2 className={COLUMN_TITLE}>Redes sociais</h2>
-            <ul className="mb-6 flex gap-2">
+            <ul className="mb-6 flex flex-wrap gap-2">
               {SOCIAL.map((s) => (
                 <li key={s.label}>
                   <a

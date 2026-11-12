@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useRef, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { HomeContent } from '@/features/catalog/components/HomeContent'
 import { useMediaQuery } from '@/shared/lib/use-media-query'
 import { cn } from '@/shared/lib/utils'
@@ -40,6 +40,9 @@ const closeTarget = (search: AuthSearch) => {
 export function AuthDialog({ mode, search, children }: { mode: AuthMode; search: AuthSearch; children: ReactNode }) {
   const navigate = useNavigate()
   const contentRef = useRef<HTMLDivElement>(null)
+  // Opened by navigation, the dialog has no Radix trigger to hand the focus back to on close:
+  // remember what had it (e.g. the header "Entrar" link) and return it there while it still exists.
+  const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null))
   const copy = COPY[mode]
   return (
     <Dialog open onOpenChange={(open) => !open && void navigate({ href: closeTarget(search) })}>
@@ -49,6 +52,10 @@ export function AuthDialog({ mode, search, children }: { mode: AuthMode; search:
           // Start on the first field, not on the tab links.
           event.preventDefault()
           contentRef.current?.querySelector<HTMLInputElement>('form input')?.focus()
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault()
+          if (opener?.isConnected) opener.focus()
         }}
         className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto rounded-none border-0 border-b-8 border-primary bg-surface p-0 sm:max-w-[505px] [&_[data-slot=dialog-close]]:text-text-accent [&_[data-slot=dialog-close]_svg]:size-5"
       >

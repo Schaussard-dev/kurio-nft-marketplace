@@ -68,7 +68,6 @@ const MENU_ITEM =
   'flex cursor-default items-center rounded-sm px-3 py-2 text-body-14 text-foreground outline-none data-[highlighted]:bg-surface-2 data-[highlighted]:text-text-accent'
 
 function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: string | null }) {
-  const navigate = useNavigate()
   const logout = useLogout()
   return (
     <DropdownMenu.Root>
@@ -88,14 +87,14 @@ function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: 
           sideOffset={8}
           className="z-50 min-w-48 rounded-lg border border-border-strong bg-surface p-1"
         >
-          <DropdownMenu.Item className={MENU_ITEM} onSelect={() => void navigate({ to: '/perfil' })}>
-            Perfil
+          <DropdownMenu.Item asChild className={MENU_ITEM}>
+            <Link to="/perfil">Perfil</Link>
           </DropdownMenu.Item>
-          <DropdownMenu.Item className={MENU_ITEM} onSelect={() => void navigate({ to: '/perfil/carteiras' })}>
-            Carteiras
+          <DropdownMenu.Item asChild className={MENU_ITEM}>
+            <Link to="/perfil/carteiras">Carteiras</Link>
           </DropdownMenu.Item>
-          <DropdownMenu.Item className={MENU_ITEM} onSelect={() => void navigate({ to: '/perfil/favoritos' })}>
-            Lista de interesse
+          <DropdownMenu.Item asChild className={MENU_ITEM}>
+            <Link to="/perfil/favoritos">Lista de interesse</Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="my-1 h-px bg-border-strong" />
           <DropdownMenu.Item className={cn(MENU_ITEM, 'font-bold')} disabled={logout.isPending} onSelect={() => logout.mutate()}>

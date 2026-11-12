@@ -35,10 +35,10 @@ export function DetailTabs({ nft }: { nft: NftDetail }) {
           Avaliações de colecionadores ({nft.reviewCount})
         </Tabs.Trigger>
       </Tabs.List>
-      <Tabs.Content value="details" className="pt-5 outline-none">
+      <Tabs.Content value="details" className="pt-5">
         <LongDescription text={nft.longDescription} />
       </Tabs.Content>
-      <Tabs.Content value="reviews" className="pt-5 outline-none">
+      <Tabs.Content value="reviews" className="pt-5">
         <Reviews reviews={nft.reviews} rating={nft.rating} />
       </Tabs.Content>
     </Tabs.Root>

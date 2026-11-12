@@ -250,6 +250,9 @@ test.describe('payment failures', () => {
 
     // New page load: no wallet approval in memory. The banner verifies the attempt; the server refuses it.
     await openCheckout(page)
+    // The banner is a named region and is announced once (a status present at mount may stay silent).
+    await expect(page.getByRole('region', { name: 'Pedido anterior sem confirmação' })).toBeVisible()
+    await expect(page.getByTestId('live-polite')).toHaveText('Um pedido anterior ficou sem confirmação. Verifique-o antes de continuar.')
     await page.getByTestId('pending-attempt').getByRole('button', { name: 'Verificar pedido' }).click()
     await expect(page.getByRole('alert').filter({ hasText: 'O pedido anterior não foi registrado' })).toBeVisible()
     await expect(reviewDialog(page)).toHaveCount(0)
