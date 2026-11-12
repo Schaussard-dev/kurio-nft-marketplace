@@ -26,7 +26,7 @@ export function CartTable({ lines, quote, layout, onRemove, removingId }: CartTa
 
   if (layout === 'cards') {
     return (
-      <ul aria-label="Itens do carrinho" aria-busy={!lines} className="flex flex-col gap-4">
+      <ul aria-label="Itens do carrinho" aria-busy={!lines} data-page-loading={lines ? undefined : ''} className="flex flex-col gap-4">
         {lines
           ? lines.map((line) => (
               <CartLineCard
@@ -47,7 +47,7 @@ export function CartTable({ lines, quote, layout, onRemove, removingId }: CartTa
   }
 
   return (
-    <table aria-busy={!lines} className="w-full border-separate border-spacing-y-3">
+    <table aria-busy={!lines} data-page-loading={lines ? undefined : ''} className="w-full border-separate border-spacing-y-3">
       <caption className="sr-only">Itens do carrinho</caption>
       <thead>
         <tr>

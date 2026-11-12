@@ -108,7 +108,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
     <div className="flex min-w-0 flex-col gap-4">
       {mobile ? (
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-title-20 font-bold text-foreground">{nft.name}</h1>
+          <h1 className="text-title-20 font-bold break-words text-foreground">{nft.name}</h1>
           <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-body-15 text-foreground">
             <Star aria-hidden className="size-4 fill-current text-text-accent" />
             <span className="sr-only">Nota </span>
@@ -121,7 +121,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
         </div>
       ) : (
         <div className="flex flex-col gap-2 border-b border-border-strong pb-3">
-          <h1 className="text-heading-28 text-foreground">{nft.name}</h1>
+          <h1 className="text-heading-28 break-words text-foreground">{nft.name}</h1>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <p className="text-title-22 font-bold text-text-accent">
               <span className="sr-only">Preço: </span>
@@ -181,7 +181,7 @@ export function MobileBuyBar(purchase: PurchaseProps) {
   const { nft, quantity, onQuantityChange } = purchase
   const unavailable = quantity.max === 0
   return (
-    <div data-bottom-bar className="fixed inset-x-0 bottom-0 z-40 rounded-t-[32px] border-t border-border-strong bg-surface px-6 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+    <div data-bottom-bar className="fixed inset-x-0 bottom-0 z-40 rounded-t-[32px] [@media(max-height:480px)]:static [@media(max-height:480px)]:mt-10 border-t border-border-strong bg-surface px-6 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span aria-hidden className="text-body-15 font-medium text-foreground">

@@ -37,12 +37,12 @@ export function FilterSheet() {
           </span>
         )}
       </SheetTrigger>
-      <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-3xl border-border-strong bg-surface">
+      <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-3xl border-border-strong bg-surface [@media(max-height:480px)]:overflow-y-auto">
         <SheetHeader className="px-5 pt-5 pb-0">
           <SheetTitle className="text-body-lg-18 font-bold">Filtros</SheetTitle>
           <SheetDescription>Coleções e redes valem na hora; a faixa de preço, ao tocar em Aplicar.</SheetDescription>
         </SheetHeader>
-        <div className="overflow-y-auto px-5 py-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-2">
           <FilterPanel facets={data?.facets} search={search} onChange={(patch) => void navigateCatalog(patch)} />
         </div>
         {/* Stacked full-width actions: side by side, the two labels do not fit a 320–390px phone. */}

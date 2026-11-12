@@ -232,3 +232,20 @@ test('the demo panel latency field shows the fixed latency still in effect after
   await page.getByRole('button', { name: 'Simulação' }).click()
   await expect(page.getByLabel('Latência (ms)')).toHaveValue('1200')
 })
+
+test('the demo panel remembers the last price event so "Reenviar último evento" works without the console (CR-10)', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'desktop project only')
+  await page.goto('/?scenario=default&reset=1')
+  await waitForMocks(page)
+  await page.getByRole('button', { name: 'Simulação' }).click()
+  await page.getByLabel('ID do NFT').fill('nft_042')
+  await page.getByLabel('Novo preço (ETH)').fill('1.29')
+  await page.getByRole('button', { name: 'Alterar preço de NFT do carrinho' }).click()
+  await expect(page.getByText('Preço alterado')).toBeVisible()
+  await expect(page.getByLabel('ID do evento')).not.toHaveValue('')
+  await page.getByRole('button', { name: 'Reenviar último evento' }).click()
+  await expect(page.getByText('Evento reenviado')).toBeVisible()
+})

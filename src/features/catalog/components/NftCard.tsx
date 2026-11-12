@@ -68,7 +68,7 @@ export function NftCard({
           className="aspect-square w-full rounded-[20px] object-cover"
         />
         {nft.rare && (
-          <span className="absolute top-0 left-0 bg-primary px-4 py-1.5 text-caption-13 font-medium text-ink">RARO</span>
+          <span className="absolute top-0 left-0 bg-primary px-4 py-1.5 text-caption-13 font-medium text-ink md:px-5 md:text-body-lg-16">RARO</span>
         )}
 
         {/* Mobile frame: favorite stays visible in the top-right corner. */}
@@ -112,7 +112,7 @@ export function NftCard({
       </div>
 
       {/* Names wrap to a second line instead of being cut: on a 320–390px phone the column is ~150px. */}
-      <h3 className={cn('mt-3 line-clamp-2 px-4 text-body-15 leading-5 break-words text-foreground md:px-0', !compact && 'md:text-body-lg-16')}>
+      <h3 className={cn('mt-3 line-clamp-2 px-4 text-body-15 leading-5 break-words text-foreground max-[374px]:line-clamp-3 md:px-0', !compact && 'md:text-body-lg-16')}>
         {/* Stretched link: the whole card opens the detail page; action buttons sit above it (z-10). */}
         <Link
           to="/nft/$nftId"
@@ -122,7 +122,7 @@ export function NftCard({
           {nft.name}
         </Link>
       </h3>
-      <p className={cn('mt-1.5 flex flex-wrap items-baseline gap-x-3 px-4 text-body-lg-16 font-bold text-text-accent md:px-0', !compact && 'md:text-body-lg-18')}>
+      <p className={cn('mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 text-body-lg-16 leading-5 font-bold text-text-accent md:px-0', !compact && 'md:text-body-lg-18')}>
         <span>
           <span className="sr-only">Preço: </span>
           {formatEth(nft.price)}

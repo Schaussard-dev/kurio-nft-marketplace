@@ -23,6 +23,16 @@ async function signOut(page: Page, displayName: string) {
 }
 
 test.describe('auth and session', () => {
+  test('signing in from the header returns to the page it was opened from (CR-01)', async ({ page, gotoFresh, isMobile }) => {
+    await gotoFresh('/nft/nft_042')
+    await page.getByRole('button', { name: isMobile ? 'Comprar NFT' : 'COMPRAR', exact: true }).click()
+    await expect(page).toHaveURL('/carrinho')
+    await page.getByRole('link', { name: 'Entrar' }).first().click()
+    await fillLogin(page, DEMO_USERS.ana.email, DEMO_USERS.ana.password)
+    await expect(accountMenu(page, DEMO_USERS.ana.displayName)).toBeVisible()
+    await expect.poll(() => path(page)).toBe('/carrinho')
+  })
+
   test('register validates on submit, focuses the first invalid field, then signs the user in', async ({
     page,
     gotoFresh,

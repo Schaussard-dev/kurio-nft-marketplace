@@ -16,8 +16,8 @@ export function MobileTabBar({ cartCount = 0 }: { cartCount?: number }) {
   const on = "text-text-accent after:absolute after:bottom-0.5 after:size-1.5 after:rounded-full after:bg-current after:content-['']"
 
   return (
-    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-40 lg:hidden">
-      <div className="relative mx-auto grid h-20 max-w-md grid-cols-5 items-center rounded-t-[32px] border-t border-border-strong bg-surface px-3 pb-[env(safe-area-inset-bottom)]">
+    <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-40 lg:hidden [@media(max-height:480px)]:static">
+      <div className="relative mx-auto grid h-[calc(5rem+env(safe-area-inset-bottom))] max-w-md grid-cols-5 items-center rounded-t-[32px] border-t border-border-strong bg-surface px-3 pb-[env(safe-area-inset-bottom)]">
         <Link to="/" aria-label="Início" aria-current={homeActive ? 'page' : undefined} className={cn(TAB, homeActive && on)}>
           <House className="size-6" fill={homeActive ? 'currentColor' : 'none'} aria-hidden />
         </Link>

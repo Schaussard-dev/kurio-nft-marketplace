@@ -135,3 +135,8 @@ body:has([data-bottom-bar]) .mock-panel-trigger {
     transition: none !important;
   }
 }
+
+/* While a page shows its loading placeholder, keep the footer below the fold: no jump when content lands. */
+#conteudo:has([data-page-loading]) {
+  min-height: calc(100dvh - 68px);
+}

@@ -11,7 +11,7 @@ describe('price notices store', () => {
     pushPriceNotice({ nftId: 'nft_314', name: 'Violet Nomad #314', from: '1.39', to: '1.2' })
     pushPriceNotice({ nftId: 'nft_042', name: 'Emerald Ape #042', from: '1.29', to: '1.39' })
     expect(getPriceNotices().map(priceNoticeText)).toEqual([
-      'O preço de Violet Nomad #314 mudou de 1.39 para 1.2 ETH',
+      'O preço de Violet Nomad #314 mudou de 1.39 para 1.20 ETH',
       'O preço de Emerald Ape #042 mudou de 1.29 para 1.39 ETH',
     ])
     expect(listener).toHaveBeenCalledTimes(3)
@@ -19,5 +19,13 @@ describe('price notices store', () => {
     dismissPriceNotices()
     expect(getPriceNotices()).toEqual([])
     expect(listener).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe('priceNoticeText', () => {
+  it('formats both prices like the rest of the app (two decimals at least)', () => {
+    expect(priceNoticeText({ nftId: 'n', name: 'Emerald Ape #042', from: '1.29', to: '1.5' })).toBe(
+      'O preço de Emerald Ape #042 mudou de 1.29 para 1.50 ETH',
+    )
   })
 })

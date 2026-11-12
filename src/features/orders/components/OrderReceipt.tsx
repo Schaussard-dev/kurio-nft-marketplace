@@ -112,7 +112,7 @@ export function OrderReceipt({ order }: { order: Order }) {
                     />
                     <div className="min-w-0">
                       <p className="text-body-15 font-bold break-words text-foreground sm:text-body-lg-16">{line.name}</p>
-                      <p className="text-caption-13 leading-5 text-text-secondary sm:text-body-14">ID do token: {tokenId(line.tokenNumber)}</p>
+                      <p className="text-caption-13 leading-5 text-muted sm:text-body-14">ID do token: {tokenId(line.tokenNumber)}</p>
                       <p className="sr-only">Edição {line.editionLabel}</p>
                     </div>
                   </div>

@@ -112,12 +112,14 @@ function couponErrorOf(error: unknown): string | undefined {
   return apiError.fieldErrors?.coupon?.[0] ?? apiError.message
 }
 
-function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+function LoadError({ message, onRetry, busy }: { message: string; onRetry: () => void; busy: boolean }) {
   return (
     <div role="alert" className="flex flex-col items-center gap-4 rounded-lg bg-surface px-6 py-12 text-center">
       <TriangleAlert aria-hidden className="size-8 text-danger" />
       <p className="text-body-lg-17 font-bold text-foreground">{message}</p>
-      <Button onClick={onRetry}>Tentar novamente</Button>
+      <Button onClick={onRetry} disabled={busy} aria-busy={busy || undefined}>
+        Tentar novamente
+      </Button>
     </div>
   )
 }
@@ -140,7 +142,7 @@ function PageHeader({ desktop }: { desktop: boolean }) {
       >
         <ChevronLeft aria-hidden className="size-6" />
       </Link>
-      <h1 className="flex-1 text-title-20 font-bold text-foreground">Pagamento com carteira</h1>
+      <h1 className="flex-1 text-title-20 leading-6 font-bold text-foreground">Pagamento com carteira</h1>
     </div>
   )
 }
@@ -159,7 +161,8 @@ export function CheckoutPage({ cupom, onCouponChange }: { cupom?: string; onCoup
   useDocumentTitle('Pagamento')
 
   let content
-  if (profile.isError || wallets.isError) {
+  // Like the cart below: a failed background refetch keeps the page as long as the data is there.
+  if ((profile.isError && !profile.data) || (wallets.isError && !wallets.data)) {
     content = (
       <LoadError
         message="Não foi possível carregar seus dados de pagamento."
@@ -169,13 +172,14 @@ export function CheckoutPage({ cupom, onCouponChange }: { cupom?: string; onCoup
           void wallets.refetch()
           if (cart.isError) void cart.refetch()
         }}
+        busy={profile.isFetching || wallets.isFetching || cart.isFetching}
       />
     )
   } else if (cart.isError && !cart.data) {
-    content = <LoadError message="Não foi possível carregar seu carrinho." onRetry={() => void cart.refetch()} />
+    content = <LoadError message="Não foi possível carregar seu carrinho." onRetry={() => void cart.refetch()} busy={cart.isFetching} />
   } else if (!session || !profile.data || !wallets.data || !cart.data) {
     content = (
-      <div aria-busy className="flex flex-col gap-4">
+      <div aria-busy data-page-loading="" className="flex flex-col gap-4">
         <span className="sr-only">Carregando pagamento…</span>
         <Skeleton className="h-14 w-full" />
         <Skeleton className="h-14 w-full" />
@@ -736,7 +740,7 @@ function CheckoutFlow({
     <>
       <form noValidate aria-label="Pagamento" onSubmit={onConfirm}>
         {desktop ? (
-          <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_489px] lg:items-start lg:gap-10">
+          <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:items-start lg:gap-10 xl:grid-cols-[minmax(0,1fr)_489px]">
             <section aria-labelledby="perfil-colecionador-titulo" className="flex min-w-0 flex-col gap-4">
               <h2 id="perfil-colecionador-titulo" className="text-body-lg-17 font-bold text-foreground">
                 Perfil do colecionador
@@ -770,7 +774,7 @@ function CheckoutFlow({
           <div className="flex flex-col gap-8">
             <section aria-labelledby="carteira-conectada-titulo" className="flex flex-col gap-6">
               <div className="flex items-center justify-between gap-4">
-                <h2 id="carteira-conectada-titulo" className="text-body-lg-16 font-bold text-foreground">
+                <h2 id="carteira-conectada-titulo" className="text-body-lg-16 leading-6 font-bold text-foreground">
                   Carteira conectada
                 </h2>
                 <Link {...manageHref} className="text-body-14 font-bold whitespace-nowrap text-text-accent">
@@ -780,7 +784,7 @@ function CheckoutFlow({
               <WalletPicker wallets={registered} registration={walletRegistration} manageHref={manageHref} variant="cards" />
             </section>
             <section aria-labelledby="carteira-rede-titulo" className="flex flex-col gap-6">
-              <h2 id="carteira-rede-titulo" className="text-body-lg-16 font-bold text-foreground">
+              <h2 id="carteira-rede-titulo" className="text-body-lg-16 leading-6 font-bold text-foreground">
                 Carteira e rede
               </h2>
               <ConnectorPicker
@@ -808,7 +812,7 @@ function CheckoutFlow({
             </section>
             <p className="flex items-baseline justify-end gap-8 text-body-lg-16 font-bold text-foreground">
               Total:
-              <span data-testid="checkout-total" aria-busy={active.isFetching} className="text-[28px] text-text-accent">
+              <span data-testid="checkout-total" aria-busy={active.isFetching} className="text-body-lg-18 text-text-accent">
                 {shownQuote ? formatEth(shownQuote.total) : '…'}
               </span>
             </p>

@@ -95,6 +95,7 @@ export default function MockPanel() {
     request: () => Promise<Response>,
     successMessage: string,
     reseed = false,
+    onOk?: (res: Response) => Promise<void>,
   ): Promise<boolean> {
     try {
       const res = await request()
@@ -113,6 +114,7 @@ export default function MockPanel() {
         window.location.reload()
         return true
       }
+      await onOk?.(res)
       toast.success(successMessage)
       return true
     } catch {
@@ -121,7 +123,13 @@ export default function MockPanel() {
     }
   }
 
-  const emit = (body: EmitBody, message: string) => run(() => post('emit', body), message)
+  // A price/stock change answers with its event id: keep it so "Reenviar último evento" can replay it.
+  const emit = (body: EmitBody, message: string) =>
+    run(() => post('emit', body), message, false, async (res) => {
+      if (body.action !== 'nft:update') return
+      const data = (await res.json().catch(() => null)) as { eventId?: unknown } | null
+      if (typeof data?.eventId === 'string') setEventId(data.eventId)
+    })
 
   // /scenario alone would not apply seed patches, so a scenario change always goes through a reseed.
   const applyScenario = async (next: ScenarioName) => {

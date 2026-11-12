@@ -12,7 +12,7 @@ const isSort = (value: string): value is CatalogSort => SORT_OPTIONS.some((optio
 
 export function SortSelect({ value, onChange }: { value: CatalogSort; onChange: (sort: CatalogSort) => void }) {
   return (
-    <div className="flex items-center gap-1 text-body-15 text-foreground">
+    <div className="flex items-center gap-1 text-body-15 whitespace-nowrap text-foreground">
       <span id="catalogo-ordenar">Ordenar por:</span>
       <Select value={value} onValueChange={(next) => isSort(next) && onChange(next)}>
         <SelectTrigger

@@ -55,7 +55,7 @@ export function CheckoutSummary({
               <ArtImage art={line.nft.art} sizes="80px" alt="" className="size-20 shrink-0 rounded-l-xs object-cover" />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-body-lg-16 font-bold text-foreground">{line.nft.name}</span>
-                <span className="truncate text-body-14 text-text-accent">ID do token: {tokenLabel(line)}</span>
+                <span className="truncate text-body-14 text-muted">ID do token: {tokenLabel(line)}</span>
               </div>
               <span className="text-body-14 whitespace-nowrap text-text-secondary">
                 <span className="sr-only">quantidade: </span>(x {line.quantity})

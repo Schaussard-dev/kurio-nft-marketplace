@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { formatEth } from '@/shared/lib/format'
 
 /** A realtime price change of an NFT in the cart, shown until the collector dismisses it. */
 export interface PriceNotice {
@@ -16,8 +17,9 @@ function publish(next: readonly PriceNotice[]): void {
   listeners.forEach((listener) => listener())
 }
 
+/** Same formatting as every price on screen ("1.50 ETH", not the raw "1.5"). */
 export const priceNoticeText = (notice: PriceNotice) =>
-  `O preço de ${notice.name} mudou de ${notice.from} para ${notice.to} ETH`
+  `O preço de ${notice.name} mudou de ${formatEth(notice.from).replace(' ETH', '')} para ${formatEth(notice.to)}`
 
 /** Adds a notice; a newer change of the same NFT replaces the previous one. */
 export function pushPriceNotice(notice: PriceNotice): void {

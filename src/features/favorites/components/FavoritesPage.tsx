@@ -47,7 +47,7 @@ export function FavoritesPage() {
         <h2 className="mb-6 text-body-15 text-text-secondary">
           {data ? `${data.items.length} ${data.items.length === 1 ? 'NFT salvo' : 'NFTs salvos'}` : 'Carregando…'}
         </h2>
-        <ul aria-label="Lista de interesse" aria-busy={!data} className={GRID}>
+        <ul aria-label="Lista de interesse" aria-busy={!data} data-page-loading={data ? undefined : ''} className={GRID}>
           {data
             ? data.items.map((nft) => (
                 <NftCard

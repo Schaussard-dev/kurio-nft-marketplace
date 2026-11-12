@@ -44,7 +44,7 @@ function SocialGlyph({ name }: { name: 'LinkedIn' | 'YouTube' }) {
 }
 
 const COLUMN_TITLE = 'mb-3 text-body-lg-18 leading-6 font-bold text-foreground'
-const COLUMN_LIST = 'flex flex-col gap-2.5 text-body-15 text-foreground'
+const COLUMN_LIST = 'flex flex-col gap-2.5 text-body-14 text-foreground'
 
 function Newsletter() {
   const [submitted, setSubmitted] = useState(false)

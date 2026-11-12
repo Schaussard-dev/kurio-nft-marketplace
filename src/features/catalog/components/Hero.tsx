@@ -160,7 +160,7 @@ export function Hero() {
 
       {/* Taller touch targets (44px) at the Figma dot spacing (28px apart); 24px squares on desktop. Swiping is
           the primary gesture on phones. */}
-      <div className="absolute inset-x-0 bottom-0.5 flex justify-center lg:right-auto lg:bottom-11 lg:left-[600px] lg:gap-1">
+      <div className="absolute inset-x-0 bottom-0.5 flex justify-center lg:right-[560px] lg:bottom-11 lg:left-auto lg:gap-1">
         {SLIDES.map((item, i) => (
           <button
             key={item.art}

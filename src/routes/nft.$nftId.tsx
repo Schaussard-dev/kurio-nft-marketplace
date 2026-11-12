@@ -118,8 +118,9 @@ function NftDetailPage() {
     },
   }
 
+  // Short screens (landscape phones, 400% zoom): the buy bar joins the page flow, so no space is reserved for it.
   return (
-    <div className="flex flex-col max-md:pb-48">
+    <div className="flex flex-col max-md:pb-48 [@media(max-height:480px)]:pb-0">
       {desktop ? (
         <Breadcrumbs items={[{ label: 'Início', to: '/' }, { label: 'Mercado', to: '/' }, { label: nft.name }]} />
       ) : (
@@ -131,7 +132,7 @@ function NftDetailPage() {
 
       <div className="mt-4 flex flex-col gap-6 md:mt-3 md:grid md:grid-cols-[80px_minmax(0,1fr)] md:gap-x-7 md:gap-y-10 lg:grid-cols-[100px_minmax(0,444px)_minmax(0,1fr)] lg:gap-x-8">
         <Gallery key={nft.id} nft={nft} />
-        <div className="max-md:-mx-4 max-md:rounded-t-[32px] max-md:bg-surface max-md:px-6 max-md:pt-8 max-md:pb-6 md:col-span-2 lg:col-span-1">
+        <div className="max-md:relative max-md:-mx-4 max-md:-mt-[54px] max-md:rounded-t-[32px] max-md:bg-surface max-md:px-6 max-md:pt-8 max-md:pb-6 md:col-span-2 lg:col-span-1">
           <NftInfo variant={desktop ? 'desktop' : 'mobile'} onSelectEdition={selectEdition} {...purchase} />
         </div>
       </div>

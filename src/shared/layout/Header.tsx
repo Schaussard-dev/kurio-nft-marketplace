@@ -86,7 +86,7 @@ function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: 
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
-          className="z-50 min-w-48 rounded-lg border border-border-strong bg-surface p-1"
+          className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-48 overflow-y-auto rounded-lg border border-border-strong bg-surface p-1"
         >
           <DropdownMenu.Item asChild className={MENU_ITEM}>
             <Link to="/perfil" activeOptions={{ exact: true }}>
@@ -109,11 +109,17 @@ function UserMenu({ displayName, avatarUrl }: { displayName: string; avatarUrl: 
   )
 }
 
+/** Pages where "Entrar" has nothing to return to (Início is already the default target). */
+const NO_RETURN = new Set(['/', '/entrar', '/cadastro'])
+
 function AccountArea() {
   const session = useSession()
+  const location = useRouterState({ select: (s) => s.location })
   if (session) return <UserMenu displayName={session.user.displayName} avatarUrl={session.user.avatarUrl} />
+  // Signing in returns to the page it was opened from (spec §3, "retorno ao fluxo anterior").
+  const redirect = NO_RETURN.has(location.pathname) ? undefined : location.href
   return (
-    <Link to="/entrar" className={cn(buttonVariants({ size: 'sm' }), 'h-9 gap-2 px-3 text-body-lg-16 font-medium')}>
+    <Link to="/entrar" search={redirect ? { redirect } : {}} className={cn(buttonVariants({ size: 'sm' }), 'h-9 gap-2 px-3 text-body-lg-16 font-medium')}>
       <LogIn className="size-5" aria-hidden />
       Entrar
     </Link>

@@ -25,7 +25,7 @@ export function ProfilePage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2" aria-busy="true">
+        <div className="grid gap-6 md:grid-cols-2" aria-busy="true" data-page-loading="">
           {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-24 rounded-sm" />
           ))}

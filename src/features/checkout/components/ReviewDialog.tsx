@@ -45,7 +45,7 @@ export function ReviewDialog({
       <ul aria-label="Itens do pedido" className="flex flex-col gap-2 border-y border-border-strong py-3">
         {quote.lines.map((line) => (
           <li key={line.lineId} className="flex items-baseline justify-between gap-3 text-body-15 text-foreground">
-            <span className="min-w-0 truncate">
+            <span className="min-w-0 break-words">
               {names[line.lineId] ?? line.nftId} <span className="text-text-secondary">(x {line.quantity})</span>
             </span>
             <span className="font-bold whitespace-nowrap">{formatEth(line.lineTotal)}</span>

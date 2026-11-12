@@ -7,7 +7,7 @@ import { LineMessage, LineName, LineTotal, RemoveLineButton, type CartLineProps 
 export function CartLineCard({ line, lineTotal, onRemove, removing }: CartLineProps) {
   const { stepper, message } = useLineQuantity(line)
   return (
-    <li data-testid="cart-line" className="flex min-h-[120px] overflow-hidden rounded-[20px] bg-surface">
+    <li data-testid="cart-line" className="flex min-h-[120px] overflow-hidden rounded-[14px] bg-surface">
       <div className="w-[100px] shrink-0 [&_picture]:block [&_picture]:h-full">
         <ArtImage art={line.nft.art} sizes="110px" alt="" className="h-full w-full object-cover" />
       </div>

@@ -28,7 +28,7 @@ export function PageShell({
     )
   }
   return (
-    <div className="flex min-h-dvh flex-col pb-24 lg:pb-0">
+    <div className="flex min-h-dvh flex-col pb-24 lg:pb-0 [@media(max-height:480px)]:pb-0">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-body-15 focus:font-bold focus:text-ink"

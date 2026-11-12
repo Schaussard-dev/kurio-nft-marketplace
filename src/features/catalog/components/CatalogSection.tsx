@@ -52,7 +52,8 @@ export function CatalogSection({ showSidebar }: { showSidebar: boolean }) {
         activationMode="manual"
         className="min-w-0"
       >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        {/* Beside the 310px sidebar (1024–1279) tabs and sort do not fit one row: stack them there. */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between lg:max-xl:flex-col lg:max-xl:items-start">
           <CatalogTabs />
           <SortSelect value={search.sort} onChange={(sort) => void navigateCatalog({ sort })} />
         </div>

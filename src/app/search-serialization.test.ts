@@ -44,3 +44,13 @@ describe('stringifySearch', () => {
     expect(parseSearch(stringifySearch(search))).toEqual(search)
   })
 })
+
+describe('round trip of text that looks like the old JSON format (CR-02)', () => {
+  it.each(['"bored ape"', '["a","b"]', '["a"]', '"', '[]'])('keeps q = %s exactly as typed', (q) => {
+    expect(parseSearch(stringifySearch({ q }))).toEqual({ q })
+  })
+
+  it('drops empty strings', () => {
+    expect(stringifySearch({ q: '', page: 2 })).toBe('?page=2')
+  })
+})

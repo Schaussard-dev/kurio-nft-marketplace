@@ -5,9 +5,12 @@
  * `?minPrice=3.62` or `?q=42` means what it says.
  */
 
+/** A value in the old format: a JSON string ("…") or a JSON array ([…]). */
+const LEGACY_JSON = /^(".*"|\[.*\])$/s
+
 /** Links shared before this format carried JSON strings/arrays; decode those, keep anything else as typed. */
 function readLegacyJson(value: string): string | string[] {
-  if (!/^(".*"|\[.*\])$/s.test(value)) return value
+  if (!LEGACY_JSON.test(value)) return value
   try {
     const parsed: unknown = JSON.parse(value)
     if (typeof parsed === 'string') return parsed
@@ -31,8 +34,12 @@ export function parseSearch(search: string): Record<string, unknown> {
 export function stringifySearch(search: Record<string, unknown>): string {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(search)) {
-    if (value === undefined || value === null) continue
-    for (const item of Array.isArray(value) ? value : [value]) params.append(key, String(item))
+    if (value === undefined || value === null || value === '') continue
+    for (const item of Array.isArray(value) ? value : [value]) {
+      const text = String(item)
+      // Text that would read as the old JSON format is written JSON-encoded, so it comes back exactly as typed.
+      params.append(key, LEGACY_JSON.test(text) ? JSON.stringify(text) : text)
+    }
   }
   const text = params.toString()
   return text ? `?${text}` : ''

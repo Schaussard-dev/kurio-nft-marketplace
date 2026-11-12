@@ -76,7 +76,7 @@ export function CouponForm({ code, applied, error, checking, onApply, onRemove, 
           aria-describedby={shownError ? errorId : undefined}
           className={cn(
             'min-w-0 flex-1 bg-transparent text-body-14 text-foreground placeholder:text-muted focus-visible:-outline-offset-2',
-            mobile ? 'px-6 text-body-15' : 'px-3',
+            mobile ? 'px-5 text-caption-13' : 'px-3',
           )}
         />
         <button
@@ -84,7 +84,7 @@ export function CouponForm({ code, applied, error, checking, onApply, onRemove, 
           aria-busy={checking || undefined}
           className={cn(
             'shrink-0 px-5 text-body-15 font-bold text-ink transition-opacity hover:opacity-90',
-            mobile ? 'rounded-full bg-gradient-to-r from-primary-dark to-primary-light px-7' : 'bg-primary',
+            mobile ? 'w-[97px] rounded-full bg-gradient-to-r from-primary-dark to-primary-light px-0' : 'bg-primary',
           )}
         >
           Aplicar
