@@ -12,7 +12,9 @@ interface CartTableProps {
   removingId: string | undefined
 }
 
-const TH = 'border-b border-border-strong pb-3 text-left text-body-lg-17 font-bold text-foreground'
+// Figma: NFTs/Edições bold, Preço/Total medium.
+const TH = 'border-b border-border-strong pb-3 text-left text-body-lg-16 font-bold text-foreground'
+const TH_MEDIUM = 'border-b border-border-strong pb-3 text-left text-body-lg-16 font-medium text-foreground'
 
 /** Cart lines: a real table on desktop (NFTs, Preço, Edições, Total), cards on mobile. */
 export function CartTable({ lines, quote, layout, onRemove, removingId }: CartTableProps) {
@@ -52,13 +54,13 @@ export function CartTable({ lines, quote, layout, onRemove, removingId }: CartTa
           <th scope="col" className={`${TH} w-[46%]`}>
             NFTs
           </th>
-          <th scope="col" className={TH}>
+          <th scope="col" className={TH_MEDIUM}>
             Preço
           </th>
           <th scope="col" className={TH}>
             Edições
           </th>
-          <th scope="col" className={TH}>
+          <th scope="col" className={TH_MEDIUM}>
             Total
           </th>
           <th scope="col" className={TH}>

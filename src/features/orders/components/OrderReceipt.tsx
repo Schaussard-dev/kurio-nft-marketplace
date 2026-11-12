@@ -53,12 +53,12 @@ export function OrderReceipt({ order }: { order: Order }) {
 
       <header className="flex flex-col items-center gap-4 px-6 py-6">
         <EnvelopeIcon />
-        <h1 id="receipt-title" className="text-center text-body-lg-18 leading-6 font-bold text-text-secondary">
+        <h1 id="receipt-title" className="text-center text-body-lg-16 leading-6 font-bold text-text-secondary">
           Seus NFTs agora estão na sua carteira
         </h1>
       </header>
 
-      <dl className="grid grid-cols-2 gap-y-4 border-y border-primary px-6 py-4 text-body-15 leading-5 sm:grid-cols-4 sm:gap-y-0 sm:px-10">
+      <dl className="grid grid-cols-2 gap-y-4 border-y border-primary px-6 py-4 text-body-14 leading-5 sm:grid-cols-4 sm:gap-y-0 sm:px-10">
         <div className="pr-3 sm:border-r sm:border-primary">
           <dt className="font-bold text-text-secondary">ID da transação</dt>
           <dd className="text-text-secondary">{shortHash(order.txHash)}</dd>
@@ -83,7 +83,7 @@ export function OrderReceipt({ order }: { order: Order }) {
       </dl>
 
       <div className="flex flex-col gap-4 px-4 pt-6 pb-10 sm:px-14">
-        <h2 className="text-body-lg-16 font-bold text-foreground">Detalhes da transação</h2>
+        <h2 className="text-body-15 font-bold text-foreground">Detalhes da transação</h2>
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">NFTs comprados</caption>
           <thead>
@@ -94,7 +94,7 @@ export function OrderReceipt({ order }: { order: Order }) {
               <th scope="col" className="px-2 pb-3 text-center font-bold">
                 Edições
               </th>
-              <th scope="col" className="pb-3 text-right font-bold">
+              <th scope="col" className="pb-3 text-right font-medium">
                 Subtotal
               </th>
             </tr>
@@ -117,7 +117,7 @@ export function OrderReceipt({ order }: { order: Order }) {
                     </div>
                   </div>
                 </td>
-                <td className="px-2 py-2 text-center text-body-15 whitespace-nowrap text-text-secondary">
+                <td className="px-2 py-2 text-center text-body-14 whitespace-nowrap text-text-secondary">
                   (x {line.quantity})
                 </td>
                 <td
@@ -131,7 +131,7 @@ export function OrderReceipt({ order }: { order: Order }) {
           </tbody>
         </table>
 
-        <dl className="ml-auto flex w-full max-w-[400px] flex-col gap-2 border-b border-border-strong pb-3 text-body-lg-16">
+        <dl className="ml-auto flex w-full max-w-[400px] flex-col gap-2 border-b border-border-strong pb-3 text-body-15">
           {compare(snapshot.discount, '0') > 0 && (
             <div className="flex justify-between gap-4 text-foreground">
               <dt>Desconto</dt>
@@ -150,7 +150,7 @@ export function OrderReceipt({ order }: { order: Order }) {
           </div>
         </dl>
 
-        <p className="mx-auto max-w-[560px] text-center text-body-15 leading-6 text-text-secondary">
+        <p className="mx-auto max-w-[560px] text-center text-body-14 leading-6 text-text-secondary">
           Transação confirmada na {network}. A propriedade foi transferida para sua carteira conectada e registrada
           na rede.
         </p>

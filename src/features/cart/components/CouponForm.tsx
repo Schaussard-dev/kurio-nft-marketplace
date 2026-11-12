@@ -50,14 +50,14 @@ export function CouponForm({ code, applied, error, checking, onApply, onRemove, 
 
   return (
     <form onSubmit={submit} noValidate aria-label="Cupom" className="flex flex-col gap-2">
-      <label htmlFor={inputId} className={cn('text-body-15 font-bold text-foreground', mobile && 'sr-only')}>
+      <label htmlFor={inputId} className={cn('text-body-14 font-bold text-foreground', mobile && 'sr-only')}>
         Código promocional
       </label>
       <div
         className={cn(
           'flex items-stretch overflow-hidden border',
           shownError ? 'border-danger' : 'border-border-strong focus-within:border-primary',
-          mobile ? 'h-[52px] rounded-full bg-ink/30' : 'h-12 rounded-xs',
+          mobile ? 'h-[52px] rounded-full bg-ink/30' : 'h-10 rounded-xs',
         )}
       >
         <input
@@ -83,7 +83,7 @@ export function CouponForm({ code, applied, error, checking, onApply, onRemove, 
           type="submit"
           aria-busy={checking || undefined}
           className={cn(
-            'shrink-0 px-5 text-body-lg-17 font-bold text-ink transition-opacity hover:opacity-90',
+            'shrink-0 px-5 text-body-15 font-bold text-ink transition-opacity hover:opacity-90',
             mobile ? 'rounded-full bg-gradient-to-r from-primary-dark to-primary-light px-7' : 'bg-primary',
           )}
         >

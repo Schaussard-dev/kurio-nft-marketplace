@@ -23,13 +23,13 @@ export function SummaryRow({
   return (
     <div className={cn('flex items-start justify-between gap-2', total && 'mt-4')}>
       {/* The label wraps on narrow phones; the amount never shrinks or wraps. */}
-      <dt className={cn('min-w-0 text-body-lg-17 leading-7 text-foreground', total && 'font-bold')}>{label}</dt>
+      <dt className={cn('min-w-0 leading-7 text-foreground', total ? 'text-body-lg-16 font-bold' : 'text-body-15')}>{label}</dt>
       <dd className="flex shrink-0 flex-col items-end gap-1 text-right">
         <span
           data-testid={`${testIdPrefix}-${row}`}
           className={cn(
             'flex h-7 items-center whitespace-nowrap',
-            total ? 'text-title-22 font-bold text-text-accent' : 'text-body-lg-18 text-foreground',
+            total ? 'text-title-22 font-bold text-text-accent' : 'text-body-lg-16 text-foreground md:text-body-15',
           )}
         >
           {children}
@@ -41,7 +41,7 @@ export function SummaryRow({
 }
 
 export function FeeNote() {
-  return <span className="text-caption-13 text-text-accent">Taxa estimada</span>
+  return <span className="text-caption-12 text-text-accent">Taxa estimada</span>
 }
 
 /**

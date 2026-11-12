@@ -58,7 +58,7 @@ export function WalletPicker({
         <label key={wallet.id} className={option}>
           <input type="radio" value={wallet.id} {...registration} className={RADIO} />
           <span className="flex min-w-0 flex-col gap-1">
-            <span className={cn('font-bold text-foreground', cards ? 'text-body-lg-18' : 'text-body-15')}>
+            <span className={cn('font-bold text-foreground', cards ? 'text-body-lg-16' : 'text-body-15')}>
               {walletTitle(wallet)}
             </span>
             <span className={cn('truncate text-text-secondary', cards ? 'text-body-15' : 'text-caption-13')}>
@@ -72,7 +72,7 @@ export function WalletPicker({
       ))}
       <label className={cn(cards ? option : 'flex cursor-pointer items-center gap-3 py-1')}>
         <input type="radio" value={MANUAL_WALLET} {...registration} className={RADIO} />
-        <span className={cn('text-foreground', cards ? 'text-body-lg-17 font-bold' : 'text-body-lg-17')}>
+        <span className={cn('text-foreground', cards ? 'text-body-15 font-bold' : 'text-body-15')}>
           Usar outra carteira?
         </span>
       </label>

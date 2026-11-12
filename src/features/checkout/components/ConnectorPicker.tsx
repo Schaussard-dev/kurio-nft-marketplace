@@ -46,11 +46,11 @@ export function ConnectorPicker({
             )}
           >
             <input type="radio" value={connector} {...registration} className={RADIO} />
-            <span className="text-body-lg-17 text-foreground">{CONNECTOR_LABELS[connector]}</span>
+            <span className={cn('text-foreground', cards ? 'text-body-14' : 'text-body-15')}>{CONNECTOR_LABELS[connector]}</span>
             {cards && (
               <span
                 aria-hidden
-                className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-body-lg-17 font-bold text-text-accent"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface-2 text-body-14 font-bold text-text-accent"
               >
                 {connector === 'coinbase' ? <WalletMinimal className="size-5" /> : CONNECTOR_LABELS[connector][0]}
               </span>

@@ -140,7 +140,7 @@ function PageHeader({ desktop }: { desktop: boolean }) {
       >
         <ChevronLeft aria-hidden className="size-6" />
       </Link>
-      <h1 className="flex-1 text-title-22 font-bold text-foreground">Pagamento com carteira</h1>
+      <h1 className="flex-1 text-title-20 font-bold text-foreground">Pagamento com carteira</h1>
     </div>
   )
 }
@@ -704,8 +704,8 @@ function CheckoutFlow({
       className={cn(
         'w-full',
         desktop
-          ? 'h-14 rounded-sm text-body-lg-17'
-          : 'h-16 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-18',
+          ? 'h-10 rounded-[3px] text-body-15'
+          : 'h-16 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-15',
       )}
     >
       Confirmar compra
@@ -736,7 +736,7 @@ function CheckoutFlow({
         {desktop ? (
           <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_489px] lg:items-start lg:gap-10">
             <section aria-labelledby="perfil-colecionador-titulo" className="flex min-w-0 flex-col gap-4">
-              <h2 id="perfil-colecionador-titulo" className="text-title-20 font-bold text-foreground">
+              <h2 id="perfil-colecionador-titulo" className="text-body-lg-17 font-bold text-foreground">
                 Perfil do colecionador
               </h2>
               {formFields(
@@ -752,7 +752,7 @@ function CheckoutFlow({
                 coupon={coupon}
               />
               <section aria-labelledby="carteira-rede-titulo" className="flex flex-col gap-5">
-                <h2 id="carteira-rede-titulo" className="text-center text-title-20 font-bold text-foreground">
+                <h2 id="carteira-rede-titulo" className="text-center text-body-lg-16 font-bold text-foreground">
                   Carteira e rede
                 </h2>
                 <ConnectorPicker
@@ -768,17 +768,17 @@ function CheckoutFlow({
           <div className="flex flex-col gap-8">
             <section aria-labelledby="carteira-conectada-titulo" className="flex flex-col gap-6">
               <div className="flex items-center justify-between gap-4">
-                <h2 id="carteira-conectada-titulo" className="text-title-20 font-bold text-foreground">
+                <h2 id="carteira-conectada-titulo" className="text-body-lg-16 font-bold text-foreground">
                   Carteira conectada
                 </h2>
-                <Link {...manageHref} className="text-body-lg-17 font-bold whitespace-nowrap text-text-accent">
+                <Link {...manageHref} className="text-body-14 font-bold whitespace-nowrap text-text-accent">
                   Trocar carteira
                 </Link>
               </div>
               <WalletPicker wallets={registered} registration={walletRegistration} manageHref={manageHref} variant="cards" />
             </section>
             <section aria-labelledby="carteira-rede-titulo" className="flex flex-col gap-6">
-              <h2 id="carteira-rede-titulo" className="text-title-20 font-bold text-foreground">
+              <h2 id="carteira-rede-titulo" className="text-body-lg-17 font-bold text-foreground">
                 Carteira e rede
               </h2>
               <ConnectorPicker
@@ -804,7 +804,7 @@ function CheckoutFlow({
                 {formFields()}
               </div>
             </section>
-            <p className="flex items-baseline justify-end gap-8 text-title-22 font-bold text-foreground">
+            <p className="flex items-baseline justify-end gap-8 text-body-lg-16 font-bold text-foreground">
               Total:
               <span data-testid="checkout-total" aria-busy={active.isFetching} className="text-[28px] text-text-accent">
                 {shownQuote ? formatEth(shownQuote.total) : '…'}

@@ -176,7 +176,7 @@ function CartPage() {
         >
           <h2
             id="resumo-titulo"
-            className="border-b border-border-strong pb-3 text-title-20 font-bold text-foreground max-md:sr-only"
+            className="border-b border-border-strong pb-3 text-body-lg-18 font-bold text-foreground max-md:sr-only"
           >
             Resumo da carteira
           </h2>
@@ -211,7 +211,7 @@ function CartPage() {
                 className={cn(
                   buttonVariants(),
                   'w-full',
-                  desktop ? 'h-12 rounded-xs text-body-lg-17' : 'h-16 rounded-full text-body-lg-18',
+                  desktop ? 'h-12 rounded-xs text-body-15' : 'h-16 rounded-full text-body-lg-16',
                 )}
               >
                 Conectar e finalizar
@@ -224,14 +224,14 @@ function CartPage() {
                   buttonVariants(),
                   'w-full',
                   desktop
-                    ? 'h-12 rounded-xs text-body-lg-17'
-                    : 'h-16 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-18',
+                    ? 'h-12 rounded-xs text-body-15'
+                    : 'h-16 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-16',
                 )}
               >
                 Conectar e finalizar
               </Link>
             )}
-            <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className="text-body-lg-17 text-text-accent underline-offset-4 hover:underline">
+            <Link to="/" hash="catalogo" activeOptions={{ includeHash: true }} className="text-body-15 text-text-accent underline-offset-4 hover:underline">
               Continuar explorando
             </Link>
           </div>
@@ -250,7 +250,7 @@ function CartPage() {
       ) : (
         <div className="flex items-center gap-4">
           <BackButton />
-          <h1 className="flex-1 pr-12 text-center text-title-22 font-bold text-foreground">Carrinho de NFTs</h1>
+          <h1 className="flex-1 pr-12 text-center text-title-20 font-bold text-foreground">Carrinho de NFTs</h1>
         </div>
       )}
       {content}
