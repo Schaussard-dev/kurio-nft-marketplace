@@ -7,10 +7,10 @@ Build de demonstração (`npm run build:demo`, mocks MSW ativos, igual ao deploy
 
 | Página | Perfil | Performance | Acessibilidade | Boas práticas | SEO | LCP | CLS | TBT |
 |---|---|---|---|---|---|---|---|---|
-| `/` | mobile | **70** ⚠ | 100 | 100 | 100 | 5.4 s | 0.019 | 277 ms |
-| `/` | desktop | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 1 ms |
-| `/nft/nft_042` | mobile | **76** ⚠ | 100 | 100 | 100 | 5.3 s | 0.003 | 209 ms |
-| `/nft/nft_042` | desktop | **89** ⚠ | 100 | 100 | 100 | 1.3 s | 0.003 | 218 ms |
+| `/` | mobile | **70** ⚠ | 100 | 100 | 100 | 5.4 s | 0.000 | 300 ms |
+| `/` | desktop | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 4 ms |
+| `/nft/nft_042` | mobile | **75** ⚠ | 100 | 100 | 100 | 5.3 s | 0.001 | 193 ms |
+| `/nft/nft_042` | desktop | 97 | 100 | 100 | 100 | 1.3 s | 0.013 | 0 ms |
 
 Metas: Performance 90, Acessibilidade 95, Boas práticas 95, SEO 90. ⚠ = mediana abaixo da meta.
 
@@ -18,27 +18,27 @@ Metas: Performance 90, Acessibilidade 95, Boas práticas 95, SEO 90. ⚠ = media
 
 | Página | Perfil | Execução | Perf | A11y | BP | SEO | LCP | CLS | TBT |
 |---|---|---|---|---|---|---|---|---|---|
-| `/` | mobile | 1 | 62 | 100 | 100 | 100 | 5.5 s | 0.000 | 531 ms |
-| `/` | mobile | 2 | 72 | 100 | 100 | 100 | 5.4 s | 0.019 | 237 ms |
-| `/` | mobile | 3 (mediana) | 70 | 100 | 100 | 100 | 5.4 s | 0.019 | 277 ms |
-| `/` | desktop | 1 (mediana) | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 0 ms |
-| `/` | desktop | 2 | 97 | 100 | 100 | 100 | 1.3 s | 0.002 | 1 ms |
-| `/` | desktop | 3 | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 7 ms |
-| `/nft/nft_042` | mobile | 1 (mediana) | 77 | 100 | 100 | 100 | 5.3 s | 0.003 | 209 ms |
-| `/nft/nft_042` | mobile | 2 | 56 | 100 | 100 | 100 | 5.3 s | 0.003 | 1.3 s |
-| `/nft/nft_042` | mobile | 3 | 76 | 100 | 100 | 100 | 5.3 s | 0.003 | 150 ms |
-| `/nft/nft_042` | desktop | 1 | 84 | 100 | 100 | 100 | 1.3 s | 0.003 | 308 ms |
-| `/nft/nft_042` | desktop | 2 (mediana) | 97 | 100 | 100 | 100 | 1.3 s | 0.003 | 0 ms |
-| `/nft/nft_042` | desktop | 3 | 89 | 100 | 100 | 100 | 1.3 s | 0.003 | 218 ms |
+| `/` | mobile | 1 | 67 | 100 | 100 | 100 | 5.4 s | 0.000 | 367 ms |
+| `/` | mobile | 2 | 71 | 100 | 100 | 100 | 5.5 s | 0.000 | 270 ms |
+| `/` | mobile | 3 (mediana) | 70 | 100 | 100 | 100 | 5.4 s | 0.000 | 300 ms |
+| `/` | desktop | 1 (mediana) | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 4 ms |
+| `/` | desktop | 2 | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 1 ms |
+| `/` | desktop | 3 | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 31 ms |
+| `/nft/nft_042` | mobile | 1 (mediana) | 75 | 100 | 100 | 100 | 5.4 s | 0.001 | 182 ms |
+| `/nft/nft_042` | mobile | 2 | 75 | 100 | 100 | 100 | 5.3 s | 0.001 | 193 ms |
+| `/nft/nft_042` | mobile | 3 | 74 | 100 | 100 | 100 | 5.3 s | 0.001 | 229 ms |
+| `/nft/nft_042` | desktop | 1 (mediana) | 97 | 100 | 100 | 100 | 1.3 s | 0.013 | 0 ms |
+| `/nft/nft_042` | desktop | 2 | 96 | 100 | 100 | 100 | 1.4 s | 0.013 | 0 ms |
+| `/nft/nft_042` | desktop | 3 | 97 | 100 | 100 | 100 | 1.3 s | 0.013 | 0 ms |
 
 ## Ambiente
 
-- Data: 2026-11-12T04:25:19.152Z
+- Data: 2026-11-12T21:38:31.830Z
 - Lighthouse: 13.6.0
 - Chrome: HeadlessChrome/157.0.0.0
 - Node: v22.22.2
 - SO: Windows_NT 10.0.26200 (x64)
-- CPU: 12th Gen Intel(R) Core(TM) i7-1255U, 12 threads (benchmarkIndex mediano do Lighthouse: 3303)
+- CPU: 12th Gen Intel(R) Core(TM) i7-1255U, 12 threads (benchmarkIndex mediano do Lighthouse: 2846)
 - Throttling mobile: simulado (Lantern), RTT 150 ms, 1638 Kbps, CPU 4x; emulação de tela 412x823 @1.75x.
 - Throttling desktop: simulado (Lantern), RTT 40 ms, 10240 Kbps, CPU 1x; emulação de tela 1350x940 @1x.
 

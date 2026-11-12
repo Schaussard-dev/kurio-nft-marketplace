@@ -335,14 +335,14 @@ Cada teste usa um contexto novo e começa com `?scenario=…&reset=1`. Eventos s
 
 | Página | Perfil | Performance | Acessibilidade | Boas práticas | SEO | LCP | CLS | TBT |
 |---|---|---|---|---|---|---|---|---|
-| `/` | mobile | **70** ⚠ | 100 | 100 | 100 | 5.4 s | 0.019 | 277 ms |
-| `/` | desktop | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 1 ms |
-| `/nft/nft_042` | mobile | **76** ⚠ | 100 | 100 | 100 | 5.3 s | 0.003 | 209 ms |
-| `/nft/nft_042` | desktop | **89** ⚠ | 100 | 100 | 100 | 1.3 s | 0.003 | 218 ms |
+| `/` | mobile | **70** ⚠ | 100 | 100 | 100 | 5.4 s | 0.000 | 300 ms |
+| `/` | desktop | 97 | 100 | 100 | 100 | 1.2 s | 0.002 | 4 ms |
+| `/nft/nft_042` | mobile | **75** ⚠ | 100 | 100 | 100 | 5.3 s | 0.001 | 193 ms |
+| `/nft/nft_042` | desktop | 97 | 100 | 100 | 100 | 1.3 s | 0.013 | 0 ms |
 
-⚠ = abaixo da meta (Performance 90). **Resultado: abaixo da meta em Performance** no mobile das duas páginas e, por um ponto, no desktop do detalhe. Acessibilidade, Boas práticas e SEO ficam em 100.
+⚠ = abaixo da meta (Performance 90). **Resultado: abaixo da meta em Performance** no mobile das duas páginas; no desktop as duas páginas ficam em 97. Acessibilidade, Boas práticas e SEO ficam em 100.
 
-A causa principal no mobile é a camada de simulação, que só existe no build de demonstração: o chunk do MSW e do banco simulado (cerca de 180 KB gzip), a espera pela ativação do Service Worker antes do primeiro render e a latência proposital de 150–400 ms por resposta. O elemento de LCP (primeiro card do catálogo) depende de tudo isso. Cortar esses custos só para a auditoria seria uma simplificação proibida pelo enunciado. O desktop do detalhe varia só pelo TBT (84 / 97 / 89 entre execuções). Análise completa, execuções individuais, ambiente e relatórios HTML/JSON: [`lighthouse/summary.md`](lighthouse/summary.md) e `lighthouse/reports/`.
+A causa principal no mobile é a camada de simulação, que só existe no build de demonstração: o chunk do MSW e do banco simulado (cerca de 180 KB gzip), a espera pela ativação do Service Worker antes do primeiro render e a latência proposital de 150–400 ms por resposta. O elemento de LCP (primeiro card do catálogo) depende de tudo isso. Cortar esses custos só para a auditoria seria uma simplificação proibida pelo enunciado. O TBT varia entre execuções (os valores individuais estão no resumo). Análise completa, execuções individuais, ambiente e relatórios HTML/JSON: [`lighthouse/summary.md`](lighthouse/summary.md) e `lighthouse/reports/`.
 
 ## Deploy
 
