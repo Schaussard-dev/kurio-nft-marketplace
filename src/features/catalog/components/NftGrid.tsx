@@ -6,6 +6,8 @@ import { NftCard, type NftCardActions } from './NftCard'
 import { NftCardSkeleton } from './NftCardSkeleton'
 
 const PAGE_SIZE = 9
+/** First row on mobile (2 columns): above the fold, so their images are not lazy-loaded. */
+const EAGER_CARDS = 2
 const GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 md:gap-x-[34px] md:gap-y-12'
 
 interface NftGridProps extends NftCardActions {
@@ -69,7 +71,7 @@ export function NftGrid({ query, onClearFilters, onFirstPage, ...actions }: NftG
       </div>
       <ul aria-label="NFTs" aria-busy={isFetching} className={GRID}>
         {data
-          ? data.items.map((nft) => <NftCard key={nft.id} nft={nft} {...actions} />)
+          ? data.items.map((nft, index) => <NftCard key={nft.id} nft={nft} eager={index < EAGER_CARDS} {...actions} />)
           : Array.from({ length: PAGE_SIZE }, (_, index) => <NftCardSkeleton key={index} />)}
       </ul>
     </div>

@@ -4,8 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Kurio, marketplace de NFTs: explore, compre e acompanhe coleções em tempo real." />
-    <!-- LCP: hero artwork of the home page (same candidates/sizes as the <picture> in Hero.tsx). -->
-    <link rel="preload" as="image" type="image/avif" href="/nfts/emerald-640.avif" imagesrcset="/nfts/emerald-320.avif 320w, /nfts/emerald-640.avif 640w, /nfts/emerald-1024.avif 1024w" imagesizes="(min-width: 1024px) 450px, 140px" fetchpriority="high" />
+    <meta name="theme-color" content="#140D0A" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- LCP of the home page only: its first hero artwork (same candidates/sizes as the <picture> in Hero.tsx). -->
+    <script>
+      if (location.pathname === '/') {
+        const hero = document.createElement('link')
+        hero.rel = 'preload'
+        hero.as = 'image'
+        hero.type = 'image/avif'
+        hero.href = '/nfts/emerald-640.avif'
+        hero.imageSrcset = '/nfts/emerald-320.avif 320w, /nfts/emerald-640.avif 640w, /nfts/emerald-1024.avif 1024w'
+        hero.imageSizes = '(min-width: 1024px) 450px, 140px'
+        hero.fetchPriority = 'high'
+        document.head.append(hero)
+      }
+    </script>
     <title>Kurio — Marketplace de NFTs</title>
   </head>
   <body>

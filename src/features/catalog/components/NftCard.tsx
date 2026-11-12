@@ -31,7 +31,13 @@ export function NftCard({
   isAddingToCart,
   onToggleFavorite,
   isFavorite,
-}: { nft: NftSummary; className?: string } & NftCardActions) {
+  eager = false,
+}: {
+  nft: NftSummary
+  className?: string
+  /** Above-the-fold card (first row of the catalog): load its image right away instead of lazily. */
+  eager?: boolean
+} & NftCardActions) {
   const favorite = isFavorite?.(nft) ?? false
   const adding = isAddingToCart?.(nft) ?? false
   const addToCart = () => {
@@ -54,6 +60,7 @@ export function NftCard({
         <ArtImage
           art={nft.art}
           sizes={CARD_IMAGE_SIZES}
+          loading={eager ? 'eager' : 'lazy'}
           alt={`${nft.name}: ${ART_DESCRIPTIONS[nft.art]}`}
           className="aspect-square w-full rounded-[20px] object-cover"
         />
