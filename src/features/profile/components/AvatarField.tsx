@@ -66,11 +66,11 @@ export function AvatarField({ displayName, avatarUrl }: { displayName: string; a
           disabled={busy}
           aria-describedby={error ? errorId : undefined}
           onClick={() => inputRef.current?.click()}
-          className="h-14 px-6"
+          className="h-10 px-6 text-body-14"
         >
           {setAvatar.isPending ? 'Enviando…' : 'Alterar'}
         </Button>
-        <Button type="button" variant="ghost" disabled={busy || !avatarUrl} onClick={onRemove}>
+        <Button type="button" variant="ghost" disabled={busy || !avatarUrl} onClick={onRemove} className="h-10 text-body-14 font-normal">
           Remover
         </Button>
       </div>

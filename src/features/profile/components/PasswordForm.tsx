@@ -42,7 +42,7 @@ export function PasswordForm() {
 
   return (
     <form aria-label="Alterar senha" noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
-      <h2 className="text-title-22 font-bold text-foreground">Alterar senha</h2>
+      <h2 className="text-body-lg-16 font-medium text-foreground">Alterar senha</h2>
       <AuthField id="senha-atual" label="Senha atual" visibleLabel error={errors.currentPassword?.message}>
         {(a11y) => (
           <PasswordInput
@@ -74,7 +74,7 @@ export function PasswordForm() {
         )}
       </AuthField>
       <div>
-        <Button type="submit" disabled={change.isPending} className="h-14 rounded-sm px-12">
+        <Button type="submit" disabled={change.isPending} className="h-10 rounded-[3px] px-12 text-body-14">
           {change.isPending ? (
             <>
               <LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />

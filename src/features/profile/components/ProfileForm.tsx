@@ -117,7 +117,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       </AuthField>
       <AvatarField displayName={profile.displayName} avatarUrl={profile.avatarUrl} />
       <div className="md:col-span-2">
-        <Button type="submit" disabled={update.isPending} className="h-14 rounded-sm px-12">
+        <Button type="submit" disabled={update.isPending} className="h-10 rounded-[3px] px-12 text-body-14">
           {update.isPending ? (
             <>
               <LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />

@@ -35,7 +35,7 @@ export function AuthField({
       <label htmlFor={id} className={visibleLabel ? 'text-body-15 text-foreground' : 'sr-only'}>
         {label}
         {required && visibleLabel && (
-          <span aria-hidden className="ml-0.5 text-danger">
+          <span aria-hidden className="ml-0.5 align-middle text-title-22 leading-none text-danger">
             *
           </span>
         )}

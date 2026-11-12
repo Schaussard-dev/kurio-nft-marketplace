@@ -13,7 +13,7 @@ export function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <h1 className="text-heading-28 text-foreground">Perfil do colecionador</h1>
+      <h1 className="text-body-lg-16 font-bold text-foreground">Perfil do colecionador</h1>
       {data ? (
         <ProfileForm profile={data} />
       ) : isError ? (

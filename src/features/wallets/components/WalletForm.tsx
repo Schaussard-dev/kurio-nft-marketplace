@@ -282,7 +282,7 @@ export function WalletForm({
         </>
       )}
       <div className="md:col-span-2">
-        <Button type="submit" disabled={submitting} className="h-14 rounded-sm px-8">
+        <Button type="submit" disabled={submitting} className="h-10 rounded-[3px] px-8 text-body-14">
           {submitting ? (
             <>
               <LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />

@@ -15,7 +15,7 @@ const COPY: Record<WalletSlot, { title: string; empty: string }> = {
   },
 }
 
-const ADD_BUTTON = 'text-title-18 font-bold text-text-accent underline-offset-4 hover:underline'
+const ADD_BUTTON = 'text-body-lg-16 font-medium text-text-accent underline-offset-4 hover:underline'
 
 /** One wallet slot: empty state with "Adicionar", or the form (prefilled when the slot is already filled). */
 export function WalletSection({
@@ -43,11 +43,11 @@ export function WalletSection({
     <section aria-labelledby={headingId} className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
         <div className="flex flex-col gap-1">
-          <h2 id={headingId} className="text-title-22 font-bold text-foreground">
+          <h2 id={headingId} className="text-body-lg-17 font-bold text-foreground">
             {COPY[slot].title}
           </h2>
           {slot === 'primary' && (
-            <p className="text-body-15 text-text-accent">
+            <p className="text-body-14 text-text-secondary">
               Estas carteiras ficam disponíveis no pagamento e para receber NFTs comprados.
             </p>
           )}
@@ -61,7 +61,7 @@ export function WalletSection({
                 onCheckedChange={(checked) => setSameAsPrimary(checked === true)}
                 className="size-5 rounded-full"
               />
-              <label htmlFor={checkboxId} className="text-body-15 text-foreground">
+              <label htmlFor={checkboxId} className="text-body-14 text-foreground">
                 Igual à carteira principal
               </label>
             </div>

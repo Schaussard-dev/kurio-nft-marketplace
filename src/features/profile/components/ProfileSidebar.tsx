@@ -11,7 +11,7 @@ export function ProfileSidebar() {
   const logout = useLogout()
   return (
     <aside aria-label="Menu do perfil" className="min-w-0 self-start bg-surface">
-      <p className="px-4 pt-4 pb-3 text-title-22 font-bold text-foreground">Meu perfil</p>
+      <p className="px-4 pt-4 pb-3 text-body-lg-18 font-bold text-foreground">Meu perfil</p>
       <nav aria-label="Seções do perfil" className="flex overflow-x-auto lg:flex-col">
         <Link to="/perfil" activeOptions={{ exact: true }} activeProps={ACTIVE} className={ITEM}>
           <User className="size-5" aria-hidden />
