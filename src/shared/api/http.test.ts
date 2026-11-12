@@ -71,6 +71,19 @@ describe('http', () => {
     expect(handler).toHaveBeenCalledWith('expired')
   })
 
+  it('does not fire the handler for a 401 of a token that is no longer the current one', async () => {
+    const newer: Session = { ...SESSION, token: 'tok-newer' }
+    const { request, setSessionExpiredHandler } = await load((c) => {
+      // Another login (here or in another tab) replaces the token while the request is in flight.
+      localStorage.setItem('kurio-session', JSON.stringify(newer))
+      return reply(c, 401, { error: { code: 'UNAUTHENTICATED', message: 'x' } })
+    }, SESSION)
+    const handler = vi.fn()
+    setSessionExpiredHandler(handler)
+    await expect(request({ url: '/x' }, z.unknown())).rejects.toMatchObject({ status: 401 })
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it('does not fire the handler when no token was sent', async () => {
     const { request, setSessionExpiredHandler } = await load(
       (c) => reply(c, 401, { error: { code: 'UNAUTHENTICATED', message: 'x' } }),

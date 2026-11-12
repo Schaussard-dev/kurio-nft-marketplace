@@ -4,7 +4,7 @@ import { LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toApiError } from '@/shared/api/api-error'
-import { registerInputSchema, type RegisterInput } from '@/shared/contracts'
+import { registerInputSchema, type RegisterInput, type Session } from '@/shared/contracts'
 import { safeRedirect } from '@/shared/lib/safe-redirect'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -33,8 +33,9 @@ export function RegisterForm({ variant, redirect }: { variant: AuthVariant; redi
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null)
+    let session: Session
     try {
-      await registerUser.mutateAsync(values)
+      session = await registerUser.mutateAsync(values)
     } catch (error) {
       const apiError = toApiError(error)
       // 409 EMAIL_TAKEN / USERNAME_TAKEN and 422 come back per field; focus the first one.
@@ -46,7 +47,7 @@ export function RegisterForm({ variant, redirect }: { variant: AuthVariant; redi
       return
     }
     // Same target rule as login: explicit redirect first, then the context saved by an expiry.
-    const resume = takeResume()
+    const resume = takeResume(session.user.id)
     await navigate({ href: safeRedirect(redirect ?? resume?.path), replace: true })
   })
 

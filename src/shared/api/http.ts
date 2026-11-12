@@ -35,10 +35,14 @@ http.interceptors.response.use(
     // Cancellations must reach TanStack Query untouched.
     if (isCancel(error)) return Promise.reject(error)
     const apiError = toApiError(error)
-    const sentToken = axios.isAxiosError(error) && Boolean(error.config?.headers?.get('Authorization'))
+    const sentAuth = axios.isAxiosError(error) ? error.config?.headers?.get('Authorization') : undefined
+    const current = sessionStore.get()
+    // A 401 for a token that is no longer the current one (replaced by a login here or in another
+    // tab) must not end the newer session.
+    const sentCurrentToken = current !== null && sentAuth === `Bearer ${current.token}`
     const skip = axios.isAxiosError(error) && error.config?.skipSessionExpiry === true
     if (
-      sentToken &&
+      sentCurrentToken &&
       !skip &&
       apiError.status === 401 &&
       (apiError.code === 'SESSION_EXPIRED' || apiError.code === 'UNAUTHENTICATED')

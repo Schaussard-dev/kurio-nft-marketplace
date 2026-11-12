@@ -4,7 +4,7 @@ import { LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toApiError } from '@/shared/api/api-error'
-import { loginInputSchema, type LoginInput } from '@/shared/contracts'
+import { loginInputSchema, type LoginInput, type Session } from '@/shared/contracts'
 import { safeRedirect } from '@/shared/lib/safe-redirect'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -43,8 +43,9 @@ export function LoginForm({
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null)
+    let session: Session
     try {
-      await login.mutateAsync(values)
+      session = await login.mutateAsync(values)
     } catch (error) {
       const apiError = toApiError(error)
       const withErrors = LOGIN_FIELDS.filter((field) => apiError.fieldErrors?.[field]?.[0])
@@ -57,7 +58,7 @@ export function LoginForm({
       }
       return
     }
-    const resume = takeResume()
+    const resume = takeResume(session.user.id)
     // `redirect` comes from the URL: only internal paths are followed (open-redirect protection).
     await navigate({ href: safeRedirect(redirect ?? resume?.path), replace: true })
   })

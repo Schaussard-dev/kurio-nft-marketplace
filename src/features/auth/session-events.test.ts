@@ -11,6 +11,7 @@ import {
   onSessionEnded,
   registerSessionStartHook,
   startSession,
+  takeResume,
 } from './session-events'
 
 const ana: Session = {
@@ -72,12 +73,45 @@ describe('session events', () => {
     })
     const toLogin = vi.fn()
     bindSessionNavigator({ currentPath: () => '/perfil/carteiras?x=1', toLogin })
+    sessionStore.set(ana)
 
     endSession(new QueryClient(), 'expired')
 
-    expect(JSON.parse(storage.get(RESUME_KEY)!)).toEqual({ path: '/perfil/carteiras?x=1' })
+    expect(JSON.parse(storage.get(RESUME_KEY)!)).toEqual({ path: '/perfil/carteiras?x=1', userId: 'usr_ana' })
     expect(toLogin).toHaveBeenCalledWith('/perfil/carteiras?x=1')
     vi.unstubAllGlobals()
+  })
+
+  it('takeResume offers the expiry context back only to the user whose session expired', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => storage.get(k) ?? null,
+      setItem: (k: string, v: string) => void storage.set(k, v),
+      removeItem: (k: string) => void storage.delete(k),
+    })
+    bindSessionNavigator({ currentPath: () => '/perfil/pedidos', toLogin: vi.fn() })
+
+    sessionStore.set(ana)
+    endSession(new QueryClient(), 'expired')
+    expect(takeResume('usr_bruno')).toBeNull()
+    expect(storage.has(RESUME_KEY)).toBe(false)
+
+    sessionStore.set(ana)
+    endSession(new QueryClient(), 'expired')
+    expect(takeResume('usr_ana')).toEqual({ path: '/perfil/pedidos' })
+    vi.unstubAllGlobals()
+  })
+
+  it('endSession drops the signed-in cart quotes and keeps guest ones', () => {
+    sessionStore.set(ana)
+    const qc = seededClient()
+    qc.setQueryData(queryKeys.quote('user:usr_ana', { version: 1 }), { total: '1' })
+    qc.setQueryData(queryKeys.quote('guest:g1', { version: 1 }), { total: '2' })
+
+    endSession(qc, 'logout')
+
+    expect(qc.getQueryCache().findAll({ queryKey: ['quote', 'user:usr_ana'] })).toHaveLength(0)
+    expect(qc.getQueryCache().findAll({ queryKey: ['quote', 'guest:g1'] })).toHaveLength(1)
   })
 
   it('endSession(expired) does not navigate again when already on /entrar', () => {

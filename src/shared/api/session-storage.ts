@@ -38,6 +38,13 @@ function notify(session: Session | null): void {
   listeners.forEach((fn) => fn(session))
 }
 
+// Another tab signed in or out: subscribers (session query, realtime socket) follow the shared token.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === SESSION_KEY || event.key === null) notify(sessionStore.get())
+  })
+}
+
 export const sessionStore = {
   get(): Session | null {
     const raw = readRaw(SESSION_KEY)

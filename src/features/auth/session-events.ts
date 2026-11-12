@@ -24,6 +24,8 @@ const endedListeners = new Set<SessionEndedListener>()
 const startHooks = new Set<SessionStartHook>()
 let navigator: SessionNavigator | null = null
 let expiredHint = false
+/** Who the last expired session belonged to: the resume context is only offered back to them. */
+let expiredUserId: string | null = null
 
 /** The session check found the stored token rejected by the API (consumed by the route guard). */
 export function markSessionRejected(): void {
@@ -64,19 +66,24 @@ function currentPath(): string {
 
 function saveResume(path: string): void {
   try {
-    sessionStorage.setItem(RESUME_KEY, JSON.stringify({ path }))
+    sessionStorage.setItem(RESUME_KEY, JSON.stringify({ path, userId: expiredUserId }))
   } catch {
     // Storage unavailable: the redirect param still brings the user back.
   }
 }
 
-/** Reads and clears the resume context saved by an expiry. */
-export function takeResume(): { path: string } | null {
+/** Reads and clears the resume context saved by an expiry; it is ignored when another user signs in. */
+export function takeResume(userId: string): { path: string } | null {
   try {
     const raw = sessionStorage.getItem(RESUME_KEY)
     sessionStorage.removeItem(RESUME_KEY)
     const parsed: unknown = raw ? JSON.parse(raw) : null
-    if (parsed && typeof parsed === 'object' && typeof Reflect.get(parsed, 'path') === 'string') {
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof Reflect.get(parsed, 'path') === 'string' &&
+      Reflect.get(parsed, 'userId') === userId
+    ) {
       return { path: Reflect.get(parsed, 'path') as string }
     }
   } catch {
@@ -106,25 +113,34 @@ export function redirectAfterExpiry({ onlyFromPrivate = false }: { onlyFromPriva
 }
 
 /**
- * Ends the client session: clears the token, drops every user-scoped query, caches "no session"
- * and notifies subscribers (the realtime provider disconnects its socket). An expiry keeps the
- * resume context and, unless navigate is false, redirects to /entrar; logout and switch drop it.
+ * Ends the client session: clears the token, drops every user-scoped query (incl. the signed-in
+ * cart's quotes), caches "no session" and notifies subscribers (the realtime provider disconnects
+ * its socket). An expiry keeps the resume context (tagged with the expired user) and, unless
+ * navigate is false, redirects to /entrar; logout and switch drop it.
  */
 export function endSession(
   queryClient: QueryClient,
   reason: SessionEndReason,
   { navigate = true }: { navigate?: boolean } = {},
 ): void {
+  const userId = sessionStore.get()?.user.id ?? null
   sessionStore.clear()
   queryClient.removeQueries({ queryKey: queryKeys.users })
+  // Quotes are keyed by cart scope (['quote', 'user:<id>' | 'guest:<id>', input]): drop the user ones.
+  queryClient.removeQueries({
+    predicate: ({ queryKey }) => queryKey[0] === 'quote' && String(queryKey[1]).startsWith('user:'),
+  })
   queryClient.setQueryData(queryKeys.session(), null)
   endedListeners.forEach((listener) => listener(reason))
 
   if (reason !== 'expired') {
     expiredHint = false
+    expiredUserId = null
     clearResume()
     return
   }
+  // Parallel 401s end an already-cleared session: keep the user captured by the first one.
+  if (userId) expiredUserId = userId
   if (navigate) redirectAfterExpiry()
 }
 
