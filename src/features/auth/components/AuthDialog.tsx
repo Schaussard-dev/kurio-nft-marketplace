@@ -29,7 +29,7 @@ const COPY: Record<AuthMode, { title: string; description: string; pageTitle: st
 /** Only the redirect travels between the tabs; the expiry notice belongs to the login it came with. */
 const tabSearch = (search: AuthSearch) => (search.redirect ? { redirect: search.redirect } : {})
 
-const TAB = 'text-title-22 font-bold text-foreground transition-colors hover:text-text-accent'
+const TAB = 'text-title-20 font-medium text-foreground transition-colors hover:text-text-accent'
 
 /** Where closing the dialog goes: the (internal) redirect target, or Início when that target needs a session. */
 const closeTarget = (search: AuthSearch) => {
@@ -110,13 +110,15 @@ function AuthPage({ mode, search, children }: { mode: AuthMode; search: AuthSear
       <Link
         to="/"
         aria-label="Kurio, página inicial"
-        className="self-center text-[44px] leading-none font-bold tracking-[0.08em] text-foreground"
+        className="self-center text-display-32 leading-none text-foreground"
       >
         KURIO
       </Link>
-      <h1 className="mt-20 mb-10 text-center text-heading-24 text-foreground">{COPY[mode].pageTitle}</h1>
+      <h1 className={cn('mt-20 mb-10 text-center font-bold text-foreground', mode === 'login' ? 'text-title-20' : 'text-body-lg-18')}>
+        {COPY[mode].pageTitle}
+      </h1>
       {children}
-      <p className="mt-12 text-center text-body-lg-17 text-text-secondary">
+      <p className="mt-12 text-center text-body-15 text-text-secondary">
         {mode === 'login' ? 'Novo na Kurio? ' : 'Já tem uma conta? '}
         <Link
           to={mode === 'login' ? '/cadastro' : '/entrar'}

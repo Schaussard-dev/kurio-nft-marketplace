@@ -126,7 +126,7 @@ export function RegisterForm({ variant, redirect }: { variant: AuthVariant; redi
         <Button
           type="submit"
           disabled={registerUser.isPending}
-          className={cn('mt-4 w-full', variant === 'dialog' ? 'h-11' : 'h-[60px] rounded-xl text-body-lg-18')}
+          className={cn('mt-4 w-full', variant === 'dialog' ? 'h-11 text-body-lg-16' : 'h-[60px] rounded-xl text-body-lg-16')}
         >
           {registerUser.isPending ? (
             <>

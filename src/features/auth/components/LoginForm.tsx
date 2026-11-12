@@ -107,7 +107,7 @@ export function LoginForm({
               type="button"
               className={cn(
                 'text-text-accent underline-offset-4 hover:underline',
-                variant === 'dialog' ? 'text-caption-13' : 'text-body-15',
+                'text-body-14',
               )}
             >
               Esqueceu a senha?
@@ -122,7 +122,7 @@ export function LoginForm({
         <Button
           type="submit"
           disabled={login.isPending}
-          className={cn('mt-4 w-full', variant === 'dialog' ? 'h-11' : 'h-[60px] rounded-xl text-body-lg-18')}
+          className={cn('mt-4 w-full', variant === 'dialog' ? 'h-11 text-body-lg-16' : 'h-[60px] rounded-xl text-body-lg-16')}
         >
           {login.isPending ? (
             <>
