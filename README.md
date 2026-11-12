@@ -134,7 +134,7 @@ A camada de mocks fica toda em `src/mocks/`. Ela é carregada por `src/main.tsx`
 | URL `?scenario=<nome>&reset=1` (em qualquer rota) | Ativa o cenário **e** restaura o seed dele. Os dois parâmetros são lidos no boot e removidos da URL; os demais parâmetros ficam. **Forma recomendada.** |
 | URL `?reset=1` | Restaura o seed do cenário ativo. |
 | URL `?scenario=<nome>` | Ativa o cenário sem reseed (latência e falhas mudam; o `empty` precisa de `reset=1` para esvaziar o catálogo). |
-| Painel **Simulação** (botão flutuante no canto inferior esquerdo, só com mocks) → "Cenário" | Reseed + troca de cenário, e a página recarrega para descartar o cache do cliente. |
+| Painel **Simulação** (botão flutuante no canto inferior esquerdo, só com mocks) → "Cenário" | Reseed + troca de cenário, e a página recarrega para descartar o cache do cliente. O reseed encerra a sessão e restaura carrinhos, favoritos e pedidos do seed: entre de novo depois de trocar. A latência fixa do campo "Latência (ms)" continua valendo até ser apagada. |
 | Painel → "Reset" | Restaura o seed do cenário ativo e recarrega a página. |
 | `POST /api/__mock/reset` / `/api/__mock/scenario` / `/api/__mock/emit` | Mesmo controle por código. Ver abaixo. |
 

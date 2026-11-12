@@ -15,6 +15,9 @@ for (const route of entryRoutes) {
 }
 
 if (import.meta.env.VITE_ENABLE_MOCKS === 'true') {
+  // Blocked site data makes storage throw, and MSW reads it while loading: shim it first.
+  const { ensureWebStorage } = await import('./mocks/storage-shim')
+  ensureWebStorage()
   await (await import('./mocks/browser')).startMocks()
 }
 

@@ -117,3 +117,10 @@
 body:has([data-bottom-bar]) .mock-panel-trigger {
   bottom: 12.5rem;
 }
+
+/* Demo builds only: room below the page content so the floating panel button never hides the last controls. */
+@media (max-width: 1023.98px) {
+  body:has(.mock-panel-trigger) #conteudo {
+    padding-bottom: 4rem;
+  }
+}

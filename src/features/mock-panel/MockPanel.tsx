@@ -77,7 +77,8 @@ export default function MockPanel() {
   const [open, setOpen] = useState(Boolean(initial?.flash))
   // The mock config is the source of truth: `?scenario=`, the control API and this panel all write it.
   const [scenario, setScenario] = useState<ScenarioName>(() => getMockConfig().scenario)
-  const [latency, setLatency] = useState('')
+  // The fixed latency survives reloads (session config): show it instead of an empty "scenario latency" field.
+  const [latency, setLatency] = useState(() => String(getMockConfig().latencyOverride ?? ''))
   const [nftId, setNftId] = useState('')
   const [price, setPrice] = useState('')
   const [eventId, setEventId] = useState('')
@@ -146,10 +147,11 @@ export default function MockPanel() {
           type="button"
           variant="secondary"
           size="sm"
-          className="mock-panel-trigger fixed bottom-24 left-3 z-50 border border-border-strong lg:bottom-4"
+          // Phones get an icon-only 40px button (it floats over content); the label stays as its accessible name.
+          className="mock-panel-trigger fixed bottom-24 left-3 z-50 border border-border-strong max-lg:size-10 max-lg:rounded-full max-lg:p-0 lg:bottom-4"
         >
           <FlaskConical aria-hidden />
-          Simulação
+          <span className="max-lg:sr-only">Simulação</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[340px] max-w-full gap-0 overflow-y-auto">

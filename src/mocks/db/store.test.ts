@@ -260,3 +260,24 @@ describe('store isolation', () => {
     expect(getDb().carts.some((c) => c.owner.id === 'usr_ana')).toBe(true)
   })
 })
+
+describe('store without usable localStorage', () => {
+  it('falls back to memory when reading localStorage throws (blocked site data)', async () => {
+    vi.resetModules()
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('blocked', 'SecurityError')
+      },
+    })
+    try {
+      const fresh = await import('./store')
+      await fresh.initDb()
+      expect(fresh.getDb().nfts).toHaveLength(60)
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor)
+      else delete (globalThis as { localStorage?: unknown }).localStorage
+    }
+  })
+})

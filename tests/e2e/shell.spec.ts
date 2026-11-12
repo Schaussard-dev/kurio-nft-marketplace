@@ -184,3 +184,50 @@ test('mock panel shows the scenario applied through the URL and resets within it
   await page.getByRole('button', { name: 'Reset' }).click()
   expect((await resetRequest).postDataJSON()).toEqual({ scenario: 'server-error' })
 })
+
+test('on a phone the demo panel button is compact and covers no control at the end of the page (FR-07)', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'mobile project only')
+  await page.setViewportSize({ width: 320, height: 640 })
+  await page.goto('/carrinho?scenario=default&reset=1')
+  await waitForMocks(page)
+  await page.evaluate(async () => {
+    const guest = localStorage.getItem('kurio-guest-cart-id')
+    const headers = { 'content-type': 'application/json', ...(guest ? { 'X-Cart-Id': guest } : {}) }
+    await fetch('/api/cart/items', { method: 'POST', headers, body: JSON.stringify({ nftId: 'nft_042', editionId: 'nft_042_e4', quantity: 2 }) })
+  })
+  await page.reload()
+  await waitForMocks(page)
+  await expect(page.getByTestId('cart-line').first()).toBeVisible()
+  const trigger = page.getByRole('button', { name: 'Simulação' })
+  const box = (await trigger.boundingBox())!
+  expect(box.width).toBeLessThanOrEqual(44)
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  await page.waitForTimeout(300)
+  const covered = await page.evaluate(() => {
+    const t = document.querySelector('.mock-panel-trigger')!.getBoundingClientRect()
+    return [...document.querySelectorAll('main a, main button, main input, main select')]
+      .filter((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top
+      })
+      .map((el) => el.getAttribute('aria-label') || el.textContent?.trim().slice(0, 30))
+  })
+  expect(covered).toEqual([])
+})
+
+test('the demo panel latency field shows the fixed latency still in effect after a reload (FR-18)', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop project only')
+  await page.goto('/?scenario=default&reset=1')
+  await waitForMocks(page)
+  await page.getByRole('button', { name: 'Simulação' }).click()
+  await page.getByLabel('Latência (ms)').fill('1200')
+  await page.getByRole('button', { name: 'Aplicar' }).click()
+  await expect(page.getByText('Latência aplicada')).toBeVisible()
+  await page.reload()
+  await waitForMocks(page)
+  await page.getByRole('button', { name: 'Simulação' }).click()
+  await expect(page.getByLabel('Latência (ms)')).toHaveValue('1200')
+})
