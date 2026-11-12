@@ -89,7 +89,7 @@ Convenções: cada feature tem `api.ts` (chamadas tipadas), `queries.ts` (hooks 
 | `*` | 404 no padrão visual | público |
 
 - **Guard:** `src/routes/_authenticated.tsx` (layout sem caminho). Com sessão em cache, navega na hora e revalida em segundo plano. Sem sessão, faz `ensureQueryData` e redireciona para `/entrar?redirect=<href>` (mais `reason=expired` quando o token salvo foi recusado pela API). O `redirect` só é seguido se for um caminho interno (`safe-redirect.ts`).
-- **Search params do catálogo** (`q`, `categories[]`, `networks[]`, `minPrice`, `maxPrice`, `tab`, `sort`, `page`): validados com o mesmo schema do contrato, valores inválidos caem no padrão e os padrões saem da URL. Qualquer mudança de filtro, busca, aba ou ordenação volta para a página 1. A busca usa debounce de 300 ms com `replace`; filtros e páginas usam `push`, para o voltar/avançar restaurar o estado.
+- **Search params do catálogo** (`q`, `categories[]`, `networks[]`, `minPrice`, `maxPrice`, `tab`, `sort`, `page`): validados com o mesmo schema do contrato, valores inválidos caem no padrão e os padrões saem da URL. A URL usa query string simples (`?categories=arte-digital&categories=musica&maxPrice=12.00`, `src/app/search-serialization.ts`), então um link escrito à mão ou compartilhado vale como está; links antigos no formato JSON continuam sendo lidos. Qualquer mudança de filtro, busca, aba ou ordenação volta para a página 1. A busca usa debounce de 300 ms com `replace`; filtros e páginas usam `push`, para o voltar/avançar restaurar o estado.
 
 ## Contratos REST
 
@@ -386,6 +386,16 @@ As cores do Figma passam em contraste ≥ 4,5:1 nos pares de texto pequeno (`src
 | Rede e ENS | — | rede é um enum (`ethereum`/`polygon`/`solana`); endereços validados só pelo formato; sem resolução de ENS | sem blockchain real (fora do escopo) |
 | Recibo | link "Ver no Etherscan"; coluna Carteira com "MetaMask" | mesmo rótulo, mas o link aponta para `explorer.kurio.example/testnet` (fictício); Carteira mostra o conector e, abaixo, o rótulo da carteira; linha de desconto só quando há desconto | um Etherscan real com hash inventado pareceria um erro real |
 | Tab bar mobile | cor e preenchimento no item ativo | mais um ponto no item ativo | estado não depende só de cor |
+| Hero mobile | pontos pequenos, troca só pelos pontos | slides arrastáveis com scroll-snap e pontos maiores (alvo de toque) | o gesto natural no celular é arrastar |
+| Filtros mobile | "Limpar" e "Ver resultados" lado a lado | botões empilhados em largura total; "Ver resultados" mostra a contagem só depois que ela chega | os dois rótulos não cabem lado a lado em 320–390 px |
+| Abas do detalhe (mobile) | rótulos longos | rótulos curtos | as três abas cabem sem rolagem |
+| Nome nos cards | uma linha | até duas linhas | nomes longos não são cortados em 320–390 px |
+| Perfil e Carteiras | sem rodapé; item ativo da barra lateral com contorno laranja | rodapé presente; item ativo com fundo e `aria-current` | rodapé consistente entre páginas; o fundo é perceptível sem depender da cor da borda |
+| Preço anterior do card | cor secundária | cor secundária e riscado | o estado não depende só de cor |
+| Pontos do hero (desktop) | 16 px entre pontos | 28 px | alvo de toque de 24 px sem sobreposição |
+| Links de texto pequenos ("EXPLORAR", "Continuar explorando", "Esqueceu a senha?") | tamanho do Figma | mantidos | seguem o Figma; passam na exceção de espaçamento do WCAG 2.5.8, salvo onde anotado no relatório |
+| 320 px | frames de 414 px | título do hero em 4 linhas e "Desconto do lançamento" em 3 com desconto de 3 dígitos | quebra natural do texto; nada é cortado |
+| Botão "Simulação" (só no build de demonstração) | — | no celular, ícone de 40 px com espaço reservado abaixo do conteúdo | não cobre controles |
 | Estados não desenhados | — | skeletons, vazios, erros, pílula de conexão, faixa de pedido pendente, 404, `/em-breve`, painel "Simulação" | seguem os tokens e componentes do Figma |
 
 ## Decisões de UX
