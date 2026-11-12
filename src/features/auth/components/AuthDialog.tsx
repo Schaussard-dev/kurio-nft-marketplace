@@ -29,7 +29,7 @@ const COPY: Record<AuthMode, { title: string; description: string; pageTitle: st
 /** Only the redirect travels between the tabs; the expiry notice belongs to the login it came with. */
 const tabSearch = (search: AuthSearch) => (search.redirect ? { redirect: search.redirect } : {})
 
-const TAB = 'text-title-20 font-medium text-foreground transition-colors hover:text-text-accent'
+const TAB = 'text-title-20 leading-6 font-medium text-foreground transition-colors hover:text-text-accent'
 
 /** Where closing the dialog goes: the (internal) redirect target, or Início when that target needs a session. */
 const closeTarget = (search: AuthSearch) => {
