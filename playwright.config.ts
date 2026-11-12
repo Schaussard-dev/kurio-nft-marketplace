@@ -5,6 +5,8 @@ const CI = !!process.env.CI
 /** Visual regression specs (tests/visual) run in every viewport project, functional E2E only in desktop/mobile. */
 const VISUAL = /tests[\\/]visual[\\/]/
 const SPIKE = /realtime-spike/
+/** Set BASE_URL to run the specs against a deployed build (e.g. the public Vercel URL); no local servers start. */
+const BASE_URL = process.env.BASE_URL
 
 export default defineConfig({
   testDir: './tests',
@@ -19,7 +21,7 @@ export default defineConfig({
     toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
   },
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: BASE_URL ?? 'http://localhost:4173',
     trace: 'retain-on-failure',
   },
   projects: [
@@ -45,7 +47,9 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:5173' },
     },
   ],
-  webServer: [
+  webServer: BASE_URL
+    ? undefined
+    : [
     {
       command: 'npm run build:demo && npm run preview',
       url: 'http://localhost:4173',

@@ -1,11 +1,11 @@
 # Kurio — Marketplace de NFTs
 
-[![e2e](https://github.com/Schaussard-dev/kurio-nft-marketplace/actions/workflows/e2e.yml/badge.svg?branch=feat/kurio-app)](https://github.com/Schaussard-dev/kurio-nft-marketplace/actions/workflows/e2e.yml)
+[![e2e](https://github.com/Schaussard-dev/kurio-nft-marketplace/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/Schaussard-dev/kurio-nft-marketplace/actions/workflows/e2e.yml)
 
 Entrega do desafio frontend da Jungle Gaming: marketplace de NFTs com descoberta, compra e conta do colecionador, em desktop e mobile. Todo o backend é simulado com MSW (REST e Socket.IO), na camada de rede.
 
 - **Repositório:** https://github.com/Schaussard-dev/kurio-nft-marketplace
-- **Deploy:** _(preenchido na entrega)_
+- **Deploy:** https://kurio-schaussard.vercel.app (Vercel, publica a cada push na `main`; build `npm run build:demo`)
 - **Arquitetura, contratos, eventos, desvios do Figma e limitações:** [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - **Auditoria Lighthouse:** [`lighthouse/summary.md`](lighthouse/summary.md)
 
@@ -299,7 +299,8 @@ Detalhes e justificativas em [`ARCHITECTURE.md`](ARCHITECTURE.md#estratégia-de-
 - sobe **dois servidores**: `npm run build:demo && npm run preview` (4173), usado por todos os projetos, e `npm run dev` (5173), usado só pelo projeto `spike` (teste do binding Socket.IO, que importa módulos do código-fonte). As duas portas precisam estar livres. Fora do CI, um servidor já rodando nessas portas é reaproveitado;
 - workers limitados a **3 local / 2 no CI**: cada worker roda a aplicação inteira, com MSW e servidor Socket.IO simulado por aba;
 - projetos: `chromium-desktop` (1440×900) e `chromium-mobile` (390×844, touch) para os fluxos; `chromium-tablet` (768×1024) só para regressão visual; `spike` (5173);
-- relatório HTML em `playwright-report/` (`npx playwright show-report`) e traces das falhas em `test-results/`.
+- relatório HTML em `playwright-report/` (`npx playwright show-report`) e traces das falhas em `test-results/`;
+- contra o deploy público, sem servidores locais: `BASE_URL=https://kurio-schaussard.vercel.app npx playwright test tests/e2e/01-catalog.spec.ts tests/e2e/06-purchase.spec.ts tests/e2e/09-realtime-checkout.spec.ts --project=chromium-desktop` (17 testes, verificados na entrega).
 
 | Spec | Cobre (§9 do enunciado) |
 |---|---|
