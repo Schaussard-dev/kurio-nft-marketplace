@@ -20,4 +20,7 @@ export async function startMocks(): Promise<void> {
   })
   // After the worker is up: resolving emits through the socket server, and due orders resolve at once.
   bootScheduler()
+  // Readiness signal for E2E: navigator.serviceWorker.controller is set as soon as the worker claims the
+  // page, before MSW sends MOCK_ACTIVATE for it; requests in that gap bypass the mocks (404 from preview).
+  document.documentElement.dataset.mocks = 'ready'
 }

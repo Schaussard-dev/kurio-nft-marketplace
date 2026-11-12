@@ -13,7 +13,7 @@ interface SpikeLog {
 }
 
 async function waitForMocks(page: Page) {
-  await page.waitForFunction('navigator.serviceWorker.controller !== null')
+  await page.waitForFunction("navigator.serviceWorker.controller !== null && document.documentElement.dataset.mocks === 'ready'")
 }
 
 /** Seeds a session for ana straight into the persisted mock DB (no auth endpoint exists yet). */

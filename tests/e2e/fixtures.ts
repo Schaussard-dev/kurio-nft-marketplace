@@ -50,9 +50,12 @@ interface Fixtures {
   gotoFresh: (path: string, options?: GotoOptions) => Promise<void>
 }
 
-/** The page load event can fire before the MSW worker takes control of the page. */
+/**
+ * The page load event can fire before the MSW worker takes control of the page, and the worker controls
+ * the page before MSW activates mocking for it; the html data-mocks flag is set once startMocks resolved.
+ */
 export async function waitForMocks(page: Page): Promise<void> {
-  await page.waitForFunction('navigator.serviceWorker.controller !== null')
+  await page.waitForFunction("navigator.serviceWorker.controller !== null && document.documentElement.dataset.mocks === 'ready'")
 }
 
 /**

@@ -3,7 +3,7 @@ import { expect, test } from './fixtures'
 
 /** The page load event can fire before the MSW worker takes control of the page. */
 async function waitForMocks(page: Page) {
-  await page.waitForFunction('navigator.serviceWorker.controller !== null')
+  await page.waitForFunction("navigator.serviceWorker.controller !== null && document.documentElement.dataset.mocks === 'ready'")
 }
 
 test.describe('app shell', () => {
