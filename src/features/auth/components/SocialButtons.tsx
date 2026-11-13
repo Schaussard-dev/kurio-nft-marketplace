@@ -38,7 +38,7 @@ export function SocialButtons({ variant }: { variant: AuthVariant }) {
             type="button"
             className={cn(
               'inline-flex w-full items-center justify-center gap-4 border border-border font-medium text-text-secondary transition-colors hover:border-primary hover:text-text-accent',
-              variant === 'dialog' ? 'h-10 rounded-sm text-caption-13' : 'h-[52px] rounded-lg text-caption-13',
+              variant === 'dialog' ? 'h-10 rounded-sm text-caption-13' : 'h-10 rounded-[5px] text-caption-13',
             )}
           >
             <img src={icon} alt="" width={20} height={20} className="size-5" />

@@ -3,7 +3,7 @@ import { Footer } from './Footer'
 import { Header } from './Header'
 import { MobileTabBar } from './MobileTabBar'
 
-const MAIN = 'mx-auto w-full max-w-[1232px] flex-1 px-4 py-6 outline-none'
+const MAIN = 'mx-auto w-full max-w-[1232px] flex-1 px-[var(--gutter)] py-6 outline-none'
 
 /**
  * App frame: skip link, header, `<main id="conteudo">`, footer and the mobile tab bar.

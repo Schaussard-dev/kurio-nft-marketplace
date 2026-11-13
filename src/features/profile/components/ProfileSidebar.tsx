@@ -3,7 +3,7 @@ import { Download, Heart, LogOut, MapPin, ShoppingCart, Tag, TriangleAlert, User
 import { useLogout } from '@/features/auth/queries'
 
 const ITEM =
-  'flex h-[52px] shrink-0 items-center gap-3 border-l-4 border-transparent px-4 text-body-15 whitespace-nowrap text-text-accent hover:bg-surface-2'
+  'flex h-[52px] shrink-0 items-center gap-3 border-l-4 lg:h-[45px] border-transparent px-4 text-body-15 whitespace-nowrap text-text-accent hover:bg-surface-2'
 const ACTIVE = { className: 'border-primary bg-surface-2', 'aria-current': 'page' as const }
 
 /** "Meu perfil" menu; below lg it becomes a horizontally scrollable strip (no mobile frame in Figma). */

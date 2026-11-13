@@ -740,7 +740,7 @@ function CheckoutFlow({
     <>
       <form noValidate aria-label="Pagamento" onSubmit={onConfirm}>
         {desktop ? (
-          <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:items-start lg:gap-10 xl:grid-cols-[minmax(0,1fr)_489px]">
+          <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:items-start lg:gap-10 xl:grid-cols-[minmax(0,1fr)_405px] xl:gap-8">
             <section aria-labelledby="perfil-colecionador-titulo" className="flex min-w-0 flex-col gap-4">
               <h2 id="perfil-colecionador-titulo" className="text-body-lg-17 font-bold text-foreground">
                 Perfil do colecionador

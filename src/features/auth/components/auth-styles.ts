@@ -9,5 +9,5 @@ export const INPUT_BASE =
 /** Input classes per variant (dialog fields are 40px/13px, mobile page fields 50px/15px as in Figma). */
 export const AUTH_INPUT_CLASS: Record<AuthVariant, string> = {
   dialog: cn(INPUT_BASE, 'h-10 rounded-sm text-caption-13'),
-  page: cn(INPUT_BASE, 'h-[50px] rounded-xl text-body-15'),
+  page: cn(INPUT_BASE, 'h-[50px] rounded-[10px] text-body-15'),
 }

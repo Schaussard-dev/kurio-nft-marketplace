@@ -110,11 +110,11 @@ function AuthPage({ mode, search, children }: { mode: AuthMode; search: AuthSear
       <Link
         to="/"
         aria-label="Kurio, página inicial"
-        className="self-center text-display-32 leading-none text-foreground"
+        className="mt-16 self-center text-display-32 leading-none text-foreground"
       >
         KURIO
       </Link>
-      <h1 className={cn('mt-20 mb-10 text-center font-bold text-foreground', mode === 'login' ? 'text-title-20' : 'text-body-lg-18')}>
+      <h1 className={cn('mt-[97px] mb-10 text-center font-bold text-foreground', mode === 'login' ? 'text-title-20' : 'text-body-lg-18')}>
         {COPY[mode].pageTitle}
       </h1>
       {children}

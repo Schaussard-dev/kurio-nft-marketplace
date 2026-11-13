@@ -109,7 +109,7 @@ export function NftInfo({ variant, onSelectEdition, ...purchase }: NftInfoProps)
       {mobile ? (
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-title-20 font-bold break-words text-foreground">{nft.name}</h1>
-          <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-body-15 text-foreground">
+          <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary px-2 py-1 text-body-14 text-foreground">
             <Star aria-hidden className="size-4 fill-current text-text-accent" />
             <span className="sr-only">Nota </span>
             {formatRating(nft.rating)}
@@ -202,7 +202,7 @@ export function MobileBuyBar(purchase: PurchaseProps) {
           aria-busy={purchase.adding || undefined}
           aria-disabled={purchase.adding || undefined}
           onClick={() => addToCart(purchase, true)}
-          className="h-14 flex-1 rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-16 font-bold text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="h-[60px] w-[196px] min-w-0 shrink rounded-full bg-gradient-to-r from-primary-light to-primary-dark text-body-lg-16 font-bold text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           Comprar NFT
         </button>
@@ -213,7 +213,7 @@ export function MobileBuyBar(purchase: PurchaseProps) {
           aria-busy={purchase.adding || undefined}
           aria-disabled={purchase.adding || undefined}
           onClick={() => addToCart(purchase, false)}
-          className="inline-flex size-14 items-center justify-center rounded-full border border-border-strong bg-ink/40 text-text-accent transition-colors hover:bg-surface-2 disabled:opacity-50"
+          className="inline-flex size-[60px] shrink-0 items-center justify-center rounded-full border border-border-strong bg-ink/40 text-text-accent transition-colors hover:bg-surface-2 disabled:opacity-50"
         >
           <ShoppingCart aria-hidden className="size-5" />
         </button>

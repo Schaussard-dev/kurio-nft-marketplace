@@ -187,7 +187,7 @@ export function WalletForm({
       aria-label={SECTION_LABEL[slot]}
       noValidate
       onSubmit={sameAsPrimary ? (event) => (event.preventDefault(), void persist({ sameAsPrimary: true })) : onValid}
-      className="grid gap-x-10 gap-y-6 md:grid-cols-2"
+      className="grid gap-x-7 gap-y-6 md:grid-cols-2"
     >
       {sameAsPrimary ? (
         <div className="flex flex-col gap-3 md:col-span-2">

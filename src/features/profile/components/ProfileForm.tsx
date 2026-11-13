@@ -59,7 +59,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
   })
 
   return (
-    <form aria-label="Dados do perfil" noValidate onSubmit={onSubmit} className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+    <form aria-label="Dados do perfil" noValidate onSubmit={onSubmit} className="grid gap-x-7 gap-y-6 md:grid-cols-2">
       <AuthField id="perfil-nome" label="Nome de exibição" visibleLabel error={errors.displayName?.message}>
         {(a11y) => <input {...a11y} {...register('displayName')} autoComplete="name" className={PROFILE_INPUT_CLASS} />}
       </AuthField>

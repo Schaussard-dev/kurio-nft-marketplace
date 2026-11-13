@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_authenticated/perfil')({
 
 function ProfileLayout() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[288px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[310px_1fr] lg:gap-7">
       <ProfileSidebar />
       <section className="min-w-0">
         <Outlet />

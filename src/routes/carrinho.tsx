@@ -172,7 +172,7 @@ function CartPage() {
 
         <section
           aria-labelledby="resumo-titulo"
-          className="flex flex-col gap-6 max-md:-mx-4 max-md:rounded-t-[40px] max-md:bg-surface max-md:px-6 max-md:pt-8 max-md:pb-10 md:max-lg:ml-auto md:max-lg:w-full md:max-lg:max-w-md"
+          className="flex flex-col gap-6 max-md:-mx-[var(--gutter)] max-md:rounded-t-[40px] max-md:bg-surface max-md:px-6 max-md:pt-8 max-md:pb-10 md:max-lg:ml-auto md:max-lg:w-full md:max-lg:max-w-md"
         >
           <h2
             id="resumo-titulo"

@@ -40,7 +40,7 @@ export function CheckoutForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-x-8 gap-y-6 md:grid-cols-2">
+      <div className="grid gap-x-6 gap-y-6 md:grid-cols-2">
         <AuthField id={id('nome')} label="Nome de exibição" visibleLabel error={errors.displayName?.message}>
           {(a11y) => (
             <input {...a11y} {...register('displayName')} data-field="displayName" autoComplete="name" className={PROFILE_INPUT_CLASS} />

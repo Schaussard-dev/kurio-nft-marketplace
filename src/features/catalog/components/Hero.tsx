@@ -55,7 +55,7 @@ const SLIDES: Slide[] = [
 const HERO_SIZES = '(min-width: 1024px) 450px, 140px'
 
 const SLIDE = cn(
-  'relative grid w-full shrink-0 snap-center grid-cols-[minmax(0,1fr)_minmax(0,140px)] items-center gap-3 overflow-hidden rounded-3xl px-5 pt-5 pb-10',
+  'relative grid w-full shrink-0 snap-center grid-cols-[minmax(0,1fr)_minmax(0,140px)] items-center gap-3 overflow-hidden rounded-[30px] p-4 pb-7',
   'bg-[radial-gradient(circle_at_45%_45%,color-mix(in_srgb,var(--color-primary)_38%,var(--color-surface))_0,color-mix(in_srgb,var(--color-primary)_22%,var(--color-surface))_38%,var(--color-surface)_75%)]',
   'lg:grid-cols-[minmax(0,1fr)_450px] lg:items-start lg:gap-10 lg:overflow-visible lg:rounded-none lg:bg-none lg:p-0 lg:pt-2',
 )
@@ -100,7 +100,7 @@ export function Hero() {
       <div
         ref={trackRef}
         onScroll={onScroll}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-3xl [scrollbar-width:none] lg:block lg:overflow-visible lg:rounded-none"
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain rounded-[30px] [scrollbar-width:none] lg:block lg:overflow-visible lg:rounded-none"
       >
         {SLIDES.map((slide, i) => {
           const active = i === index
@@ -145,14 +145,24 @@ export function Hero() {
                   <ArrowRight aria-hidden className="size-5 lg:hidden" />
                 </Link>
               </div>
-              <ArtImage
-                art={slide.art}
-                sizes={HERO_SIZES}
-                alt={slide.alt}
-                loading={i === 0 ? 'eager' : 'lazy'}
-                fetchPriority={i === 0 ? 'high' : 'auto'}
-                className="aspect-square w-full rounded-[20px] object-cover lg:rounded-3xl"
-              />
+              <div className="relative">
+                <ArtImage
+                  art={slide.art}
+                  sizes={HERO_SIZES}
+                  alt={slide.alt}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : 'auto'}
+                  className="aspect-square w-full rounded-2xl object-cover lg:rounded-3xl"
+                />
+                {/* Mobile frame: a second, smaller artwork overlaps the bottom-left corner (decorative). */}
+                <ArtImage
+                  art={SLIDES[(i + 1) % SLIDES.length]!.art}
+                  sizes="58px"
+                  alt=""
+                  loading="lazy"
+                  className="absolute -bottom-2 left-3.5 size-[42%] rounded-2xl object-cover shadow-lg lg:hidden"
+                />
+              </div>
             </div>
           )
         })}

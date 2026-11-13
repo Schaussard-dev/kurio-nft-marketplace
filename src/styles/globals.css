@@ -157,3 +157,13 @@ body:has([data-bottom-bar]) .mock-panel-trigger {
     bottom: 1rem !important;
   }
 }
+
+/* Page gutter: 16px, and 24px on phones from 375px (Figma mobile frames). Containers and edge-to-edge rows read it. */
+:root {
+  --gutter: 1rem;
+}
+@media (min-width: 375px) and (max-width: 767.98px) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}

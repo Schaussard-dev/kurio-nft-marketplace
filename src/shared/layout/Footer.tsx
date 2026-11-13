@@ -84,7 +84,7 @@ function Newsletter() {
 
 export function Footer() {
   return (
-    <footer className="mx-auto w-full max-w-[1232px] px-4 pb-6">
+    <footer className="mx-auto w-full max-w-[1232px] px-[var(--gutter)] pb-6 lg:mt-[72px]">
       <div className="bg-surface">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-8 p-6 lg:grid-cols-[1fr_1fr_1fr_1.25fr] lg:gap-0 lg:px-10 lg:pt-8 lg:pb-9">
           {FEATURES.map((f) => (

@@ -54,8 +54,8 @@ export function CheckoutSummary({
             <li key={line.lineId} className="flex items-center gap-3 rounded-xs bg-surface pr-4">
               <ArtImage art={line.nft.art} sizes="80px" alt="" className="size-20 shrink-0 rounded-l-xs object-cover" />
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate text-body-lg-16 font-bold text-foreground">{line.nft.name}</span>
-                <span className="truncate text-body-14 text-muted">ID do token: {tokenLabel(line)}</span>
+                <span className="text-body-lg-16 leading-5 font-bold break-words text-foreground">{line.nft.name}</span>
+                <span className="text-body-14 text-muted">ID do token: {tokenLabel(line)}</span>
               </div>
               <span className="text-body-14 whitespace-nowrap text-text-secondary">
                 <span className="sr-only">quantidade: </span>(x {line.quantity})

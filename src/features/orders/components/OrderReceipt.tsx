@@ -41,7 +41,7 @@ export function OrderReceipt({ order }: { order: Order }) {
   return (
     <section
       aria-labelledby="receipt-title"
-      className="relative mx-auto flex w-full max-w-[700px] flex-col border-b-[10px] border-primary bg-surface"
+      className="relative mx-auto flex w-full max-w-[578px] flex-col border-b-[10px] border-primary bg-surface"
     >
       <Link
         to="/"
@@ -58,7 +58,7 @@ export function OrderReceipt({ order }: { order: Order }) {
         </h1>
       </header>
 
-      <dl className="grid grid-cols-2 gap-y-4 border-y border-primary px-6 py-4 text-body-15 leading-5 sm:grid-cols-4 [&_dt]:text-body-14 sm:gap-y-0 sm:px-10">
+      <dl className="grid grid-cols-2 gap-y-4 border-y border-primary px-6 py-4 text-body-15 leading-5 sm:grid-cols-4 [&_dt]:text-body-14 sm:gap-y-0 sm:px-8">
         <div className="pr-3 sm:border-r sm:border-primary">
           <dt className="font-bold text-text-secondary">ID da transação</dt>
           <dd className="text-text-secondary">{shortHash(order.txHash)}</dd>
@@ -82,7 +82,7 @@ export function OrderReceipt({ order }: { order: Order }) {
         </div>
       </dl>
 
-      <div className="flex flex-col gap-4 px-4 pt-6 pb-10 sm:px-14">
+      <div className="flex flex-col gap-4 px-4 pt-6 pb-10 sm:px-11">
         <h2 className="text-body-15 font-bold text-foreground">Detalhes da transação</h2>
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">NFTs comprados</caption>

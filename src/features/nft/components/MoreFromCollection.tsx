@@ -29,11 +29,11 @@ export function MoreFromCollection({
       >
         Mais desta coleção
       </h2>
-      {/* Bleeds to the screen edge (-mx-4); scroll-px-4 makes snap-start land on the page gutter. */}
+      {/* Bleeds to the screen edge (page gutter); the matching scroll padding makes snap-start land on the page gutter. */}
       <ul
         aria-label={`Mais NFTs de ${nft.collection}`}
         aria-busy={!items}
-        className="-mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:scroll-px-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 lg:grid-cols-5"
+        className="-mx-[var(--gutter)] flex snap-x scroll-px-[var(--gutter)] gap-4 overflow-x-auto px-[var(--gutter)] pb-2 md:mx-0 md:scroll-px-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 lg:grid-cols-5"
       >
         {items
           ? items.map((item) => (

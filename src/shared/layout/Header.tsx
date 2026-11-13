@@ -132,7 +132,7 @@ export function Header({ cartCount = 0 }: HeaderProps) {
   const homeActive = pathname === '/'
 
   return (
-    <header className="mx-auto w-full max-w-[1232px] px-4">
+    <header className="mx-auto w-full max-w-[1232px] px-[var(--gutter)]">
       <div className="flex h-[68px] items-center justify-between gap-4 border-b border-primary/30 lg:grid lg:grid-cols-[1fr_auto_1fr]">
         <Link to="/" className="text-body-14 font-bold tracking-[1.4px] text-foreground" aria-label="Kurio, página inicial">
           KURIO
