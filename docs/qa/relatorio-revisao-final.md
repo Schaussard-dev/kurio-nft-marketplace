@@ -199,7 +199,7 @@ Resultado:
 
 ## Correções (pacote aprovado)
 
-Plano: [`docs/superpowers/plans/2026-11-12-kurio-final-review-fixes.md`](../superpowers/plans/2026-11-12-kurio-final-review-fixes.md). Cada correção de comportamento tem um teste que falhou antes e passou depois. A tipografia foi conferida com o comparador Figma × DOM nos 15 frames.
+Cada correção de comportamento tem um teste que falhou antes e passou depois. A tipografia foi conferida com o comparador Figma × DOM nos 15 frames.
 
 | ID | Status | Como | Commit |
 |---|---|---|---|
@@ -224,7 +224,7 @@ Plano: [`docs/superpowers/plans/2026-11-12-kurio-final-review-fixes.md`](../supe
 | FR-20 | corrigido | Com movimento reduzido, sheets e diálogos aparecem sem animação (e2e) | 19b0ee7 |
 | FR-21 | corrigido | A causa real era o cookie store do MSW lendo `localStorage` ao carregar (não `store.ts`, como o F10 supôs). Um shim de armazenamento em memória roda antes do MSW (unit + sonda) | 2ce8ecc |
 
-## Varredura final (Fable)
+## Varredura final (revisões independentes)
 
 Três revisões independentes, uma por agente: código (`102d66c..2f96209` mais o código inteiro), responsividade (26 tamanhos de tela de 320 a 2560 px, celular deitado, zoom de 200% e 400%, espaçamento de texto da WCAG 1.4.12, troca de orientação, conteúdo extremo) e fidelidade ao Figma (15 frames: geometria, cores, raios, alturas de linha, textos). Resultado: nenhum item eliminatório; 1 S1 e 4 S2 de responsividade; 2 S2 de Figma; 2 achados importantes de código.
 

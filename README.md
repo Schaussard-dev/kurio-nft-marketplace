@@ -8,6 +8,7 @@ Entrega do desafio frontend da Jungle Gaming: marketplace de NFTs com descoberta
 - **Deploy:** https://kurio-schaussard.vercel.app (Vercel, publica a cada push na `main`; build `npm run build:demo`)
 - **Arquitetura, contratos, eventos, desvios do Figma e limitações:** [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - **Auditoria Lighthouse:** [`lighthouse/summary.md`](lighthouse/summary.md)
+- **Testes exploratórios e revisão final (planos e relatórios):** [`docs/qa/`](docs/qa/relatorio-revisao-final.md)
 
 **Stack:** React 19 · TypeScript 5.9 · Vite 8 · TanStack Router · TanStack Query v5 · Axios · socket.io-client 4.8 · Tailwind CSS v4 · shadcn/ui (Radix) · Zod 4 · react-hook-form · big.js · MSW 2.15 + `@mswjs/socket.io-binding` · Playwright 1.65 · Vitest · Lighthouse 13. Versões fixadas em `package.json` e `package-lock.json`.
 
