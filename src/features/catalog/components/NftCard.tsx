@@ -112,7 +112,7 @@ export function NftCard({
       </div>
 
       {/* Names wrap to a second line instead of being cut: on a 320–390px phone the column is ~150px. */}
-      <h3 className={cn('mt-3 line-clamp-2 px-4 text-body-15 leading-5 break-words text-foreground max-[374px]:line-clamp-3 md:px-0', !compact && 'md:text-body-lg-16')}>
+      <h3 className={cn('mt-3 line-clamp-2 px-4 text-body-15 leading-5 break-words text-foreground max-md:min-h-10 max-[374px]:line-clamp-3 md:px-0', !compact && 'md:text-body-lg-16')}>
         {/* Stretched link: the whole card opens the detail page; action buttons sit above it (z-10). */}
         <Link
           to="/nft/$nftId"
