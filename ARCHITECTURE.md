@@ -396,6 +396,16 @@ As cores do Figma passam em contraste ≥ 4,5:1 nos pares de texto pequeno (`src
 | Links de texto pequenos ("EXPLORAR", "Continuar explorando", "Esqueceu a senha?") | tamanho do Figma | mantidos | seguem o Figma; passam na exceção de espaçamento do WCAG 2.5.8, salvo onde anotado no relatório |
 | 320 px | frames de 414 px | título do hero em 4 linhas e "Desconto do lançamento" em 3 com desconto de 3 dígitos | quebra natural do texto; nada é cortado |
 | Botão "Simulação" (só no build de demonstração) | — | no celular, ícone de 40 px com espaço reservado abaixo do conteúdo | não cobre controles |
+| Busca na barra lateral (desktop) | não desenhada; a busca é só o ícone do cabeçalho | campo "Buscar NFTs" no topo dos filtros | a busca precisa de um campo visível ao lado dos filtros; o ícone do cabeçalho leva até ele |
+| Pagamento mobile | sem cabeçalho nem tab bar; "Confirmar compra" fixo no rodapé | cabeçalho e tab bar mantidos; botão no fim do formulário | navegação consistente; o formulário expansível muda de altura e um botão fixo cobriria campos |
+| Fundo do login (desktop) | Início em brilho total atrás do diálogo | véu escuro de 80% | contraste e foco no diálogo modal |
+| Recibo (desktop) | modal sobre fundo opaco | página com cabeçalho e rodapé, cartão de 578 px | `/pedidos/$id` é uma rota acessível por link e recarga |
+| Stepper de quantidade (mobile) | botões de 20x30 px | 28x40 px | alvo de toque mínimo de 24 px (WCAG 2.5.8) |
+| Nota das avaliações | "4.8" | "4,8" | formato numérico pt-BR (valores em ETH seguem com ponto, como no Figma) |
+| Alvos de toque no mobile | vários entre 24 e 44 px | mantidos | seguem o Figma e passam no mínimo de 24 px do WCAG 2.5.8 |
+| Tamanho do texto | px | tokens em px; o zoom do navegador funciona | os tokens vêm do Figma; aumentar só a fonte padrão do navegador não amplia o texto |
+| Login/cadastro ao girar o celular | — | abaixo de 768 px é página e acima é diálogo; girar no meio do preenchimento recomeça o formulário | dois layouts do Figma para o mesmo fluxo |
+| Telas baixas (até 480 px de altura, zoom de 400%) | — | barra de compra e tab bar entram no fluxo da página; diálogos e painel de filtros rolam | as barras fixas ocupariam quase toda a tela |
 | Estados não desenhados | — | skeletons, vazios, erros, pílula de conexão, faixa de pedido pendente, 404, `/em-breve`, painel "Simulação" | seguem os tokens e componentes do Figma |
 
 ## Decisões de UX
