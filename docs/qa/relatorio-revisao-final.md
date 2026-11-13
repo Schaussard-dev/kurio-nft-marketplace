@@ -238,3 +238,5 @@ Três revisões independentes, uma por agente: código (`102d66c..2f96209` mais 
 | Registrados (S4) | CR-05 a CR-09, CR-12, CR-13, RS-15, RS-16, RS-19, RS-20 e os S4 de Figma não listados acima | sem mudança |
 
 Verificação: typecheck, lint e 345 unitários verdes; e2e completo em blocos (desktop, mobile e spike), com duas regressões pegas e corrigidas no caminho (avisos no topo cobrindo botões e altura do esqueleto dos cards); `layout-audit2` em 320–1440 sem estouro horizontal nem elemento fora da tela.
+
+**Reteste no deploy (2026-11-12):** `main` = `fe53819`, publicado em https://kurio-schaussard.vercel.app com o mesmo bundle do build local (`index-hYK56n3b.js`). Contra o deploy: `smoke`, `shell`, `01-catalog` e `mock-control` em desktop e mobile (48/48) e os testes de visitante de `14-responsive` (5/5). CI verde em `fe53819`. Lighthouse: a nova medição sob carga da máquina oscilou muito; num A/B intercalado com o build anterior à varredura, o TBT ficou igual ou melhor, então o resumo versionado foi mantido.
