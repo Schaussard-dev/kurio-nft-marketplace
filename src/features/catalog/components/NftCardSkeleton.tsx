@@ -10,7 +10,7 @@ export function NftCardSkeleton({ className }: { className?: string }) {
       </div>
       <div className="mt-3 px-4 md:px-0">
         <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="mt-1.5 h-4 w-1/3 md:h-[18px]" />
+        <Skeleton className="mt-1.5 h-5 w-1/3" />
       </div>
     </li>
   )
