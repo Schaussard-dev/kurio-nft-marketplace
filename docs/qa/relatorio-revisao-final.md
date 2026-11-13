@@ -223,3 +223,18 @@ Plano: [`docs/superpowers/plans/2026-11-12-kurio-final-review-fixes.md`](../supe
 | FR-19 | corrigido | Menu da conta não modal: axe limpo com o menu aberto (e2e) | 19b0ee7 |
 | FR-20 | corrigido | Com movimento reduzido, sheets e diálogos aparecem sem animação (e2e) | 19b0ee7 |
 | FR-21 | corrigido | A causa real era o cookie store do MSW lendo `localStorage` ao carregar (não `store.ts`, como o F10 supôs). Um shim de armazenamento em memória roda antes do MSW (unit + sonda) | 2ce8ecc |
+
+## Varredura final (Fable)
+
+Três revisões independentes, uma por agente: código (`102d66c..2f96209` mais o código inteiro), responsividade (26 tamanhos de tela de 320 a 2560 px, celular deitado, zoom de 200% e 400%, espaçamento de texto da WCAG 1.4.12, troca de orientação, conteúdo extremo) e fidelidade ao Figma (15 frames: geometria, cores, raios, alturas de linha, textos). Resultado: nenhum item eliminatório; 1 S1 e 4 S2 de responsividade; 2 S2 de Figma; 2 achados importantes de código.
+
+| Grupo | Achados | Status |
+|---|---|---|
+| Bloqueio de compra | RS-01: a revisão do pedido não cabia em celulares deitados nem com zoom de 400% | corrigido: todo diálogo tem altura máxima e rola (e2e `14-responsive`) |
+| Layout | RS-02 (valores cortados na revisão a 320–390 px), RS-03 (avisos sobre a barra de compra), RS-04 (barra do catálogo a 1024 px), RS-05 (barras fixas com zoom de 400%), RS-08 (página pulando ao carregar), RS-09 (número do token escondido a 320 px), RS-10 (títulos encostados), RS-11 (pontos do hero), RS-12 (formulário de pagamento a 1024 px), RS-13 (tabela do carrinho), RS-14 (nomes extremos), RS-17/FG-02 (cartão da imagem), RS-18 (área segura do iOS), RS-21 | corrigidos (e2e `14-responsive`, `12`, `13`) |
+| Figma | FG-01 (primeira tela do NFT no celular), FG-03, FG-07, FG-08, FG-09, FG-10 (margem de 24 px no celular), FG-11 (hero mobile), FG-12, FG-14, FG-15, FG-21, FG-23, FG-33, links do rodapé | corrigidos e conferidos com capturas lado a lado |
+| Código | CR-01 ("Entrar" do cabeçalho volta à página de origem), CR-02 (busca com aspas preservada), CR-03/04 (checkout resiste a falha em segundo plano), CR-10 (painel guarda o ID do evento), CR-11 (aviso de preço formatado) | corrigidos (e2e `03`, `shell`; unitários) |
+| Decisões documentadas | FG-06, FG-13, FG-16, FG-08 (recibo como página), stepper de 28x40, "4,8", alvos entre 24 e 44 px, fonte em px, RS-07 | em `ARCHITECTURE.md`, "Desvios do Figma" |
+| Registrados (S4) | CR-05 a CR-09, CR-12, CR-13, RS-15, RS-16, RS-19, RS-20 e os S4 de Figma não listados acima | sem mudança |
+
+Verificação: typecheck, lint e 345 unitários verdes; e2e completo em blocos (desktop, mobile e spike), com duas regressões pegas e corrigidas no caminho (avisos no topo cobrindo botões e altura do esqueleto dos cards); `layout-audit2` em 320–1440 sem estouro horizontal nem elemento fora da tela.
